@@ -1,4 +1,4 @@
-![](assets/img/logo_colored.svg)
+![](https://raw.githubusercontent.com/roman-right/AnnaDB/main/docs/build/assets/img/logo_colored.svg?token=GHSAT0AAAAAABXADZHTHTTD4UZR3G6P2J5GYXRFT7Q)
 
 Next-generation developer-first NoSQL database.
 
