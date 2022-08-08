@@ -2,7 +2,7 @@ import time
 
 # import pytest
 
-from annadb.data_types.journal import QuerySet
+from annadb.query.query_set import QuerySet
 from annadb.response import OkResponse
 from annadb.query.types import Insert
 

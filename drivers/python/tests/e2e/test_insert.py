@@ -2,7 +2,7 @@ from uuid import UUID
 
 import pytest
 
-from annadb.data_types.journal import QuerySet
+from annadb.query.query_set import QuerySet
 from annadb.data_types.map import Map
 from annadb.data_types.primitive import Link, String, Number, Bool, Null
 from annadb.data_types.vector import Vector

@@ -1,7 +1,7 @@
 ## Server
 
 ```shell
-docker command
+docker run --init -p 10001:10001 -t romanright/annadb:0.0.1
 ```
 
 ## Client shell
