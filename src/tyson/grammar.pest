@@ -1,0 +1,33 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+char = _{
+    !("|" | "\\") ~ ANY
+    | "\\" ~ ("|" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+prefix = @{ ( LETTER | NUMBER | "&" | "#" | "@" | "^" | "." | "_" )+ }
+
+value = @{ char* }
+
+separator = _{ ";" | "," }
+
+primitive = ${ ( prefix ~ ( "|" ~ value ~ "|" )? ) | ( ( prefix )? ~  "|" ~ value ~ "|"  ) }
+
+pair = { primitive ~ ":" ~ item }
+
+map_value = _{ "{" ~ "}" | "{" ~ pair ~ (separator ~ pair)* ~ (separator)? ~ "}" }
+
+map = { prefix ~ map_value | map_value }
+
+vector_item = _{ "[" ~ "]" | "[" ~ item ~ (separator ~ item)* ~ (separator)? ~ "]" }
+
+vector = { prefix ~ vector_item | vector_item }
+
+modifier = { prefix ~ "(" ~ item ~ ")" }
+
+item = _{ modifier | map | vector | primitive  }
+
+journal_content = _{ pair ~ ( separator ~ pair )* ~ (separator)? | "" }
+
+journal = { SOI  ~ journal_content ~ EOI }

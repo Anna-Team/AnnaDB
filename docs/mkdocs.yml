@@ -1,0 +1,40 @@
+site_name: AnnaDB
+docs_dir: build
+theme:
+  name: material
+  palette:
+    scheme: bright
+  features:
+    - navigation.tabs
+  logo: assets/img/small_icon.svg
+  favicon: assets/img/favicon.png
+
+extra_css:
+  - assets/stylesheets/extra.css
+  - assets/stylesheets/color_scheme.css
+
+nav:
+  - About: index.md
+  - Install: install.md
+  - Documentation:
+    - Introduction: documentation/introduction.md
+    - Data Types: documentation/data_types.md
+    - Insert: documentation/insert.md
+    - Get: documentation/get.md
+    - Find: documentation/find.md
+    - Sort: documentation/sort.md
+    - Limit: documentation/limit.md
+    - Offset: documentation/offset.md
+    - Update: documentation/update.md
+    - Delete: documentation/delete.md
+  - Tutorial:
+    - Native: tutorial/native/index.md
+    - Python: tutorial/python/index.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - tables
