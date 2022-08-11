@@ -71,6 +71,6 @@ AnnaDB shell client is an interactive terminal application, that connects to the
 
 AnnaDB has a Python driver. It has an internal query builder - you don't need to learn AnnaDB query syntax to work with it. But it supports raw querying too.
 
-[Python Driver](https://github.com/roman-right/AnnaDB/tree/main/drivers/python/)
+LINK
 
 Other languages will be supported soon too. If you want to help me with this, please text me - I'll provide all the information and tools.

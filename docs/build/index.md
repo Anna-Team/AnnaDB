@@ -11,3 +11,5 @@ Features:
 - Flexible object structure
 - Relations
 - Transactions
+
+Read more in the [documentation](documentation/introduction/).

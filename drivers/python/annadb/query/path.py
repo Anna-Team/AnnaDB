@@ -8,7 +8,7 @@ from annadb.query.sort.operators import Asc, Desc
 
 class Path(PrimitiveBase):
     def __init__(self, value: Optional[str] = None):
-        if value is None:
+        if value is None or value == "":
             self.prefix = ROOT
         else:
             self.prefix = PATH_TO_VALUE
