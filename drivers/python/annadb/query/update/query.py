@@ -1,7 +1,7 @@
 import typing
 
-from annadb.data_types.journal import QuerySet
 from annadb.query.base import BaseQuery
+from annadb.query.query_set import QuerySet
 from annadb.query.types import Update
 
 if typing.TYPE_CHECKING:

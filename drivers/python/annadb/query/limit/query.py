@@ -1,7 +1,7 @@
 import typing
 
-from annadb.data_types.journal import QuerySet
 from annadb.query.base import FindInterface
+from annadb.query.query_set import QuerySet
 from annadb.query.types import Limit
 
 if typing.TYPE_CHECKING:
