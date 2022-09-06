@@ -1,4 +1,5 @@
 from annadb.connection import Connection
+from article_native_tutorial import build_first_article
 from delete import build_delete
 from find import build_find
 from get import build_get
@@ -47,3 +48,6 @@ build_delete(connection)
 
 clean_collections()
 build_native_tutorial(connection)
+
+clean_collections()
+build_first_article(connection)
