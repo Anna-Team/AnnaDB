@@ -1,6 +1,6 @@
 I'm excited to introduce [AnnaDB](https://annadb.dev) - a next-generation developer-first NoSQL database.
 
-I work with a lot of small projects daily - proofs of concepts and experiments with the new frameworks or patterns. For these purposes, I needed a database, that supports flexible data structures, as I change it frequently during my experiments. And it must support relations out of the box, as this is a very natural part of the structures' design - links to other objects. I tried a lot (if not all of) databases, but nothing did fit my requirements well. So, I decided to make my own then. This is how AnnaDB was born.
+I work with a lot of small projects daily - proofs of concepts and experiments with the new frameworks or patterns. For these purposes, I needed a database that supports flexible data structures, as I change it frequently during my experiments. And it must support relations out of the box, as this is a very natural part of the structures' design - links to other objects. I tried a lot (if not all of) databases, but nothing fit my requirements well. So, I decided to make my own then. This is how AnnaDB was born.
 
 **Features**
 
@@ -20,13 +20,27 @@ Every object and sub-object (item of a vector or map) that was stored in AnnaDB 
 
 ### TySON
 
-AnnaDB query language uses the `TySON` format. The main difference from other data formats is that each item has a value and prefix. The prefix can mark the data type or query type (as it is used in AnnaDB) or any other information, useful for the parser. This adds more flexibility to the data structure design - it is allowed to use as many custom data types, as the developer needs.
+The AnnaDB query language uses the `TySON` format. The main difference from other data formats is that each item has a value and prefix. The prefix can mark the data type or query type (as it is used in AnnaDB) or any other information, useful for the parser. This adds more flexibility to the data structure design - it is allowed to use as many custom data types as the developer needs.
 
 You can read more about the `TySON` format [here](https://github.com/roman-right/tyson)
 
+### Data Types
+
+There are primitive and container data types in AnnaDB.
+
+Primitive data types are a set of basic types whose values can not be decoupled. In TySON, primitives are represented as `prefix|value|` or `prefix` only. Prefix in AnnaDB shows the data type.
+For example, the string `test` will be represented as `s|test|`, where `s` - is a prefix that marks data as a string, and `test` is the actual value.
+
+Container data types keep primitive and container objects using specific rules. There are only two container types in AnnaDB for now. Maps and vectors.
+
+- Vectors are ordered sets of elements of any type. Example: `v[n|1|,n|2|,n|3|,]`
+- Maps are associative arrays. Example: `m{ s|bar|: s|baz|,}`
+
+More information about AnnaDB data types could be found in the [documentation](https://annadb.dev/documentation/data_types/)
+
 ### Query
 
-Query in AnnaDB is a pipeline of steps, that should be applied in the order it was declared. The steps are wrapped into a vector with the prefix `q` - query.
+Query in AnnaDB is a pipeline of steps that should be applied in the order it was declared. The steps are wrapped into a vector with the prefix `q` - query.
 
 <pre><code><span class="prefix_primitive">collection</span>|<span class="value_primitive">test</span>|:<span class="prefix_vector">q</span>[
    <span class="prefix_vector">find</span>[
@@ -57,7 +71,7 @@ docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
 
 ### Client
 
-AnnaDB shell client is an interactive terminal application, that connects to the DB instance, validates and handles queries. It fits well to play with query language or work with the data manually.
+AnnaDB shell client is an interactive terminal application that connects to the DB instance, validates and handles queries. It fits well to play with query language or work with the data manually.
 
 ![](https://raw.githubusercontent.com/roman-right/AnnaDB/0c9f00f53f21184fe166c5c70d417f0ed4bcf01b/docs/build/assets/img/shell.png)
 
@@ -97,7 +111,7 @@ Let's start with categories. I'll represent categories as simple string objects.
 
 {{ insert_category_out }}
 
-If everything is ok, in result will be returned `ok[...]` vector with responses for all the transaction pipelines. Each response contains `data` and `meta` information. In our case, there is only one response with a vector of `ids` in `data` and a number of inserted objects in `meta`
+If everything is ok, the result will be returned `ok[...]` vector with responses for all the transaction pipelines. Each response contains `data` and `meta` information. In our case, there is only one response with a vector of `ids` in `data` and a number of inserted objects in `meta`
 
 ### Insert container
 
@@ -113,7 +127,7 @@ For the category, I'll use the already created one.
 
 {{ insert_chocolate_bar_in }}
 
-The query is similar to the previous one, but the object is not a primitive, but a map. The value of the `category` field is a link, that was received after the previous insert.
+The query is similar to the previous one, but the object is not a primitive, but a map. The value of the `category` field is a link that was received after the previous insert.
 
 **Response**:
 
@@ -161,7 +175,7 @@ The query here consists of 2 steps. `Get the object by link` step and `modify th
 
 The response of the update operation contains the ids of the updated objects as data and the number of the updated objects as meta.
 
-Let's take a look, at how this affected the chocolate objects.
+Let's take a look at how this affected the chocolate objects.
 
 **Request**:
 
@@ -203,7 +217,7 @@ To sort objects I'll use the `sort` operation against the price field
 
 {{ sort_in }}
 
-The `sort[...]` operation is a vector of sort operators - `asc` and `desc`. Sort operators are modifiers, that contain paths to the sorting value. The `sort` operation is not an independent step, it can stay only after find-like operations, that return objects. You can read more about sort [here](https://annadb.dev/documentation/update/)
+The `sort[...]` operation is a vector of sort operators - `asc` and `desc`. Sort operators are modifiers that contain paths to the sorting value. The `sort` operation is not an independent step, it can stay only after find-like operations that return objects. You can read more about sort [here](https://annadb.dev/documentation/update/)
 
 **Response**:
 
@@ -250,8 +264,11 @@ My next plans are:
 - More `find` and `update` operators
 - Performance increase
 
+If you can help with development, please ping me.
+
 ## Links
 
 - Documentation - <https://annadb.dev>
 - Repo - <https://github.com/roman-right/AnnaDB>
 - Python Driver - <https://pypi.org/project/annadb/>
+- My Twitter - <https://twitter.com/roman_the_right>
