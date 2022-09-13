@@ -170,7 +170,7 @@ for k, v in response.data.items():
     print(v["name"], v["price"])
 
 >>> Tony's 5.95
->>> Mars  4.0
+>>> Mars 4.0
 ```
 
 ## Sort objects
@@ -185,7 +185,7 @@ response = products.all().sort(+root.price).run()
 for k, v in response.data.items():
     print(v["name"], v["price"])
 
->>> Mars4.0
+>>> Mars 4.0
 >>> Tony's 5.95
 ```
 
