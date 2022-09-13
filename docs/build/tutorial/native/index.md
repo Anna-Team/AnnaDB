@@ -22,7 +22,7 @@ let's start with categories. Let's represent categories as simple string objects
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_vector">ids</span>[
-			<span class="prefix_link">categories</span>|<span class="value_link">39f44c6d-49d9-466a-bd29-81a1e9bf44b9</span>|,
+			<span class="prefix_link">categories</span>|<span class="value_link">bfe9ce56-5d57-4018-8de1-b7933dea26d2</span>|,
 		],
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">insert_meta</span>{
 			<span class="prefix_string">s</span>|<span class="value_string">count</span>|:<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
@@ -49,7 +49,7 @@ For the category, I'll use the already created one.
 	<span class="prefix_map">m</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Tony's</span>|,
 		<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
-		<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_link">categories</span>|<span class="value_link">39f44c6d-49d9-466a-bd29-81a1e9bf44b9</span>|,
+		<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_link">categories</span>|<span class="value_link">bfe9ce56-5d57-4018-8de1-b7933dea26d2</span>|,
 	},
 ];
 </code></pre>
@@ -61,7 +61,7 @@ The query is similar to the previous one, but the object is not a primitive, but
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_vector">ids</span>[
-			<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|,
 		],
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">insert_meta</span>{
 			<span class="prefix_string">s</span>|<span class="value_string">count</span>|:<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
@@ -79,7 +79,7 @@ Let's retrieve the information about this chocolate bar now. I'll use the `get` 
 **Request**:
 
 <pre><code><span class="prefix_primitive">collection</span>|<span class="value_primitive">products</span>|:<span class="prefix_vector">get</span>[
-	<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|,
+	<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|,
 ];
 </code></pre>
 
@@ -90,10 +90,10 @@ This time I use the `get[...]` query step. Using this step you can retrieve one 
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_map">objects</span>{
-			<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">sweets</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Tony's</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">sweets</span>|,
 			},
 		},
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">get_meta</span>{
@@ -113,7 +113,7 @@ Let's insert another chocolate bar there to have more objects in the collection:
 	<span class="prefix_map">m</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Mars</span>|,
 		<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">2</span>|,
-		<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_link">categories</span>|<span class="value_link">39f44c6d-49d9-466a-bd29-81a1e9bf44b9</span>|,
+		<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_link">categories</span>|<span class="value_link">bfe9ce56-5d57-4018-8de1-b7933dea26d2</span>|,
 	},
 ];
 </code></pre>
@@ -128,7 +128,7 @@ Let's modify the category to make it more accurate.
 
 <pre><code><span class="prefix_primitive">collection</span>|<span class="value_primitive">categories</span>|:<span class="prefix_vector">q</span>[
 	<span class="prefix_vector">get</span>[
-		<span class="prefix_link">categories</span>|<span class="value_link">39f44c6d-49d9-466a-bd29-81a1e9bf44b9</span>|,
+		<span class="prefix_link">categories</span>|<span class="value_link">bfe9ce56-5d57-4018-8de1-b7933dea26d2</span>|,
 	],
 	<span class="prefix_vector">update</span>[
 		<span class="prefix_map">set</span>{
@@ -145,7 +145,7 @@ The query here consists of 2 steps. `Get the object by link` step and `modify th
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_vector">ids</span>[
-			<span class="prefix_link">categories</span>|<span class="value_link">39f44c6d-49d9-466a-bd29-81a1e9bf44b9</span>|,
+			<span class="prefix_link">categories</span>|<span class="value_link">bfe9ce56-5d57-4018-8de1-b7933dea26d2</span>|,
 		],
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">update_meta</span>{
 			<span class="prefix_string">s</span>|<span class="value_string">count</span>|:<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
@@ -171,14 +171,14 @@ To find objects I use the `find[...]` operation. It is a vector of find operator
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_map">objects</span>{
-			<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|:<span class="prefix_map">m</span>{
+				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Tony's</span>|,
-				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
 			},
-			<span class="prefix_link">products</span>|<span class="value_link">f922e8a5-21e9-43ab-9f2b-a52453f7bcb2</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Mars</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">b507ac61-e251-4e96-b4d1-fe2df9cb4e4f</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Mars</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">2</span>|,
 			},
 		},
@@ -218,7 +218,7 @@ The `find` step can stay before the `update` step as well. All the found objects
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_vector">ids</span>[
-			<span class="prefix_link">products</span>|<span class="value_link">f922e8a5-21e9-43ab-9f2b-a52453f7bcb2</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">b507ac61-e251-4e96-b4d1-fe2df9cb4e4f</span>|,
 		],
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">update_meta</span>{
 			<span class="prefix_string">s</span>|<span class="value_string">count</span>|:<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
@@ -234,14 +234,14 @@ Here is how all the products look like after update:
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_map">objects</span>{
-			<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|:<span class="prefix_map">m</span>{
+			<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Tony's</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
 			},
-			<span class="prefix_link">products</span>|<span class="value_link">f922e8a5-21e9-43ab-9f2b-a52453f7bcb2</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Mars</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">b507ac61-e251-4e96-b4d1-fe2df9cb4e4f</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Mars</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">4</span>|,
 			},
 		},
@@ -274,14 +274,14 @@ The `sort[...]` operation is a vector of sort operators - `asc` and `desc`. Sort
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_map">objects</span>{
-			<span class="prefix_link">products</span>|<span class="value_link">f922e8a5-21e9-43ab-9f2b-a52453f7bcb2</span>|:<span class="prefix_map">m</span>{
+			<span class="prefix_link">products</span>|<span class="value_link">b507ac61-e251-4e96-b4d1-fe2df9cb4e4f</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">4</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Mars</span>|,
 			},
-			<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">category</span>|:<span class="prefix_string">s</span>|<span class="value_string">chocolate</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">price</span>|:<span class="prefix_number">n</span>|<span class="value_number">5.95</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">Tony's</span>|,
 			},
 		},
@@ -320,7 +320,7 @@ The `delete` operation is a primitive without value.
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_vector">ids</span>[
-			<span class="prefix_link">products</span>|<span class="value_link">288b520f-3bdb-4064-b9f2-7daf92978558</span>|,
+			<span class="prefix_link">products</span>|<span class="value_link">5412320f-3ad8-46fc-8fcf-716f545a4302</span>|,
 		],
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">update_meta</span>{
 			<span class="prefix_string">s</span>|<span class="value_string">count</span>|:<span class="prefix_number">n</span>|<span class="value_number">1</span>|,

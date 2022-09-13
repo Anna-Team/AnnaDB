@@ -1,16 +1,16 @@
-I'm excited to introduce [AnnaDB](https://annadb.dev) - a next-generation developer-first NoSQL database.
+I'm excited to introduce [AnnaDB](https://annadb.dev) - the next-generation developer-first NoSQL data store.
 
-I work with a lot of small projects daily - proofs of concepts and experiments with the new frameworks or patterns. For these purposes, I needed a database that supports flexible data structures, as I change it frequently during my experiments. And it must support relations out of the box, as this is a very natural part of the structures' design - links to other objects. I tried a lot (if not all of) databases, but nothing fit my requirements well. So, I decided to make my own then. This is how AnnaDB was born.
+I work with many small projects daily - proofs of concepts and experiments with new frameworks or patterns. For these purposes, I needed a database that works with flexible data structures, as I change it frequently during my experiments. And it must support relations out of the box, as this is a natural part of the structures' design - links to other objects. I tried a lot (if not all) databases, but nothing fit my requirements well. So, I decided to make my own then. This is how AnnaDB was born.
 
 **Features**
 
 - Flexible object structure - simple primitives and complicated nested containers could be stored in AnnaDB
-- Relations - every object can be linked to another and this relation will be resolved for every operation without additional commands
+- Relations - you can link any object to another, and AnnaDB will resolve this relation on finds, updates, and other operations.
 - Transactions - out of the box
 
 ## Basics
 
-I want to start with the basic concepts and the examples of the syntax here and continue with the usage example then.
+I want to start with the basic concepts and examples of the syntax here and continue with the usage example.
 
 ### Collections
 
@@ -20,7 +20,7 @@ Every object and sub-object (item of a vector or map) that was stored in AnnaDB 
 
 ### TySON
 
-The AnnaDB query language uses the `TySON` format. The main difference from other data formats is that each item has a value and prefix. The prefix can mark the data type or query type (as it is used in AnnaDB) or any other information, useful for the parser. This adds more flexibility to the data structure design - it is allowed to use as many custom data types as the developer needs.
+The AnnaDB query language uses the `TySON` format. The main difference from other data formats is that each item has a value and prefix. The prefix can mark the data or query type (as it is used in AnnaDB) or any other useful for the parser information. This adds more flexibility to the data structure design - it is allowed to use as many custom data types as the developer needs.
 
 You can read more about the `TySON` format [here](https://github.com/roman-right/tyson)
 
@@ -28,15 +28,14 @@ You can read more about the `TySON` format [here](https://github.com/roman-right
 
 There are primitive and container data types in AnnaDB.
 
-Primitive data types are a set of basic types whose values can not be decoupled. In TySON, primitives are represented as `prefix|value|` or `prefix` only. Prefix in AnnaDB shows the data type.
-For example, the string `test` will be represented as `s|test|`, where `s` - is a prefix that marks data as a string, and `test` is the actual value.
+Primitive data types are a set of basic types whose values can not be decoupled. In TySON, primitives are represented as `prefix|value|` or `prefix` only. Prefix in AnnaDB shows the data type. For example, the string `test` will be represented as `s|test|`, where `s` - is a prefix that marks data as a string, and `test` is the actual value.
 
 Container data types keep primitive and container objects using specific rules. There are only two container types in AnnaDB for now. Maps and vectors.
 
 - Vectors are ordered sets of elements of any type. Example: `v[n|1|,n|2|,n|3|,]`
 - Maps are associative arrays. Example: `m{ s|bar|: s|baz|,}`
 
-More information about AnnaDB data types could be found in the [documentation](https://annadb.dev/documentation/data_types/)
+More information about AnnaDB data types can be found in the [documentation](https://annadb.dev/documentation/data_types/)
 
 ### Query
 
@@ -73,7 +72,7 @@ docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
 
 AnnaDB shell client is an interactive terminal application that connects to the DB instance, validates and handles queries. It fits well to play with query language or work with the data manually.
 
-![](https://raw.githubusercontent.com/roman-right/AnnaDB/0c9f00f53f21184fe166c5c70d417f0ed4bcf01b/docs/build/assets/img/shell.png)
+![AnnaDB shell](https://raw.githubusercontent.com/roman-right/AnnaDB/0c9f00f53f21184fe166c5c70d417f0ed4bcf01b/docs/build/assets/img/shell.png)
 
 It can be installed via `pip`
 
@@ -89,19 +88,19 @@ annadb --uri annadb://localhost:10001
 
 ## Usage example
 
-You are prepared for the fun part of the article now. Let's create a database!
+You are prepared for the fun part of the article now. Let's play with AnnaDB!
 
-To show the features I'll create a database for the candy store.
+I'll create a database for the candy store to show the features.
 
 ### Insert primitive
 
-Let's start with categories. I'll represent categories as simple string objects. To do so let's insert the first one into the `categories` collection.
+Let's start with categories. I'll represent categories as simple string objects. Let's insert the first one into the `categories` collection.
 
 **Request**:
 
 {{ insert_category_in }}
 
-`collection|categories|` shows on which collection the query will be applied. In our case - `categories`
+`collection|categories|` shows on which collection the query will be applied. In our case - `categories`.
 
 `insert[...]` - is a query step. You can insert one or many objects using the `insert` operation.
 
@@ -111,7 +110,7 @@ Let's start with categories. I'll represent categories as simple string objects.
 
 {{ insert_category_out }}
 
-If everything is ok, the result will be returned `ok[...]` vector with responses for all the transaction pipelines. Each response contains `data` and `meta` information. In our case, there is only one response with a vector of `ids` in `data` and a number of inserted objects in `meta`
+If everything is ok, the result will have an `ok[...]` vector with responses for all the transaction pipelines. Each response contains `data` and `meta` information. In our case, there is only one response with a vector of `ids` in `data` and a number of inserted objects in `meta`.
 
 ### Insert container
 
@@ -127,7 +126,7 @@ For the category, I'll use the already created one.
 
 {{ insert_chocolate_bar_in }}
 
-The query is similar to the previous one, but the object is not a primitive, but a map. The value of the `category` field is a link that was received after the previous insert.
+The query is similar to the previous one, but the object is not a primitive but a map. The value of the `category` field is a link that was received after the previous insert.
 
 **Response**:
 
@@ -181,7 +180,7 @@ Let's take a look at how this affected the chocolate objects.
 
 {{ find_chocolate_in }}
 
-To find objects I use the `find[...]` operation. It is a vector of find operators. If it is empty, all the collection objects will be returned.
+To find objects, I use the `find[...]` operation. It is a vector of find operators. If it is empty, all the collection objects will be returned.
 
 **Response**:
 
@@ -211,7 +210,7 @@ Here is how all the products look like after the update:
 
 ### Sort objects
 
-To sort objects I'll use the `sort` operation against the price field
+To sort objects, I'll use the `sort` operation against the price field.
 
 **Request**:
 
@@ -227,10 +226,9 @@ Objects in the response are sorted by price now.
 
 It is useful to use `limit` and `offset` operations together with sort. You can read about them in the [documentation](https://annadb.dev/documentation/limit/)
 
-
 ### Delete objects
 
-You can use the `delete` operation after any find-like step to delete all the found objects. Or it can be used independently to delete the whole collection.
+After any find-like step, you can use the `delete` operation to delete all the found objects. Or it can be used independently to delete the whole collection.
 
 **Request**:
 
@@ -242,7 +240,7 @@ The `delete` operation is a primitive without value.
 
 {{ delete_out }}
 
-The response contains affected ids in `data` and the number of deleted objects in `meta`
+The response contains affected ids in `data` and the number of deleted objects in `meta`.
 
 ## Using from your app
 
@@ -255,16 +253,29 @@ I'll add drivers for other languages soon. If you can help me with it, I'll be m
 
 ## Plans
 
-This is the very early version of the database. It already can do things and I use it in a few of my own projects already. But there are many things to do yet. 
+This is the very early version of the database. It can already do things and I use it in a few of my projects. But there are many features to work on yet.
 
-My next plans are:
+### Drivers
 
-- Drivers for `Rust`, `Go`, and `JS`
+I plan to add drivers to support the most popular languages. If you can help with this - please contact me.
+
+### Rights management
+
+This is probably the most important feature to implement. Authentication, authorizations, roles, etc.
+
+### Performance increase
+
+There are many performance-related things to improve now. 
+
+### Query features
+
 - Projections
-- More `find` and `update` operators
-- Performance increase
+- More find and update operators
+- Developer experience improves
 
-If you can help with development, please ping me.
+### Managed service
+
+My big goal is to make a managed data store service. Hey, aws, gcloud, azure, I'm ready for collaborations! ;)
 
 ## Links
 
@@ -272,3 +283,6 @@ If you can help with development, please ping me.
 - Repo - <https://github.com/roman-right/AnnaDB>
 - Python Driver - <https://pypi.org/project/annadb/>
 - My Twitter - <https://twitter.com/roman_the_right>
+
+If you face any bug or weird behavior, please, let me know.
+Thank you for your time!
