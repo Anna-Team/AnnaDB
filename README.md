@@ -1,7 +1,7 @@
 [![shields badge](https://shields.io/badge/-docs-blue)](https://annadb.dev/)
-[![pypi](https://img.shields.io/docker/v/romanright/annadb)](https://hub.docker.com/repository/docker/romanright/annadb)
+[![docker](https://img.shields.io/docker/v/romanright/annadb)](https://hub.docker.com/repository/docker/romanright/annadb)
 
-![](https://raw.githubusercontent.com/roman-right/AnnaDB/main/docs/build/assets/img/logo_colored.svg?token=GHSAT0AAAAAABXADZHTHTTD4UZR3G6P2J5GYXRFT7Q)
+![Logo](https://raw.githubusercontent.com/roman-right/AnnaDB/main/docs/build/assets/img/logo_colored.svg?token=GHSAT0AAAAAABXADZHTHTTD4UZR3G6P2J5GYXRFT7Q)
 
 Next-generation developer-first NoSQL database.
 
@@ -14,3 +14,8 @@ Features:
 - Flexible object structure
 - Relations
 - Transactions
+
+## Links
+
+- [Documentation](https://annadb.dev)
+- [Docker Hub](https://hub.docker.com/repository/docker/romanright/annadb)

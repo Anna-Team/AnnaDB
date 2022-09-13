@@ -2,6 +2,8 @@ I'm excited to introduce [AnnaDB](https://annadb.dev) - the next-generation deve
 
 I work with many small projects daily - proofs of concepts and experiments with new frameworks or patterns. For these purposes, I needed a database that works with flexible data structures, as I change it frequently during my experiments. And it must support relations out of the box, as this is a natural part of the structures' design - links to other objects. I tried a lot (if not all) databases, but nothing fit my requirements well. So, I decided to make my own then. This is how AnnaDB was born.
 
+AnnaDB is an in-memory data store with disk persistence. It is written with Rust, a memory-safe compilable language. AnnaDB is fast and safe enough to be and the main data storage, and the cache layer.
+
 **Features**
 
 - Flexible object structure - simple primitives and complicated nested containers could be stored in AnnaDB
@@ -253,11 +255,11 @@ I'll add drivers for other languages soon. If you can help me with it, I'll be m
 
 ## Plans
 
-This is the very early version of the database. It can already do things and I use it in a few of my projects. But there are many features to work on yet.
+This is the very early version of the database. It can already do things, and I use it in a few of my projects. But there are many features to work on yet.
 
 ### Drivers
 
-I plan to add drivers to support the most popular languages. If you can help with this - please contact me.
+I plan to add drivers to support the most popular languages, like `JS`, `Rust`, `Go`, and others. If you can help with this - please get in touch with me.
 
 ### Rights management
 
