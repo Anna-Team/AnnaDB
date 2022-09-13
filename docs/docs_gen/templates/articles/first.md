@@ -275,16 +275,19 @@ There are many performance-related things to improve now.
 - More find and update operators
 - Developer experience improves
 
+### Data Types
+
+I plan to add more data types like geo points and graph vertices to make AnnaDB more comfortable working with different data fields.
+
 ### Managed service
 
-My big goal is to make a managed data store service. Hey, aws, gcloud, azure, I'm ready for collaborations! ;)
+My big goal is to make a managed data store service. Hey, AWS, Google Cloud, MS Azure, I'm ready for collaborations! ;)
 
 ## Links
 
 - Documentation - <https://annadb.dev>
-- Repo - <https://github.com/roman-right/AnnaDB>
+- GitHub Repo - <https://github.com/roman-right/AnnaDB>
 - Python Driver - <https://pypi.org/project/annadb/>
 - My Twitter - <https://twitter.com/roman_the_right>
 
-If you face any bug or weird behavior, please, let me know.
-Thank you for your time!
+*If you face any bug or weird behavior, please, let me know.*
