@@ -2,14 +2,17 @@
 
 Next-generation developer-first NoSQL database.
 
-AnnaDB moves familiar programming languages' patterns into the databases world to solve the problem of the relations: 
+AnnaDB is an in-memory data store with disk persistence. It can work as the main data storage and the cache layer as well. Rust lang under the hood makes it memory-safe and fast.
 
-*Every object and sub-object (item of a vector or map) that was stored in AnnaDB has a link id. This link can be placed as a field value of any other object and the database will fetch and process it automatically on all the operations without additional commands in queries.*
+## Features
 
-Features:
+- Flexible object structure - simple primitives and complicated nested containers could be stored in AnnaDB
+- Relations - you can link any object to another, and AnnaDB will resolve this relation on finds, updates, and other operations.
+- Transactions - out of the box
 
-- Flexible object structure
-- Relations
-- Transactions
+## Links
 
-Read more in the [documentation](documentation/introduction/).
+- [Documentation](documentation/introduction/)
+- [GitHub Repo](https://github.com/roman-right/AnnaDB)
+- [Docker Hub](https://hub.docker.com/repository/docker/romanright/annadb)
+- [Discord Server](https://discord.gg/s5TUAHkqv7)

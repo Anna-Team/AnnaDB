@@ -5,7 +5,7 @@
 
 Next-generation developer-first NoSQL database.
 
-AnnaDB is an in-memory data store with disk persistence. It is written with Rust, a memory-safe compilable language. AnnaDB is fast and safe enough to be and the main data storage, and the cache layer.
+AnnaDB is an in-memory data store with disk persistence. It can work as the main data storage and the cache layer as well. Rust lang under the hood makes it memory-safe and fast.
 
 **Features**
 
@@ -90,4 +90,6 @@ annadb --uri annadb://localhost:10001
 ## Links
 
 - [Documentation](https://annadb.dev)
+- [Road Map](https://annadb.dev/roadmap)
 - [Docker Hub](https://hub.docker.com/repository/docker/romanright/annadb)
+- [Discord Server](https://discord.gg/s5TUAHkqv7)
