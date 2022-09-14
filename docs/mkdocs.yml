@@ -30,6 +30,7 @@ nav:
   - Tutorial:
     - Native: tutorial/native/index.md
     - Python: tutorial/python/index.md
+  - Road Map: roadmap.md
 
 markdown_extensions:
   - pymdownx.highlight:
