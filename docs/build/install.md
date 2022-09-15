@@ -1,7 +1,7 @@
 ## Server
 
 ```shell
-docker run --init -p 10001:10001 -t romanright/annadb:0.0.1
+docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
 ```
 
 ## Client shell
@@ -16,4 +16,12 @@ Run
 
 ```shell
 annadb --uri annadb://localhost:10001
+```
+
+## Playground
+
+Alternatively, you can try AnnaDB using the public playground connection string:
+
+```shell
+annadb --uri annadb://playground.annadb.dev:10001
 ```
