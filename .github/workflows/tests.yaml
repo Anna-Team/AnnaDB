@@ -1,6 +1,10 @@
 name: Tests
 on: [ pull_request ]
 
+defaults:
+  run:
+    working-directory: drivers/python
+
 jobs:
   run-tests:
     strategy:
@@ -26,7 +30,5 @@ jobs:
           poetry-version: ${{ matrix.poetry-version }}
       - name: poetry install
         run: poetry install
-      - name: specify pydantic
-        run: poetry add pydantic==${{ matrix.pydantic-version }}
       - name: run tests
         run: poetry run pytest
