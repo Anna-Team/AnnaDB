@@ -6,7 +6,7 @@ on:
 defaults:
   run:
     shell: bash
-    working-directory: scripts
+    working-directory: drivers/python
 jobs:
   publish_project:
     runs-on: ubuntu-latest
