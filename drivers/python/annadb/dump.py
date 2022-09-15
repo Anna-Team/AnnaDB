@@ -1,5 +1,3 @@
-from types import NoneType
-
 from annadb.exceptions import ConvertError
 from annadb.data_types.map import Map, MapBase, MapUnique, MapNotUnique
 from annadb.data_types.modifier import ModifierBase
@@ -13,6 +11,8 @@ from annadb.data_types.primitive import (
 from annadb.data_types.tyson import TysonItem
 from annadb.data_types.vector import Vector, VectorBase
 from annadb.query.query_set import QuerySet
+
+NoneType = type(None)
 
 TYPE_TO_TYSON = {
     int: lambda o: Number(o),
