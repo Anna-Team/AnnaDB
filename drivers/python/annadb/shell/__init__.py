@@ -49,7 +49,7 @@ def shell(uri):
                 console.print(str(e))
                 continue
 
-            console.clear()
+            # console.clear()
 
             request_doc.pretty("Request", console)
 
