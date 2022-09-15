@@ -1,4 +1,5 @@
 import click
+import os
 from rich.console import Console
 
 from annadb.connection import Connection
@@ -49,7 +50,7 @@ def shell(uri):
                 console.print(str(e))
                 continue
 
-            console.clear()
+            os.system("cls" if os.name == "nt" else "clear")
 
             request_doc.pretty("Request", console)
 

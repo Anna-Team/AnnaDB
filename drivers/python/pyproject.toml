@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "annadb"
-version = "0.1.0"
+version = "0.1.1"
 description = "AnnaDB driver and shell"
 authors = ["Roman Right <roman-right@protonmail.com>"]
 
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.8,<4.0"
 pyzmq = "^23.1.0"
 tyson = "^0.1.5"
 textual = "^0.1.18"

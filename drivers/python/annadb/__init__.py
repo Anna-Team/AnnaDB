@@ -1,16 +1,13 @@
-__version__ = "0.0.4"
+__version__ = "0.1.1"
 
 __all__ = [
     # Entities
     "Connection",
-
     # utils
     "to_str",
-
     # Operators
     "Inc",
     "Set",
-
     # Fields
     "root",
 ]

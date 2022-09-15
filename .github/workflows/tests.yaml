@@ -1,0 +1,29 @@
+name: Tests
+on: [ pull_request ]
+
+jobs:
+  run-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ 3.8, 3.9, 3.10.5 ]
+        poetry-version: [ 1.2.0 ]
+        os: [ ubuntu-18.04 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build And Run DB
+        run: scripts/build_and_run.sh
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Use Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install Package
+        run: poetry install
+        working-directory: drivers/python
+      - name: Run Tests
+        run: poetry run pytest
+        working-directory: drivers/python
