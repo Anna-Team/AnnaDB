@@ -23,7 +23,7 @@ jobs:
           poetry-version: ${{ matrix.poetry-version }}
       - name: Install Package
         run: poetry install
-        working-directory: drivers/python
+        working-directory: tests
       - name: Run Tests
-        run: poetry run pytest
-        working-directory: drivers/python
+        run: poetry run pytest e2e
+        working-directory: tests
