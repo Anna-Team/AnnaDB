@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "annadb tests"
+version = "0.1.0"
+description = "AnnaDB tests"
+authors = ["Roman Right <roman-right@protonmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+annadb = "^0.1.1"
+pytest = "^7.1.3"

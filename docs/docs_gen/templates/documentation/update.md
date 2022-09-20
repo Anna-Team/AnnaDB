@@ -12,8 +12,8 @@ Update values of found objects
 
 ## Operators:
 
-- Inc - `inc(...)`
-- Set - `set(...)`
+- Inc - `inc{...}`
+- Set - `set{...}`
 
 ## Example
 
