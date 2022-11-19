@@ -6,6 +6,7 @@ use std::io::Write;
 use crate::constants::{
     DELETED, FETCH_DEPTH_LIMIT, INTERNAL_COLLECTION_NAME, NULL, ROOT, STORAGE_MAP, STORAGE_VECTOR,
 };
+use crate::data_types::map::storage::StorageMap;
 use crate::data_types::modifier::ModifierItem;
 use crate::data_types::primitives::path::PathToValue;
 use crate::errors::DBError;
@@ -13,8 +14,9 @@ use crate::query::find::processor::find;
 use crate::query::get::processor::get;
 use crate::query::insert::processor::insert;
 use crate::query::limit::processor::limit;
-use crate::query::offset::offset_processor::offset;
+use crate::query::offset::processor::offset;
 use crate::query::operations::QueryOperation;
+use crate::query::project::processor::{ProjectionRules, ProjectionTarget, Rule};
 use crate::query::sort::processor::sort;
 use crate::query::update::operators::set::SetOperator;
 use crate::query::update::processor::update;
@@ -26,7 +28,9 @@ use crate::response::{
 };
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
+use crate::storage::projection::{Projection, ProjectionRule};
 use crate::tyson::item::BaseTySONItemInterface;
+use crate::Primitive::NullPrimitive;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
     TySONVector, VectorItem,
@@ -103,6 +107,7 @@ impl Storage {
         let mut transaction_response: OkTransactionResponse = OkTransactionResponse::new();
         // let mut bufs: Vec<InsertBuffer> = vec![];
         let mut insert_buf: InsertBuffer = InsertBuffer::new();
+        let mut projection: ProjectionRules = ProjectionRules::new();
 
         for query_set in transaction.steps {
             let mut filter_buf: FilterBuffer = FilterBuffer::new();
@@ -221,7 +226,8 @@ impl Storage {
                 };
                 if iteration == query_set_size {
                     if query_response.status == QueryStatus::NotFetched {
-                        query_response.data = self.fetch_found_ids(&filter_buf, &insert_buf)?;
+                        query_response.data =
+                            self.fetch_found_ids(&filter_buf, &insert_buf, &projection)?;
                         query_response.status = QueryStatus::Ready;
                     }
                     transaction_response.add_response(query_response);
@@ -353,6 +359,7 @@ impl Storage {
         &self,
         buf: &FilterBuffer,
         insert_buf: &InsertBuffer,
+        projection_rules: &ProjectionRules,
     ) -> Result<Item, DBError> {
         let mut res = ResponseObjects::new("".to_string())?;
         for id in buf.ids.clone() {
@@ -364,11 +371,35 @@ impl Storage {
         Ok(res.to_item())
     }
 
+    fn resolve_projection(
+        item: &Item,
+        projection_rules: &ProjectionRules,
+    ) -> Result<Item, DBError> {
+        if !projection_rules.target.fits(item) {
+            return Ok(Item::Primitive(Primitive::new(
+                NULL.to_string(),
+                "".to_string(),
+            )?));
+        } else {
+            match projection_rules.target {
+                ProjectionTarget::Map => {
+                    let mut storage_map: StorageMap = StorageMap::new("".to_string())?;
+                }
+                _ => {
+                    return Err(DBError::new(
+                        "Internal error. Projection resolver is not implemented for this rule.",
+                    ))
+                }
+            }
+        }
+    }
+
     pub fn fetch(
         &self,
         item: &Item,
         insert_buf: &InsertBuffer,
         counter: i32,
+        projection_rules: ProjectionRules,
     ) -> Result<Item, DBError> {
         let counter = counter + 1;
         if counter > FETCH_DEPTH_LIMIT {

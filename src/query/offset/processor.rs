@@ -1,5 +1,5 @@
 use crate::constants::NULL;
-use crate::query::offset::offset_query::OffsetQuery;
+use crate::query::offset::query::OffsetQuery;
 use crate::response::meta::{FindMeta, Meta};
 use crate::response::{QueryResponse, QueryStatus};
 use crate::storage::buffer::FilterBuffer;

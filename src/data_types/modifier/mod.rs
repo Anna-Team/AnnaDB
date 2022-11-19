@@ -1,7 +1,7 @@
 use crate::constants::{ASC_OPERATOR, DESC_OPERATOR, LIMIT_QUERY, NOT_OPERATOR, OFFSET_QUERY};
 use crate::query::find::operators::not::NotOperator;
 use crate::query::limit::query::LimitQuery;
-use crate::query::offset::offset_query::OffsetQuery;
+use crate::query::offset::query::OffsetQuery;
 use crate::query::sort::query::{AscOperator, DescOperator};
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::modifier::TySONModifier;

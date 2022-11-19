@@ -1,5 +1,6 @@
 use crate::constants::{
-    BOOL, COLLECTION_NAME, DELETED, DELETE_QUERY, NULL, NUMBER, PATH_TO_VALUE, ROOT, STRING, UTS,
+    BOOL, COLLECTION_NAME, DELETED, DELETE_QUERY, KEEP, NULL, NUMBER, PATH_TO_VALUE, ROOT, STRING,
+    UTS,
 };
 use crate::data_types::primitives::bool::BoolPrimitive;
 use crate::data_types::primitives::deleted::DeletedPrimitive;
@@ -10,6 +11,7 @@ use crate::data_types::primitives::root::RootPrimitive;
 use crate::data_types::primitives::string::StringPrimitive;
 use crate::data_types::primitives::unix_timestamp::UTSPrimitive;
 use crate::query::delete::query::DeleteQuery;
+use crate::query::project::operators::keep::KeepPrimitive;
 use crate::storage::common::collection_name::CollectionName;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
@@ -40,6 +42,8 @@ pub enum Primitive {
     RootPrimitive(RootPrimitive),
 
     DeleteQuery(DeleteQuery),
+
+    KeepPrimitive(KeepPrimitive),
 }
 
 impl Primitive {
@@ -61,6 +65,8 @@ impl Primitive {
 
             DELETE_QUERY => Ok(Self::DeleteQuery(DeleteQuery::new(prefix, value)?)),
 
+            KEEP => Ok(Self::KeepPrimitive(KeepPrimitive::new(prefix, value)?)),
+
             _ => Ok(Self::Link(Link::new(prefix, value)?)),
         }
     }
@@ -81,6 +87,8 @@ impl Primitive {
             Self::RootPrimitive(o) => o.serialize(),
 
             Self::DeleteQuery(o) => o.serialize(),
+
+            Self::KeepPrimitive(o) => o.serialize(),
         }
     }
 
@@ -100,6 +108,8 @@ impl Primitive {
             Self::RootPrimitive(o) => o.get_prefix(),
 
             Self::DeleteQuery(o) => o.get_prefix(),
+
+            Self::KeepPrimitive(o) => o.get_prefix(),
         }
     }
 }
