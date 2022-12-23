@@ -4,6 +4,12 @@
 docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
 ```
 
+Alternatively, you can persist your data:
+
+```shell
+docker run --init -p 10001:10001 -t -v "$(pwd)/data:/app/warehouse" romanright/annadb:0.1.0
+```
+
 ## Client shell
 
 Install
