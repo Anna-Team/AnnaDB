@@ -69,6 +69,12 @@ To run AnnaDB locally please type the next command in the terminal:
 docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
 ```
 
+If you want to persist your data use this volume:
+
+```shell
+docker run --init -p 10001:10001 -t -v "$(pwd)/data:/app/warehouse" romanright/annadb:0.1.0
+```
+
 ## Client
 
 AnnaDB shell client is an interactive terminal application that connects to the DB instance, validates and handles queries. It fits well to play with query language or work with the data manually.
