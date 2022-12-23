@@ -653,16 +653,19 @@
 <h2 id="server">Server</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker run --init -p <span class="m">10001</span>:10001 -t romanright/annadb:0.1.0
 </code></pre></div>
+<p>Alternatively, you can persist your data:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker run --init -p <span class="m">10001</span>:10001 -t -v <span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/data:/app/warehouse&quot;</span> romanright/annadb:0.1.0
+</code></pre></div>
 <h2 id="client-shell">Client shell</h2>
 <p>Install</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip install annadb
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip install annadb
 </code></pre></div>
 <p>Run</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>annadb --uri annadb://localhost:10001
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>annadb --uri annadb://localhost:10001
 </code></pre></div>
 <h2 id="playground">Playground</h2>
 <p>Alternatively, you can try AnnaDB using the public playground connection string:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>annadb --uri annadb://playground.annadb.dev:10001
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>annadb --uri annadb://playground.annadb.dev:10001
 </code></pre></div>
 
 
