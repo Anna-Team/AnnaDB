@@ -1,5 +1,6 @@
-use crate::query::find::compare::Res::True;
-use crate::{DBError, Item, StringPrimitive};
+use crate::constants::NULL;
+use crate::data_types::map::storage::StorageMap;
+use crate::{DBError, Item, MapItem, Primitive, StringPrimitive, TySONMap, TySONPrimitive};
 
 #[derive(PartialEq)]
 pub enum ProjectionTarget {
@@ -34,22 +35,23 @@ impl PlainSet {
     pub fn get_target(&self) -> ProjectionTarget {
         return ProjectionTarget::Map;
     }
-}
 
-pub enum Rule {
-    PlainSet(PlainSet),
-}
-
-impl Rule {
-    pub fn get_target(&self) -> ProjectionTarget {
-        match self {
-            Rule::PlainSet(r) => r.get_target(),
+    pub fn resolve(&self, item: &StorageMap) -> Result<Item, DBError> {
+        match self.value {
+            Item::Primitive(Primitive::KeepPrimitive(_)) => {
+                let default = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+                let res = item
+                    .get_by_str(self.field.get_string_value().as_str())?
+                    .unwrap_or_else(|| &default);
+                Ok(res.clone())
+            }
+            _ => Err(DBError::new("Projection rule is not supported")),
         }
     }
 }
 
 pub struct ProjectionRules {
-    items: Vec<Rule>,
+    items: Vec<PlainSet>,
     pub target: ProjectionTarget,
 }
 
@@ -61,7 +63,7 @@ impl ProjectionRules {
         }
     }
 
-    pub fn push_rule(&mut self, rule: Rule) -> Result<bool, DBError> {
+    pub fn push_rule(&mut self, rule: PlainSet) -> Result<bool, DBError> {
         match self.target {
             ProjectionTarget::NotSet => {
                 self.target = rule.get_target();
@@ -82,5 +84,22 @@ impl ProjectionRules {
         return self.items.len() == 0;
     }
 
-    pub fn resolve(&self, item: &Item) {}
+    pub fn resolve(&self, item: &Item) -> Result<Item, DBError> {
+        return match item {
+            Item::Map(MapItem::StorageMap(m)) => {
+                let mut new_item = StorageMap::new("".to_string())?;
+                for rule in &self.items {
+                    new_item.insert(
+                        Primitive::StringPrimitive(rule.field.clone()),
+                        rule.resolve(m)?,
+                    )?;
+                }
+                Ok(Item::Map(MapItem::StorageMap(new_item)))
+            }
+            _ => Ok(Item::Primitive(Primitive::new(
+                NULL.to_string(),
+                "".to_string(),
+            )?)),
+        };
+    }
 }

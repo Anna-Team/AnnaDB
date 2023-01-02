@@ -110,7 +110,7 @@ fn get_value(
             }
         }
         Primitive::RootPrimitive(_) => {
-            let item = storage.get_item_by_link(id, insert_buf, 0)?;
+            let item = storage.get_item_by_link(id, insert_buf, 0, None)?;
             Ok(Some(FoundItem::FoundRootItem(FoundRootItem {
                 id: id.clone(),
                 value: item,

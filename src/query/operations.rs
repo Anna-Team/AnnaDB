@@ -8,4 +8,5 @@ pub enum QueryOperation {
     SortOperation,
     LimitOperation,
     OffsetOperation,
+    ProjectOperation,
 }

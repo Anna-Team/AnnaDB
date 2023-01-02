@@ -16,12 +16,12 @@ use crate::query::insert::processor::insert;
 use crate::query::limit::processor::limit;
 use crate::query::offset::processor::offset;
 use crate::query::operations::QueryOperation;
-use crate::query::project::processor::{ProjectionRules, ProjectionTarget, Rule};
+use crate::query::project::processor::{ProjectionRules, ProjectionTarget};
 use crate::query::sort::processor::sort;
 use crate::query::update::operators::set::SetOperator;
 use crate::query::update::processor::update;
 use crate::query::update::query::UpdateQuery;
-use crate::response::meta::{DeleteMeta, Meta};
+use crate::response::meta::{DeleteMeta, FindMeta, Meta};
 use crate::response::objects::ResponseObjects;
 use crate::response::{
     ErrorTransactionResponse, OkTransactionResponse, QueryResponse, QueryStatus,
@@ -30,7 +30,6 @@ use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
 use crate::storage::projection::{Projection, ProjectionRule};
 use crate::tyson::item::BaseTySONItemInterface;
-use crate::Primitive::NullPrimitive;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
     TySONVector, VectorItem,
@@ -107,7 +106,7 @@ impl Storage {
         let mut transaction_response: OkTransactionResponse = OkTransactionResponse::new();
         // let mut bufs: Vec<InsertBuffer> = vec![];
         let mut insert_buf: InsertBuffer = InsertBuffer::new();
-        let mut projection: ProjectionRules = ProjectionRules::new();
+        let mut projection: Option<ProjectionRules> = None;
 
         for query_set in transaction.steps {
             let mut filter_buf: FilterBuffer = FilterBuffer::new();
@@ -122,11 +121,16 @@ impl Storage {
             let query_set_size = query_set.query_set.items.len() as i32;
             for query in query_set.query_set.items {
                 iteration += 1;
-                let mut query_response = match query {
+                let mut query_response: Option<QueryResponse> = match query {
                     Item::Vector(VectorItem::InsertQuery(o)) => {
                         if next_available.contains(&QueryOperation::InsertOperation) {
                             next_available = o.next_available();
-                            insert(&self, collection_name.clone(), &o.items, &mut insert_buf)?
+                            Some(insert(
+                                &self,
+                                collection_name.clone(),
+                                &o.items,
+                                &mut insert_buf,
+                            )?)
                         } else {
                             return Err(DBError::new("Insert query is unavailable"));
                         }
@@ -135,14 +139,14 @@ impl Storage {
                         if next_available.contains(&QueryOperation::FindOperation) {
                             next_available = o.next_available();
                             let is_first: bool = if iteration == 1 { true } else { false };
-                            find(
+                            Some(find(
                                 &self,
                                 collection_name.clone(),
                                 &o,
                                 &mut filter_buf,
                                 &insert_buf,
                                 is_first,
-                            )?
+                            )?)
                         } else {
                             return Err(DBError::new("Find query is unavailable"));
                         }
@@ -150,7 +154,7 @@ impl Storage {
                     Item::Vector(VectorItem::GetQuery(o)) => {
                         if next_available.contains(&QueryOperation::GetOperation) {
                             next_available = o.next_available();
-                            get(&self, collection_name.clone(), &o, &mut filter_buf)?
+                            Some(get(&self, collection_name.clone(), &o, &mut filter_buf)?)
                         } else {
                             return Err(DBError::new("Get query is unavailable"));
                         }
@@ -158,7 +162,7 @@ impl Storage {
                     Item::Vector(VectorItem::UpdateQuery(o)) => {
                         if next_available.contains(&QueryOperation::UpdateOperation) {
                             next_available = o.next_available();
-                            update(&self, &o, &mut insert_buf, &filter_buf)?
+                            Some(update(&self, &o, &mut insert_buf, &filter_buf)?)
                         } else {
                             return Err(DBError::new("Update query is unavailable"));
                         }
@@ -166,7 +170,7 @@ impl Storage {
                     Item::Vector(VectorItem::SortQuery(o)) => {
                         if next_available.contains(&QueryOperation::SortOperation) {
                             next_available = o.next_available();
-                            sort(&o, &self, &mut filter_buf, &insert_buf)?
+                            Some(sort(&o, &self, &mut filter_buf, &insert_buf)?)
                         } else {
                             return Err(DBError::new("Sort query is unavailable"));
                         }
@@ -199,7 +203,7 @@ impl Storage {
                                 };
                                 delete_res = update(self, &query, &mut insert_buf, &filter_buf)?;
                             }
-                            delete_res
+                            Some(delete_res)
                         } else {
                             return Err(DBError::new("Delete query is unavailable"));
                         }
@@ -207,7 +211,7 @@ impl Storage {
                     Item::Modifier(ModifierItem::LimitQuery(o)) => {
                         if next_available.contains(&QueryOperation::LimitOperation) {
                             next_available = o.next_available();
-                            limit(&o, &mut filter_buf)?
+                            Some(limit(&o, &mut filter_buf)?)
                         } else {
                             return Err(DBError::new("Limit query is unavailable"));
                         }
@@ -215,26 +219,54 @@ impl Storage {
                     Item::Modifier(ModifierItem::OffsetQuery(o)) => {
                         if next_available.contains(&QueryOperation::LimitOperation) {
                             next_available = o.next_available();
-                            offset(&o, &mut filter_buf)?
+                            Some(offset(&o, &mut filter_buf)?)
                         } else {
                             return Err(DBError::new("Offset query is unavailable"));
+                        }
+                    }
+                    Item::Map(MapItem::ProjectQuery(o)) => {
+                        if next_available.contains(&QueryOperation::ProjectOperation) {
+                            next_available = o.next_available();
+                            projection = Some(o.make_rules()?);
+                            let data =
+                                Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+                            let meta = Meta::FindMeta(FindMeta::new(filter_buf.ids.len()));
+                            Some(QueryResponse::new(data, meta, QueryStatus::NotFetched))
+                        } else {
+                            return Err(DBError::new("Project query is unavailable"));
                         }
                     }
                     _ => {
                         return Err(DBError::new("Unexpected query type"));
                     }
                 };
-                if iteration == query_set_size {
-                    if query_response.status == QueryStatus::NotFetched {
-                        query_response.data =
-                            self.fetch_found_ids(&filter_buf, &insert_buf, &projection)?;
-                        query_response.status = QueryStatus::Ready;
+                println!("{:?}", &query_response);
+                if query_response.is_some() {
+                    let mut query_response_unwrapped = query_response.unwrap();
+                    if iteration == query_set_size {
+                        println!("{:?}", &filter_buf);
+                        if query_response_unwrapped.status == QueryStatus::NotFetched {
+                            match &projection {
+                                // TODO make it more beautiful
+                                Some(r) => {
+                                    query_response_unwrapped.data =
+                                        self.fetch_found_ids(&filter_buf, &insert_buf, Some(r))?;
+                                }
+                                None => {
+                                    query_response_unwrapped.data =
+                                        self.fetch_found_ids(&filter_buf, &insert_buf, None)?;
+                                }
+                            }
+                            query_response_unwrapped.status = QueryStatus::Ready;
+                        }
+                        transaction_response.add_response(query_response_unwrapped);
                     }
-                    transaction_response.add_response(query_response);
                 }
+                println!("{:?}", &transaction_response);
             }
         }
         self.sync_buf(&insert_buf)?;
+        // println!("{:?}", &transaction_response);
         Ok(transaction_response)
     }
 
@@ -336,16 +368,17 @@ impl Storage {
         id: &Link,
         insert_buf: &InsertBuffer,
         counter: i32,
+        projection_rules: Option<&ProjectionRules>,
     ) -> Result<Item, DBError> {
         match insert_buf.items.get(id) {
-            Some(value) => Ok(self.fetch(value, insert_buf, counter)?),
+            Some(value) => Ok(self.fetch(value, insert_buf, counter, projection_rules)?),
             None => {
                 let collection = self
                     .warehouse
                     .get(id.get_prefix().as_str())
                     .ok_or(DBError::new("Getting collection internal error"))?;
                 match collection.values.get(id) {
-                    Some(value) => Ok(self.fetch(value, insert_buf, counter)?),
+                    Some(value) => Ok(self.fetch(value, insert_buf, counter, projection_rules)?),
                     None => Ok(Item::Primitive(Primitive::new(
                         NULL.to_string(),
                         "".to_string(),
@@ -359,39 +392,16 @@ impl Storage {
         &self,
         buf: &FilterBuffer,
         insert_buf: &InsertBuffer,
-        projection_rules: &ProjectionRules,
+        projection_rules: Option<&ProjectionRules>,
     ) -> Result<Item, DBError> {
         let mut res = ResponseObjects::new("".to_string())?;
         for id in buf.ids.clone() {
             res.insert(
                 Primitive::from(id.clone()),
-                self.get_item_by_link(&id, insert_buf, 0)?,
+                self.get_item_by_link(&id, insert_buf, 0, projection_rules)?,
             )?;
         }
         Ok(res.to_item())
-    }
-
-    fn resolve_projection(
-        item: &Item,
-        projection_rules: &ProjectionRules,
-    ) -> Result<Item, DBError> {
-        if !projection_rules.target.fits(item) {
-            return Ok(Item::Primitive(Primitive::new(
-                NULL.to_string(),
-                "".to_string(),
-            )?));
-        } else {
-            match projection_rules.target {
-                ProjectionTarget::Map => {
-                    let mut storage_map: StorageMap = StorageMap::new("".to_string())?;
-                }
-                _ => {
-                    return Err(DBError::new(
-                        "Internal error. Projection resolver is not implemented for this rule.",
-                    ))
-                }
-            }
-        }
     }
 
     pub fn fetch(
@@ -399,7 +409,7 @@ impl Storage {
         item: &Item,
         insert_buf: &InsertBuffer,
         counter: i32,
-        projection_rules: ProjectionRules,
+        projection_rules: Option<&ProjectionRules>,
     ) -> Result<Item, DBError> {
         let counter = counter + 1;
         if counter > FETCH_DEPTH_LIMIT {
@@ -407,8 +417,8 @@ impl Storage {
         }
         match item {
             Item::Primitive(Primitive::Link(o)) => {
-                let i = self.get_item_by_link(o, insert_buf, counter)?;
-                Ok(self.fetch(&i, insert_buf, counter)?)
+                let i = self.get_item_by_link(o, insert_buf, counter, None)?;
+                Ok(self.fetch(&i, insert_buf, counter, None)?)
             }
             Item::Primitive(Primitive::StringPrimitive(_)) => Ok(item.clone()),
             Item::Primitive(Primitive::NumberPrimitive(_)) => Ok(item.clone()),
@@ -419,14 +429,18 @@ impl Storage {
             Item::Vector(o) => {
                 let mut new_vec: VectorItem = VectorItem::new(STORAGE_VECTOR.to_string())?;
                 for i in o.get_items() {
-                    new_vec.push(self.fetch(i, insert_buf, counter)?)?;
+                    new_vec.push(self.fetch(i, insert_buf, counter, None)?)?;
                 }
                 Ok(Item::Vector(new_vec))
             }
             Item::Map(o) => {
                 let mut new_map: MapItem = MapItem::new(STORAGE_MAP.to_string())?;
                 for (k, v) in o.get_items() {
-                    new_map.insert(k.clone(), self.fetch(&v, insert_buf, counter)?)?;
+                    new_map.insert(k.clone(), self.fetch(&v, insert_buf, counter, None)?)?;
+                }
+                if projection_rules.is_some() {
+                    let result = projection_rules.unwrap().resolve(&Item::Map(new_map))?;
+                    return Ok(result);
                 }
                 Ok(Item::Map(new_map))
             }

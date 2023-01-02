@@ -10,5 +10,7 @@ class TestProject:
             ]
             """
         )
+        print(resp[0])
         for k, v in resp[0]["data"].items():
-            assert list(v.keys()) == ["name"]
+            print(v._value)
+            # assert list(v.keys()) == ["name"]

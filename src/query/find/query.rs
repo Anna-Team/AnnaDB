@@ -43,20 +43,7 @@ impl FindQuery {
             QueryOperation::SortOperation,
             QueryOperation::LimitOperation,
             QueryOperation::OffsetOperation,
+            QueryOperation::ProjectOperation,
         ]
     }
-
-    // pub fn run(&self, storage: &Storage, collection: &Collection, mut filter_buf: &mut FilterBuffer) -> Result<Response, DBError> {
-    //     let docs: VectorItem = storage.find(&collection, &self, &mut filter_buf)?;
-    //     let mut data_types.md = VectorItem::new(STORAGE_VECTOR.to_string())?;
-    //     for doc in docs {
-    //         data_types.md.push(doc)?;
-    //     };
-    //     let mut data: HashMap<Primitive, Item> = HashMap::new();
-    //     data.insert(
-    //         Primitive::new(STRING.to_string(), "docs".to_string())?,
-    //         Item::Vector(data_types.md),
-    //     );
-    //     Ok(Response { data })
-    // }
 }

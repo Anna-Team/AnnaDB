@@ -1,5 +1,6 @@
 use crate::constants::PROJECT_QUERY;
-use crate::query::project::processor::{PlainSet, ProjectionRules, Rule};
+use crate::query::operations::QueryOperation;
+use crate::query::project::processor::{PlainSet, ProjectionRules};
 use crate::storage::projection::Projection;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, MapItem, Primitive, TySONMap, TySONVector, VectorItem};
@@ -47,11 +48,15 @@ impl ProjectQuery {
         for item in self.get_items() {
             match item {
                 (Primitive::StringPrimitive(k), v) => {
-                    result.push_rule(Rule::PlainSet(PlainSet::new(k, v)));
+                    result.push_rule(PlainSet::new(k, v));
                 }
                 _ => return Err(DBError::new("Projection query parse error. Wrong rules.")),
             }
         }
         Ok(result)
+    }
+
+    pub fn next_available(&self) -> Vec<QueryOperation> {
+        vec![]
     }
 }
