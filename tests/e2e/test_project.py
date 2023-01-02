@@ -4,13 +4,31 @@ class TestProject:
             """
             collection|test|:q[
                 find[],
+                sort[asc(value|name|)],
                 project{
-                    s|name|:keep
+                    s|name|:keep,
+                    s|d|:keep,
                 }
             ]
             """
         )
-        print(resp[0])
-        for k, v in resp[0]["data"].items():
-            print(v._value)
-            # assert list(v.keys()) == ["name"]
+        for i, (k, v) in enumerate(resp[0]["data"].items()):
+            assert set(v._value.keys()) == {"name", "d"}
+            assert v["name"] == f"test_{i}"
+            assert v["d"] == {"smth": i}
+
+    def test_set_by_path(self, conn, objects):
+        resp = conn.send_query(
+            """
+            collection|test|:q[
+                find[],
+                sort[asc(value|name|)],
+                project{
+                    s|name|:value|smth|
+                }
+            ]
+            """
+        )
+        for i, (k, v) in enumerate(resp[0]["data"].items()):
+            assert set(v._value.keys()) == {"name"}
+            assert v["name"] == "TEST"

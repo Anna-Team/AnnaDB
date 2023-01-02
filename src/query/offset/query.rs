@@ -45,6 +45,7 @@ impl OffsetQuery {
             QueryOperation::DeleteOperation,
             QueryOperation::LimitOperation,
             QueryOperation::OffsetOperation,
+            QueryOperation::ProjectOperation,
         ]
     }
 }

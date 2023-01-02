@@ -1,6 +1,10 @@
 use crate::constants::NULL;
 use crate::data_types::map::storage::StorageMap;
-use crate::{DBError, Item, MapItem, Primitive, StringPrimitive, TySONMap, TySONPrimitive};
+use crate::storage::buffer::InsertBuffer;
+use crate::{
+    DBError, Item, Link, MapItem, PathToValue, Primitive, Storage, StringPrimitive, TySONMap,
+    TySONPrimitive,
+};
 
 #[derive(PartialEq)]
 pub enum ProjectionTarget {
@@ -36,14 +40,34 @@ impl PlainSet {
         return ProjectionTarget::Map;
     }
 
-    pub fn resolve(&self, item: &StorageMap) -> Result<Item, DBError> {
-        match self.value {
+    pub fn resolve(
+        &self,
+        link: &Link,
+        storage: &Storage,
+        insert_buf: &InsertBuffer,
+    ) -> Result<Item, DBError> {
+        let default = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+        match &self.value {
             Item::Primitive(Primitive::KeepPrimitive(_)) => {
-                let default = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
-                let res = item
-                    .get_by_str(self.field.get_string_value().as_str())?
-                    .unwrap_or_else(|| &default);
-                Ok(res.clone())
+                let path = PathToValue::new("".to_string(), self.field.get_string_value())?;
+                let res = storage.get_value_by_path(path, link.clone(), insert_buf)?;
+                match res {
+                    Some(o) => {
+                        let item_to_fetch = o.value.unwrap_or(default);
+                        Ok(storage.fetch(&item_to_fetch, insert_buf, 0)?)
+                    }
+                    None => Ok(default),
+                }
+            }
+            Item::Primitive(Primitive::PathToValue(path)) => {
+                let res = storage.get_value_by_path(path.clone(), link.clone(), insert_buf)?;
+                match res {
+                    Some(o) => {
+                        let item_to_fetch = o.value.unwrap_or(default);
+                        Ok(storage.fetch(&item_to_fetch, insert_buf, 0)?)
+                    }
+                    None => Ok(default),
+                }
             }
             _ => Err(DBError::new("Projection rule is not supported")),
         }
@@ -84,16 +108,23 @@ impl ProjectionRules {
         return self.items.len() == 0;
     }
 
-    pub fn resolve(&self, item: &Item) -> Result<Item, DBError> {
+    pub fn resolve(
+        &self,
+        link: &Link,
+        storage: &Storage,
+        insert_buf: &InsertBuffer,
+    ) -> Result<Item, DBError> {
+        let item = storage.get_item_by_link(link, insert_buf, 0, None)?;
         return match item {
             Item::Map(MapItem::StorageMap(m)) => {
                 let mut new_item = StorageMap::new("".to_string())?;
                 for rule in &self.items {
                     new_item.insert(
                         Primitive::StringPrimitive(rule.field.clone()),
-                        rule.resolve(m)?,
+                        rule.resolve(link, storage, insert_buf)?,
                     )?;
                 }
+                println!("{:?}", new_item);
                 Ok(Item::Map(MapItem::StorageMap(new_item)))
             }
             _ => Ok(Item::Primitive(Primitive::new(

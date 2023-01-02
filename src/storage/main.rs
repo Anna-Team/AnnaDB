@@ -371,14 +371,22 @@ impl Storage {
         projection_rules: Option<&ProjectionRules>,
     ) -> Result<Item, DBError> {
         match insert_buf.items.get(id) {
-            Some(value) => Ok(self.fetch(value, insert_buf, counter, projection_rules)?),
+            Some(value) => {
+                Ok(self.fetch_or_project(value, id, insert_buf, projection_rules, counter)?)
+            }
             None => {
                 let collection = self
                     .warehouse
                     .get(id.get_prefix().as_str())
                     .ok_or(DBError::new("Getting collection internal error"))?;
                 match collection.values.get(id) {
-                    Some(value) => Ok(self.fetch(value, insert_buf, counter, projection_rules)?),
+                    Some(value) => Ok(self.fetch_or_project(
+                        value,
+                        id,
+                        insert_buf,
+                        projection_rules,
+                        counter,
+                    )?),
                     None => Ok(Item::Primitive(Primitive::new(
                         NULL.to_string(),
                         "".to_string(),
@@ -386,6 +394,23 @@ impl Storage {
                 }
             }
         }
+    }
+
+    pub fn fetch_or_project(
+        &self,
+        value: &Item,
+        link: &Link,
+        insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectionRules>,
+        counter: i32,
+    ) -> Result<Item, DBError> {
+        println!("FETCH OR PROJECT");
+        if projection_rules.is_some() {
+            println!("PROJECTION");
+            let result = projection_rules.unwrap().resolve(link, self, insert_buf)?;
+            return Ok(result);
+        }
+        Ok(self.fetch(value, insert_buf, counter)?)
     }
 
     pub fn fetch_found_ids(
@@ -409,7 +434,6 @@ impl Storage {
         item: &Item,
         insert_buf: &InsertBuffer,
         counter: i32,
-        projection_rules: Option<&ProjectionRules>,
     ) -> Result<Item, DBError> {
         let counter = counter + 1;
         if counter > FETCH_DEPTH_LIMIT {
@@ -418,7 +442,7 @@ impl Storage {
         match item {
             Item::Primitive(Primitive::Link(o)) => {
                 let i = self.get_item_by_link(o, insert_buf, counter, None)?;
-                Ok(self.fetch(&i, insert_buf, counter, None)?)
+                Ok(self.fetch(&i, insert_buf, counter)?)
             }
             Item::Primitive(Primitive::StringPrimitive(_)) => Ok(item.clone()),
             Item::Primitive(Primitive::NumberPrimitive(_)) => Ok(item.clone()),
@@ -429,19 +453,21 @@ impl Storage {
             Item::Vector(o) => {
                 let mut new_vec: VectorItem = VectorItem::new(STORAGE_VECTOR.to_string())?;
                 for i in o.get_items() {
-                    new_vec.push(self.fetch(i, insert_buf, counter, None)?)?;
+                    new_vec.push(self.fetch(i, insert_buf, counter)?)?;
                 }
                 Ok(Item::Vector(new_vec))
             }
             Item::Map(o) => {
+                // if projection_rules.is_some() {
+                //     let result = projection_rules.unwrap().resolve()?;
+                //     return Ok(result);
+                // }
+
                 let mut new_map: MapItem = MapItem::new(STORAGE_MAP.to_string())?;
                 for (k, v) in o.get_items() {
-                    new_map.insert(k.clone(), self.fetch(&v, insert_buf, counter, None)?)?;
+                    new_map.insert(k.clone(), self.fetch(&v, insert_buf, counter)?)?;
                 }
-                if projection_rules.is_some() {
-                    let result = projection_rules.unwrap().resolve(&Item::Map(new_map))?;
-                    return Ok(result);
-                }
+
                 Ok(Item::Map(new_map))
             }
             _ => Err(DBError::new("Internal fetch error")),

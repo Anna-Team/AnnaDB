@@ -59,6 +59,7 @@ def objects(collection):
             "blink": "test" if i % 2 == 0 else {"smth": i},
             "blink2": {"a": 100, "c": "d"} if i % 2 == 0 else {},
             "ts": UTS(12345),
+            "d": {"smth": i}
         }
         for i in range(10)
     ]

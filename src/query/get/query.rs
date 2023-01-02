@@ -59,20 +59,7 @@ impl GetQuery {
             QueryOperation::DeleteOperation,
             QueryOperation::LimitOperation,
             QueryOperation::OffsetOperation,
+            QueryOperation::ProjectOperation,
         ]
     }
-
-    // pub fn run(&self, storage: &Storage, collection: &Collection) -> Result<Response, DBError> {
-    //     let docs = storage.get(&collection, self)?;
-    //     let mut data_types.md = VectorItem::new(STORAGE_VECTOR.to_string())?;
-    //     for doc in docs {
-    //         data_types.md.push(doc.clone())?;
-    //     };
-    //     let mut data: HashMap<Primitive, Item> = HashMap::new();
-    //     data.insert(
-    //         Primitive::new(STRING.to_string(), "docs".to_string())?,
-    //         Item::Vector(data_types.md),
-    //     );
-    //     Ok(Response { data })
-    // }
 }

@@ -45,6 +45,7 @@ impl LimitQuery {
             QueryOperation::DeleteOperation,
             QueryOperation::LimitOperation,
             QueryOperation::OffsetOperation,
+            QueryOperation::ProjectOperation,
         ]
     }
 }
