@@ -88,13 +88,24 @@ pub fn resolve(
         Item::Primitive(Primitive::UTSPrimitive(_)) => Ok(rules.clone()),
         Item::Primitive(Primitive::BoolPrimitive(_)) => Ok(rules.clone()),
         Item::Primitive(Primitive::NullPrimitive(_)) => Ok(rules.clone()),
-        // Item::Vector(VectorItem::StorageVector(v)) => {
-        //     let mut new_vec = StorageVector::new("".to_string())?;
-        //     for i in v.get_items(){
-        //         let new_item = self.resolve()
-        //         new_vec.push()
-        //     }
-        // },
+        Item::Vector(v) => {
+            let mut new_vec = StorageVector::new("".to_string())?;
+            for (i, v) in v.get_items().iter().enumerate() {
+                let mut new_field = i.to_string();
+                if field.is_some() {
+                    new_field = format!("{}.{}", field.unwrap().get_string_value(), new_field);
+                }
+
+                new_vec.push(resolve(
+                    v.clone(),
+                    Some(&StringPrimitive::new("".to_string(), new_field)?),
+                    link,
+                    storage,
+                    insert_buf,
+                )?)?;
+            }
+            Ok(new_vec.to_item())
+        }
         Item::Map(m) => {
             let mut new_map = StorageMap::new("".to_string())?;
             for (k, v) in m.get_items() {

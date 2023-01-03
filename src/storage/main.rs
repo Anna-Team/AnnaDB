@@ -241,11 +241,9 @@ impl Storage {
                         return Err(DBError::new("Unexpected query type"));
                     }
                 };
-                println!("{:?}", &query_response);
                 if query_response.is_some() {
                     let mut query_response_unwrapped = query_response.unwrap();
                     if iteration == query_set_size {
-                        println!("{:?}", &filter_buf);
                         if query_response_unwrapped.status == QueryStatus::NotFetched {
                             match &projection {
                                 // TODO make it more beautiful
@@ -263,11 +261,9 @@ impl Storage {
                         transaction_response.add_response(query_response_unwrapped);
                     }
                 }
-                println!("{:?}", &transaction_response);
             }
         }
         self.sync_buf(&insert_buf)?;
-        // println!("{:?}", &transaction_response);
         Ok(transaction_response)
     }
 
@@ -405,9 +401,7 @@ impl Storage {
         projection_rules: Option<&ProjectQuery>,
         counter: i32,
     ) -> Result<Item, DBError> {
-        println!("FETCH OR PROJECT");
         if projection_rules.is_some() {
-            println!("PROJECTION");
             let result = resolve(
                 projection_rules.unwrap().clone().to_item(),
                 None,
