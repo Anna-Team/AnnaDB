@@ -16,7 +16,8 @@ use crate::query::insert::processor::insert;
 use crate::query::limit::processor::limit;
 use crate::query::offset::processor::offset;
 use crate::query::operations::QueryOperation;
-use crate::query::project::processor::{ProjectionRules, ProjectionTarget};
+use crate::query::project::processor::resolve;
+use crate::query::project::query::ProjectQuery;
 use crate::query::sort::processor::sort;
 use crate::query::update::operators::set::SetOperator;
 use crate::query::update::processor::update;
@@ -106,7 +107,7 @@ impl Storage {
         let mut transaction_response: OkTransactionResponse = OkTransactionResponse::new();
         // let mut bufs: Vec<InsertBuffer> = vec![];
         let mut insert_buf: InsertBuffer = InsertBuffer::new();
-        let mut projection: Option<ProjectionRules> = None;
+        let mut projection: Option<ProjectQuery> = None;
 
         for query_set in transaction.steps {
             let mut filter_buf: FilterBuffer = FilterBuffer::new();
@@ -227,7 +228,7 @@ impl Storage {
                     Item::Map(MapItem::ProjectQuery(o)) => {
                         if next_available.contains(&QueryOperation::ProjectOperation) {
                             next_available = o.next_available();
-                            projection = Some(o.make_rules()?);
+                            projection = Some(o.clone());
                             let data =
                                 Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
                             let meta = Meta::FindMeta(FindMeta::new(filter_buf.ids.len()));
@@ -368,7 +369,7 @@ impl Storage {
         id: &Link,
         insert_buf: &InsertBuffer,
         counter: i32,
-        projection_rules: Option<&ProjectionRules>,
+        projection_rules: Option<&ProjectQuery>,
     ) -> Result<Item, DBError> {
         match insert_buf.items.get(id) {
             Some(value) => {
@@ -401,13 +402,19 @@ impl Storage {
         value: &Item,
         link: &Link,
         insert_buf: &InsertBuffer,
-        projection_rules: Option<&ProjectionRules>,
+        projection_rules: Option<&ProjectQuery>,
         counter: i32,
     ) -> Result<Item, DBError> {
         println!("FETCH OR PROJECT");
         if projection_rules.is_some() {
             println!("PROJECTION");
-            let result = projection_rules.unwrap().resolve(link, self, insert_buf)?;
+            let result = resolve(
+                projection_rules.unwrap().clone().to_item(),
+                None,
+                link,
+                self,
+                insert_buf,
+            )?;
             return Ok(result);
         }
         Ok(self.fetch(value, insert_buf, counter)?)
@@ -417,7 +424,7 @@ impl Storage {
         &self,
         buf: &FilterBuffer,
         insert_buf: &InsertBuffer,
-        projection_rules: Option<&ProjectionRules>,
+        projection_rules: Option<&ProjectQuery>,
     ) -> Result<Item, DBError> {
         let mut res = ResponseObjects::new("".to_string())?;
         for id in buf.ids.clone() {
