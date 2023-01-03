@@ -1,20 +1,20 @@
-use crate::constants::PROJECT_QUERY;
+use crate::constants::INDEX_QUERY;
 use crate::query::operations::QueryOperation;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, MapItem, Primitive, TySONMap};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ProjectQuery {
+pub struct IndexQuery {
     pub(crate) values: Vec<(Primitive, Item)>,
 }
 
-impl BaseTySONItemInterface for ProjectQuery {
+impl BaseTySONItemInterface for IndexQuery {
     fn get_prefix(&self) -> String {
-        PROJECT_QUERY.to_string()
+        INDEX_QUERY.to_string()
     }
 }
 
-impl TySONMap for ProjectQuery {
+impl TySONMap for IndexQuery {
     fn new(_: String) -> Result<Self, DBError>
     where
         Self: Sized,
@@ -36,11 +36,11 @@ impl TySONMap for ProjectQuery {
     }
 
     fn to_item(self) -> Item {
-        Item::Map(MapItem::ProjectQuery(self))
+        Item::Map(MapItem::IndexQuery(self))
     }
 }
 
-impl ProjectQuery {
+impl IndexQuery {
     pub fn next_available(&self) -> Vec<QueryOperation> {
         vec![]
     }

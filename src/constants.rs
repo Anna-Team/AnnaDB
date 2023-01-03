@@ -7,6 +7,7 @@ pub const COLLECTION_NAME: &str = "collection";
 pub const PATH_TO_VALUE: &str = "value";
 pub const DELETED: &str = "deleted";
 pub const UTS: &str = "uts";
+pub const BTREE: &str = "btree";
 
 pub const STORAGE_MAP: &str = "m";
 
@@ -23,6 +24,7 @@ pub const SORT_QUERY: &str = "sort";
 pub const LIMIT_QUERY: &str = "limit";
 pub const OFFSET_QUERY: &str = "offset";
 pub const PROJECT_QUERY: &str = "project";
+pub const INDEX_QUERY: &str = "index";
 
 // FIND OPERATORS
 pub const EQ_OPERATOR: &str = "eq";

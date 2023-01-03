@@ -1,6 +1,7 @@
 pub mod delete;
 pub mod find;
 pub mod get;
+pub mod index;
 pub mod insert;
 pub mod limit;
 pub mod offset;

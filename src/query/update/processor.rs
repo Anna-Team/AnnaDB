@@ -8,7 +8,7 @@ use std::collections::HashSet;
 
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 
-use crate::storage::main::{FoundItem, FoundRootItem, FoundSubItem};
+use crate::storage::{FoundItem, FoundRootItem, FoundSubItem};
 
 fn update_sub_item(
     storage: &Storage,

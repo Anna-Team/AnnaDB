@@ -9,4 +9,5 @@ pub enum QueryOperation {
     LimitOperation,
     OffsetOperation,
     ProjectOperation,
+    IndexOperation,
 }

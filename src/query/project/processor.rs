@@ -3,8 +3,8 @@ use crate::data_types::map::storage::StorageMap;
 use crate::data_types::vector::storage::StorageVector;
 use crate::storage::buffer::InsertBuffer;
 use crate::{
-    DBError, Item, Link, MapItem, PathToValue, Primitive, Storage, StringPrimitive, TySONMap,
-    TySONPrimitive, TySONVector, VectorItem,
+    DBError, Item, Link, PathToValue, Primitive, Storage, StringPrimitive, TySONMap,
+    TySONPrimitive, TySONVector,
 };
 
 pub fn resolve(
