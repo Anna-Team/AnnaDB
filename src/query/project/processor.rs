@@ -7,52 +7,6 @@ use crate::{
     TySONPrimitive, TySONVector, VectorItem,
 };
 
-pub fn resolve_plain_set(
-    value: &Item,
-    field: StringPrimitive,
-    link: &Link,
-    storage: &Storage,
-    insert_buf: &InsertBuffer,
-) -> Result<Item, DBError> {
-    let default = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
-    match value {
-        Item::Primitive(Primitive::KeepPrimitive(_)) => {
-            let path = PathToValue::new("".to_string(), field.get_string_value())?;
-            let res = storage.get_value_by_path(path, link.clone(), insert_buf)?;
-            match res {
-                Some(o) => {
-                    let item_to_fetch = o.value.unwrap_or(default);
-                    Ok(storage.fetch(&item_to_fetch, insert_buf, 0)?)
-                }
-                None => Ok(default),
-            }
-        }
-        Item::Primitive(Primitive::PathToValue(path)) => {
-            let res = storage.get_value_by_path(path.clone(), link.clone(), insert_buf)?;
-            match res {
-                Some(o) => {
-                    let item_to_fetch = o.value.unwrap_or(default);
-                    Ok(storage.fetch(&item_to_fetch, insert_buf, 0)?)
-                }
-                None => Ok(default),
-            }
-        }
-        Item::Primitive(Primitive::NumberPrimitive(_)) => Ok(value.clone()),
-        Item::Primitive(Primitive::StringPrimitive(_)) => Ok(value.clone()),
-        Item::Primitive(Primitive::UTSPrimitive(_)) => Ok(value.clone()),
-        Item::Primitive(Primitive::BoolPrimitive(_)) => Ok(value.clone()),
-        Item::Primitive(Primitive::NullPrimitive(_)) => Ok(value.clone()),
-        // Item::Vector(VectorItem::StorageVector(v)) => {
-        //     let mut new_vec = StorageVector::new("".to_string())?;
-        //     for i in v.get_items(){
-        //         let new_item = self.resolve()
-        //         new_vec.push()
-        //     }
-        // },
-        _ => Err(DBError::new("Projection rule is not supported")),
-    }
-}
-
 pub fn resolve(
     rules: Item,
     field: Option<&StringPrimitive>,
