@@ -128,6 +128,7 @@ impl SortQuery {
             QueryOperation::UpdateOperation,
             QueryOperation::DeleteOperation,
             QueryOperation::LimitOperation,
+            QueryOperation::ProjectOperation,
         ]
     }
 }

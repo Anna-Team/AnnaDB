@@ -5,6 +5,7 @@ pub mod insert;
 pub mod limit;
 pub mod offset;
 pub mod operations;
+pub mod project;
 pub mod queryset;
 pub mod sort;
 pub mod update;

@@ -20,7 +20,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::vector::TySONVector;
 use crate::DBError;
 
-mod storage;
+pub mod storage;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VectorItem {

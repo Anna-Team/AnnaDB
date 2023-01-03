@@ -53,7 +53,6 @@ pub fn run() {
             Ok(_) => match msg.as_str() {
                 Some(msg_value) => {
                     let res = storage.run(msg_value.to_string());
-                    // println!("{:?}", &res);
                     responder.send(res.as_str(), 0).unwrap();
                 }
                 None => {}

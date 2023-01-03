@@ -2,6 +2,7 @@ pub const STRING: &str = "s";
 pub const NUMBER: &str = "n";
 pub const BOOL: &str = "b";
 pub const NULL: &str = "null";
+pub const KEEP: &str = "keep";
 pub const COLLECTION_NAME: &str = "collection";
 pub const PATH_TO_VALUE: &str = "value";
 pub const DELETED: &str = "deleted";
@@ -21,6 +22,7 @@ pub const DELETE_QUERY: &str = "delete";
 pub const SORT_QUERY: &str = "sort";
 pub const LIMIT_QUERY: &str = "limit";
 pub const OFFSET_QUERY: &str = "offset";
+pub const PROJECT_QUERY: &str = "project";
 
 // FIND OPERATORS
 pub const EQ_OPERATOR: &str = "eq";
