@@ -5,7 +5,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct BoolPrimitive {
     value: bool,
 }

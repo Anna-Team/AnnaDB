@@ -9,6 +9,7 @@ use crate::constants::{
 use crate::data_types::modifier::ModifierItem;
 use crate::data_types::primitives::path::PathToValue;
 use crate::errors::DBError;
+use crate::query::find::compare::Res;
 use crate::query::find::processor::find;
 use crate::query::get::processor::get;
 use crate::query::insert::processor::insert;
@@ -484,30 +485,81 @@ impl Storage {
         }
     }
 
-    pub fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError> {
+    pub fn get_value_by_link(
+        &self,
+        id: &Link,
+        insert_buf: Option<&InsertBuffer>,
+    ) -> Result<Item, DBError> {
+        if insert_buf.is_some() {
+            let res = insert_buf.unwrap().items.get(id);
+            if res.is_some() {
+                return Ok(res.unwrap().clone());
+            }
+        }
+
         match self.get_collection(id.get_prefix()) {
             Some(collection) => Ok(collection.get_value(&id)?),
             None => Err(DBError::new("Getting value by link error")),
         }
     }
 
-    fn fetch_value_by_link(&self, id: &Link) -> Result<(Link, Item), DBError> {
-        let value = self.get_value_by_link(id)?;
+    pub fn get_item_value_by_path(
+        &self,
+        path: PathToValue,
+        item: &Item,
+        insert_buf: Option<&InsertBuffer>,
+    ) -> Result<Option<Item>, DBError> {
+        let mut res: Option<Item> = None;
+        let mut value = item.clone();
+        for sub_path in path.value.split(".") {
+            match &value {
+                Item::Map(MapItem::StorageMap(o)) => match o.get_by_str(sub_path)? {
+                    Some(found_link) => {
+                        let (_, fetched_value) = self
+                            .get_value_by_link_skipping_links(&found_link.to_link()?, insert_buf)?;
+                        value = fetched_value;
+                    }
+                    None => return Ok(None),
+                },
+                Item::Vector(VectorItem::StorageVector(o)) => match o.get_by_str(sub_path)? {
+                    Some(found_link) => {
+                        let (_, fetched_value) = self
+                            .get_value_by_link_skipping_links(&found_link.to_link()?, insert_buf)?;
+                        value = fetched_value;
+                    }
+                    None => {
+                        return Ok(None);
+                    }
+                },
+                _ => {
+                    return Ok(None);
+                }
+            }
+        }
+        Ok(res)
+    }
+
+    fn get_value_by_link_skipping_links(
+        &self,
+        id: &Link,
+        insert_buf: Option<&InsertBuffer>,
+    ) -> Result<(Link, Item), DBError> {
+        let value = self.get_value_by_link(id, insert_buf)?;
         match value {
             Item::Primitive(Primitive::Link(link)) => {
-                return self.fetch_value_by_link(&link);
+                return self.get_value_by_link_skipping_links(&link, insert_buf);
             }
             _ => Ok((id.clone(), value)),
         }
     }
 
-    pub fn get_value_by_path(
+    pub fn find_sub_item_by_path(
         &self,
         path: PathToValue,
         id: Link,
         insert_buf: &InsertBuffer,
     ) -> Result<Option<FoundSubItem>, DBError> {
-        let value = match insert_buf.items.get(&id) {
+        let mut item = match insert_buf.items.get(&id) {
             Some(v) => v.clone(),
             None => match self.get_collection(id.get_prefix()) {
                 Some(collection) => collection.get_value(&id)?,
@@ -518,7 +570,6 @@ impl Storage {
         };
 
         let mut last_link: Link = id;
-        let mut item: Item = value;
 
         let mut sub_item: Option<FoundSubItem> = None;
 
@@ -526,8 +577,10 @@ impl Storage {
             match &item {
                 Item::Map(MapItem::StorageMap(o)) => match o.get_by_str(sub_path)? {
                     Some(found_link) => {
-                        let (fetched_link, fetched_value) =
-                            self.fetch_value_by_link(&found_link.to_link()?)?;
+                        let (fetched_link, fetched_value) = self.get_value_by_link_skipping_links(
+                            &found_link.to_link()?,
+                            Some(insert_buf),
+                        )?;
                         sub_item = Some(FoundSubItem {
                             container_id: last_link,
                             container_value: item.clone(),
@@ -553,10 +606,12 @@ impl Storage {
                             container_id: last_link,
                             container_value: item.clone(),
                             key: sub_path.to_string(),
-                            value: Some(self.get_value_by_link(&found_link.to_link()?)?),
+                            value: Some(
+                                self.get_value_by_link(&found_link.to_link()?, Some(insert_buf))?,
+                            ),
                         });
                         last_link = found_link.to_link()?;
-                        item = self.get_value_by_link(&last_link.clone())?;
+                        item = self.get_value_by_link(&last_link.clone(), Some(insert_buf))?;
                     }
                     None => {
                         return Ok(None);

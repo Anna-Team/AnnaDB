@@ -98,7 +98,7 @@ fn get_value(
 ) -> Result<Option<FoundItem>, DBError> {
     match pr {
         Primitive::PathToValue(path) => {
-            let found_item = storage.get_value_by_path(path.clone(), id.clone(), insert_buf)?;
+            let found_item = storage.find_sub_item_by_path(path.clone(), id.clone(), insert_buf)?;
             match found_item {
                 Some(mut i) => {
                     if let Some(item_from_buf) = insert_buf.items.get(&i.container_id) {

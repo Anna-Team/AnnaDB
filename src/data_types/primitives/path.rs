@@ -6,7 +6,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct PathToValue {
     pub value: String,
 }
@@ -32,6 +32,10 @@ impl TySONPrimitive for PathToValue {
 
 impl PathToValue {
     // pub(crate) fn to_path(&self) -> Vec<String>{
+    //     self.value.split(".").collect()
+    // }
+
+    // pub fn to_sub_paths(&self) -> Vec<String>{
     //     self.value.split(".").collect()
     // }
 }

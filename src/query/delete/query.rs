@@ -6,7 +6,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::{DBError, Item, Primitive};
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct DeleteQuery;
 
 impl BaseTySONItemInterface for DeleteQuery {

@@ -7,7 +7,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, Eq, Hash, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Link {
     pub(crate) collection_name: String,
     id: Uuid,

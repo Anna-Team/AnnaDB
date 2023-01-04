@@ -69,9 +69,11 @@ impl<'a> SortProcessor<'a> {
         for path in &self.paths {
             match path {
                 Path::PathToValue(p) => {
-                    let val =
-                        self.storage
-                            .get_value_by_path(p.clone(), link.clone(), self.insert_buf);
+                    let val = self.storage.find_sub_item_by_path(
+                        p.clone(),
+                        link.clone(),
+                        self.insert_buf,
+                    );
                     match val {
                         Ok(Some(found_val)) => result_vec.push(found_val.get_primitive_or_none()),
                         _ => result_vec.push(None),
@@ -83,7 +85,7 @@ impl<'a> SortProcessor<'a> {
                         _ => result_vec.push(None),
                     },
                     None => {
-                        match self.storage.get_value_by_link(&link) {
+                        match self.storage.get_value_by_link(&link, None) {
                             Ok(o) => match o {
                                 Item::Primitive(pr) => result_vec.push(Some(pr)),
                                 _ => result_vec.push(None),

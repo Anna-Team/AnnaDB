@@ -1,3 +1,4 @@
+use float_ord::FloatOrd;
 use std::fmt::Debug;
 
 use crate::constants::NUMBER;
@@ -5,9 +6,9 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, PartialOrd)]
+#[derive(Debug, Clone, PartialOrd, Ord)]
 pub struct NumberPrimitive {
-    value: f64,
+    value: FloatOrd<f64>,
 }
 
 impl BaseTySONItemInterface for NumberPrimitive {
@@ -22,17 +23,19 @@ impl TySONPrimitive for NumberPrimitive {
         Self: Sized,
     {
         let f_value: f64 = value.as_str().parse::<f64>()?;
-        Ok(Self { value: f_value })
+        Ok(Self {
+            value: FloatOrd(f_value),
+        })
     }
 
     fn get_string_value(&self) -> String {
-        self.value.to_string()
+        self.value.0.to_string()
     }
 }
 
 impl PartialEq<Self> for NumberPrimitive {
     fn eq(&self, other: &Self) -> bool {
-        (self.value - other.value).abs() == f64::from(0) // TODO fix this!!
+        (self.value.0 - other.value.0).abs() == f64::from(0) // TODO fix this!!
     }
 }
 
@@ -40,18 +43,20 @@ impl Eq for NumberPrimitive {}
 
 impl NumberPrimitive {
     pub fn get_value(&self) -> f64 {
-        self.value
+        self.value.0
     }
 
     pub fn add(&self, other: &NumberPrimitive) -> Self {
         Self {
-            value: self.value + other.value,
+            value: FloatOrd(self.value.0 + other.value.0),
         }
     }
 }
 
 impl From<usize> for NumberPrimitive {
     fn from(n: usize) -> Self {
-        Self { value: n as f64 }
+        Self {
+            value: FloatOrd(n as f64),
+        }
     }
 }

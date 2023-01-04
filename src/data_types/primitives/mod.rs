@@ -27,7 +27,7 @@ pub mod root;
 pub mod string;
 pub mod unix_timestamp;
 
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Primitive {
     Link(Link),
     StringPrimitive(StringPrimitive),

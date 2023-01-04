@@ -18,7 +18,7 @@ pub fn resolve(
     match rules {
         Item::Primitive(Primitive::KeepPrimitive(_)) => {
             let path = PathToValue::new("".to_string(), field.unwrap().get_string_value())?;
-            let res = storage.get_value_by_path(path, link.clone(), insert_buf)?;
+            let res = storage.find_sub_item_by_path(path, link.clone(), insert_buf)?;
             match res {
                 Some(o) => {
                     let item_to_fetch = o.value.unwrap_or(default);
@@ -28,7 +28,7 @@ pub fn resolve(
             }
         }
         Item::Primitive(Primitive::PathToValue(path)) => {
-            let res = storage.get_value_by_path(path.clone(), link.clone(), insert_buf)?;
+            let res = storage.find_sub_item_by_path(path.clone(), link.clone(), insert_buf)?;
             match res {
                 Some(o) => {
                     let item_to_fetch = o.value.unwrap_or(default);

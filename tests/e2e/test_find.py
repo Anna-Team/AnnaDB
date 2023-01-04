@@ -69,6 +69,7 @@ class TestFindNeq:
             ]
             """
         )
+        print(resp[0]["data"])
         assert len(resp[0]["data"]) == primitives["meta"]["count"] - 1
         for k, v in resp[0]["data"].items():
             assert v != 1
@@ -197,6 +198,7 @@ class TestFindLt:
             ]
             """
         )
+        print(resp[0]["data"])
         assert len(resp[0]["data"]) == 6
         for k, v in resp[0]["data"].items():
             assert v["num"] < 6

@@ -5,7 +5,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, PartialOrd)]
+#[derive(Debug, Clone, PartialOrd, Ord)]
 pub struct UTSPrimitive {
     value: i64,
 }
