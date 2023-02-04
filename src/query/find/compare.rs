@@ -189,7 +189,6 @@ pub fn compare(
     storage: &Storage,
     insert_buf: &InsertBuffer,
 ) -> Result<HashSet<Link>, DBError> {
-    println!("{:?}", op);
     match op {
         Item::Map(MapItem::EqOperator(o)) => {
             let mut started: bool = false;
@@ -347,9 +346,7 @@ pub fn compare(
         }
         Item::Modifier(ModifierItem::NotOperator(o)) => {
             let buf = check_bool(o.get_value(), links, storage, insert_buf)?;
-            println!("{:?}", buf);
             let res = links.difference(&buf).cloned().collect();
-            println!("{:?}", res);
             Ok(res)
         }
         _ => Err(DBError::new("Unsupported compare operator")),

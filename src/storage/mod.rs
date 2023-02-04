@@ -7,7 +7,8 @@ use crate::constants::{
     DELETED, FETCH_DEPTH_LIMIT, INTERNAL_COLLECTION_NAME, NULL, ROOT, STORAGE_MAP, STORAGE_VECTOR,
 };
 use crate::data_types::modifier::ModifierItem;
-use crate::data_types::primitives::path::PathToValue;
+use crate::data_types::primitives::path::{Path, PathToValue};
+use crate::data_types::primitives::root::RootPrimitive;
 use crate::errors::DBError;
 use crate::query::find::compare::Res;
 use crate::query::find::processor::find;
@@ -29,6 +30,7 @@ use crate::response::{
 };
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
+use crate::storage::link_keeper::LinkData;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
@@ -38,6 +40,7 @@ use crate::{
 pub mod buffer;
 pub mod collection;
 pub mod common;
+pub mod link_keeper;
 pub mod transaction;
 
 #[derive(Debug)]
@@ -80,7 +83,7 @@ pub struct FoundRootItem {
 
 #[derive(Debug)]
 pub struct Storage {
-    pub(crate) warehouse: HashMap<String, Collection>,
+    pub warehouse: HashMap<String, Collection>,
     wh_path: String,
 }
 
@@ -277,43 +280,6 @@ impl Storage {
         Ok(transaction_response)
     }
 
-    fn sync_buf(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
-        if buf.dropped_collections.len() > 0 {
-            for collection_name in &buf.dropped_collections {
-                match self.get_collection(collection_name.to_string()) {
-                    Some(collection) => {
-                        fs::remove_file(collection.get_path(self.wh_path.clone()))?; // TODO clean internal collection too
-                        self.warehouse.remove(collection_name);
-                    }
-                    _ => {}
-                };
-            }
-        }
-        if buf.changed {
-            for (link, item) in &buf.items {
-                let collection = match self.warehouse.entry(link.get_prefix()) {
-                    Entry::Occupied(o) => o.into_mut(),
-                    Entry::Vacant(v) => {
-                        let inserting_collection =
-                            Collection::new(link.get_prefix(), self.wh_path.clone())?;
-                        v.insert(inserting_collection)
-                    }
-                };
-                let mut file = collection.get_file(self.wh_path.clone())?;
-                write!(file, "{}:{};", link.serialize(), item.serialize())?;
-                match item {
-                    Item::Primitive(Primitive::DeletedPrimitive(_)) => {
-                        collection.values.remove(link);
-                    }
-                    _ => {
-                        collection.values.insert(link.clone(), item.clone());
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
-
     pub fn insert_item(
         &self,
         collection_name: String,
@@ -388,7 +354,7 @@ impl Storage {
                     .ok_or(DBError::new("Getting collection internal error"))?;
                 match collection.values.get(id) {
                     Some(value) => Ok(self.fetch_or_project(
-                        value,
+                        &value.item,
                         id,
                         insert_buf,
                         projection_rules,
@@ -627,5 +593,109 @@ impl Storage {
 
     pub fn get_collection(&self, collection_name: String) -> Option<&Collection> {
         self.warehouse.get(collection_name.as_str())
+    }
+
+    // INSERT BUFFER
+
+    fn sync_buf(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
+        println!("{:?}", buf);
+        if buf.dropped_collections.len() > 0 {
+            for collection_name in &buf.dropped_collections {
+                match self.get_collection(collection_name.to_string()) {
+                    Some(collection) => {
+                        fs::remove_file(collection.get_path(self.wh_path.clone()))?; // TODO clean internal collection too
+                        self.warehouse.remove(collection_name);
+                    }
+                    _ => {}
+                };
+            }
+        }
+        if buf.changed {
+            for (link, item) in &buf.items {
+                self.insert_to_collection(link, item)?;
+            }
+        }
+        Ok(())
+    }
+
+    // LINK KEEPER
+
+    fn insert_to_collection(&mut self, link: &Link, item: &Item) -> Result<(), DBError> {
+        let collection = match self.warehouse.entry(link.get_prefix()) {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => {
+                let inserting_collection =
+                    Collection::new(link.get_prefix(), self.wh_path.clone())?;
+                v.insert(inserting_collection)
+            }
+        };
+        let mut file = collection.get_file(self.wh_path.clone())?;
+        write!(file, "{}:{};", link.serialize(), item.serialize())?;
+        match item {
+            Item::Primitive(Primitive::DeletedPrimitive(_)) => {
+                let data = collection
+                    .values
+                    .get_mut(link)
+                    .ok_or(DBError::new("Item not found"))?;
+                data.back_track.remove(link);
+                collection.values.remove(link);
+            }
+            Item::Map(m) => {
+                for (k, v) in m.get_items() {
+                    println!("{:?}", v);
+                    let data = collection
+                        .values
+                        .get_mut(&v.to_link()?)
+                        .ok_or(DBError::new("Item not found MAP"))?;
+                    data.back_track
+                        .insert(link.clone(), Path::PathToValue(k.to_path()?));
+                }
+                collection
+                    .values
+                    .insert(link.clone(), LinkData::new(item.clone()));
+            }
+            Item::Vector(v) => {
+                for (i, v) in v.get_items().iter().enumerate() {
+                    println!("{:?}", v);
+                    let data_link = v.to_link()?;
+                    let data_collection = match self.warehouse.entry(data_link.get_prefix()) {
+                        Entry::Occupied(o) => o.into_mut(),
+                        Entry::Vacant(v) => {
+                            let inserting_collection =
+                                Collection::new(link.get_prefix(), self.wh_path.clone())?;
+                            v.insert(inserting_collection)
+                        }
+                    };
+                    let data = collection
+                        .values
+                        .get_mut(&v.to_link()?)
+                        .ok_or(DBError::new("Item not found VECTOR"))?;
+                    data.back_track.insert(
+                        link.clone(),
+                        Path::PathToValue(PathToValue::new("".to_string(), i.to_string())?),
+                    );
+                }
+                collection
+                    .values
+                    .insert(link.clone(), LinkData::new(item.clone()));
+            }
+            Item::Primitive(Primitive::Link(l)) => {
+                println!("{:?}", l);
+                let data = collection
+                    .values
+                    .get_mut(l)
+                    .ok_or(DBError::new("Item not found LINK"))?;
+                data.back_track.insert(
+                    link.clone(),
+                    Path::Root(RootPrimitive::new("".to_string(), "".to_string())?),
+                );
+            }
+            _ => {
+                collection
+                    .values
+                    .insert(link.clone(), LinkData::new(item.clone()));
+            }
+        };
+        Ok(())
     }
 }

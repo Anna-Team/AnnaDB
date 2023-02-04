@@ -1,4 +1,5 @@
 use crate::constants::INTERNAL_COLLECTION_NAME;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::{read_to_string, File};
@@ -8,6 +9,7 @@ use crate::data_types::item::Item;
 use crate::data_types::primitives::link::Link;
 use crate::data_types::primitives::Primitive;
 
+use crate::storage::link_keeper::LinkData;
 use crate::DBError;
 
 use crate::tyson::de::Desereilize;
@@ -15,7 +17,7 @@ use crate::tyson::de::Desereilize;
 #[derive(Debug)]
 pub struct Collection {
     pub name: String,
-    pub(crate) values: HashMap<Link, Item>,
+    pub(crate) values: HashMap<Link, LinkData>,
 }
 
 impl Desereilize for Collection {
@@ -37,7 +39,8 @@ impl Desereilize for Collection {
                     self.values.remove(&o);
                 }
                 _ => {
-                    self.values.insert(o, data.1);
+                    let link_data = LinkData::new(data.1);
+                    self.values.insert(o, link_data);
                 }
             },
             _ => return Err(DBError::new("Internal storage read error")),
@@ -88,6 +91,13 @@ impl Collection {
             .ok_or(DBError::new(
                 "Internal error: there is no such id in the collection",
             ))?
+            .item
             .clone())
+    }
+}
+
+impl PartialOrd for bool {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        todo!()
     }
 }

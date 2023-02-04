@@ -131,3 +131,13 @@ impl From<CollectionName> for Primitive {
         Primitive::CollectionName(data)
     }
 }
+
+impl Primitive {
+    pub fn to_path(&self) -> Result<PathToValue, DBError> {
+        match self {
+            Primitive::StringPrimitive(s) => PathToValue::new("".to_string(), s.get_string_value()),
+            Primitive::PathToValue(p) => Ok(p.clone()),
+            _ => Err(DBError::new("Can not convert primitive to path")),
+        }
+    }
+}
