@@ -1,5 +1,5 @@
 poetry run pydoc-markdown
-cd docs/build
+cd ../build
 
 remote_repo="https://x-access-token:${GITHUB_TOKEN}@${GITHUB_DOMAIN:-"github.com"}/${GITHUB_REPOSITORY}.git"
 git remote rm origin

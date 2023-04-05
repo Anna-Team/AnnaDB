@@ -22,4 +22,5 @@ jobs:
         run: poetry run python main.py
         working-directory: docs/docs_gen
       - name: publish docs
-        run: bash scripts/publish_docs.sh
+        run: bash publish_docs.sh
+        working-directory: docs/docs_gen
