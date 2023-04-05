@@ -31,8 +31,8 @@ def build_update(connection):
     (update_in, update_out) = update(connection)
 
     env = Environment()
-    with open("../build/documentation/update.md", "w") as output:
-        with open("templates/documentation/update.md", "r") as f:
+    with open("build/documentation/update.md", "w") as output:
+        with open("docs_gen/templates//documentation/update.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

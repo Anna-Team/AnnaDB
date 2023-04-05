@@ -32,8 +32,8 @@ def build_offset(connection):
     (offset_in, offset_out) = offset(connection)
 
     env = Environment()
-    with open("../build/documentation/offset.md", "w") as output:
-        with open("templates/documentation/offset.md", "r") as f:
+    with open("build/documentation/offset.md", "w") as output:
+        with open("docs_gen/templates//documentation/offset.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

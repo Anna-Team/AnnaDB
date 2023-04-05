@@ -49,8 +49,8 @@ def transaction():
 
 def build_intro():
     env = Environment()
-    with open("../build/documentation/introduction.md", "w") as output:
-        with open("templates/documentation/introduction.md", "r") as f:
+    with open("build/documentation/introduction.md", "w") as output:
+        with open("docs_gen/templates//documentation/introduction.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

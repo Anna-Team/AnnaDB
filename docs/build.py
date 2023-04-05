@@ -1,16 +1,16 @@
 from annadb.connection import Connection
-from article_native_tutorial import build_first_article
-from delete import build_delete
-from find import build_find
-from get import build_get
-from insert import build_insert
-from introduction import build_intro
-from limit import build_limit
-from native_tutorial import build_native_tutorial
-from offset import build_offset
-from project import build_project
-from sort import build_sort
-from update import build_update
+from docs_gen.article_native_tutorial import build_first_article
+from docs_gen.delete import build_delete
+from docs_gen.find import build_find
+from docs_gen.get import build_get
+from docs_gen.insert import build_insert
+from docs_gen.introduction import build_intro
+from docs_gen.limit import build_limit
+from docs_gen.native_tutorial import build_native_tutorial
+from docs_gen.offset import build_offset
+from docs_gen.project import build_project
+from docs_gen.sort import build_sort
+from docs_gen.update import build_update
 
 connection = Connection.from_connection_string("annadb://localhost:10001")
 

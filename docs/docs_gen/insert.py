@@ -22,8 +22,8 @@ def build_insert(connection):
     (insert_in, insert_out) = insert(connection)
 
     env = Environment()
-    with open("../build/documentation/insert.md", "w") as output:
-        with open("templates/documentation/insert.md", "r") as f:
+    with open("build/documentation/insert.md", "w") as output:
+        with open("docs_gen/templates//documentation/insert.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

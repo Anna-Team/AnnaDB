@@ -32,8 +32,8 @@ def build_find(connection):
     (find_in, find_out) = find(connection)
 
     env = Environment()
-    with open("../build/documentation/find.md", "w") as output:
-        with open("templates/documentation/find.md", "r") as f:
+    with open("build/documentation/find.md", "w") as output:
+        with open("docs_gen/templates//documentation/find.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

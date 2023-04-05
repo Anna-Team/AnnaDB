@@ -31,8 +31,8 @@ def build_delete(connection):
     (delete_in, delete_out) = delete(connection)
 
     env = Environment()
-    with open("../build/documentation/delete.md", "w") as output:
-        with open("templates/documentation/delete.md", "r") as f:
+    with open("build/documentation/delete.md", "w") as output:
+        with open("docs_gen/templates//documentation/delete.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(
