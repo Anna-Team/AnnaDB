@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "docs-gen"
+version = "0.1.0"
+description = ""
+authors = ["Roman <roman-right@protonmail.com>"]
+readme = "README.md"
+packages = [{include = "docs_gen"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+annadb = "^0.1.4"
+Jinja2 = "^3.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

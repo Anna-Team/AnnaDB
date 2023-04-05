@@ -115,6 +115,42 @@ def delete_bars(connection):
     return input_data.to_html(), output_data.to_html()
 
 
+def projections_keep(connection):
+    query = """
+                collection|products|:q[
+                    find[],
+                    project{s|name|: keep, s|price|: keep}
+                ]
+                """
+    input_data = Journal.deserialize(query)
+    output_data = connection.send_query(query, value_only=False)
+    return input_data.to_html(), output_data.to_html()
+
+
+def projections_existing_values(connection):
+    query = """
+                collection|products|:q[
+                    find[],
+                    project{s|new_field|: value|category|}
+                ]
+                """
+    input_data = Journal.deserialize(query)
+    output_data = connection.send_query(query, value_only=False)
+    return input_data.to_html(), output_data.to_html()
+
+
+def projections_new_values(connection):
+    query = """
+                collection|products|:q[
+                    find[],
+                    project{s|new_field|: s|new_value|}
+                ]
+                """
+    input_data = Journal.deserialize(query)
+    output_data = connection.send_query(query, value_only=False)
+    return input_data.to_html(), output_data.to_html()
+
+
 def build_native_tutorial(connection):
     (insert_category_in, insert_category_out, category_id) = insert_category(
         connection)
@@ -139,6 +175,9 @@ def build_native_tutorial(connection):
     (find_chocolate_in_2, find_chocolate_out_2) = find_chocolate(connection)
     (sort_in, sort_out) = sort_bars(connection)
     (delete_in, delete_out) = delete_bars(connection)
+    (projections_keep_in, projections_keep_out) = projections_keep(connection)
+    (projections_existing_values_in, projections_existing_values_out) = projections_existing_values(connection)
+    (projections_new_values_in, projections_new_values_out) = projections_new_values(connection)
 
     env = Environment()
     with open("../build/tutorial/native/index.md", "w") as output:
@@ -164,5 +203,11 @@ def build_native_tutorial(connection):
                     sort_out=sort_out,
                     delete_in=delete_in,
                     delete_out=delete_out,
+                    projections_keep_in=projections_keep_in,
+                    projections_keep_out=projections_keep_out,
+                    projections_existing_values_in=projections_existing_values_in,
+                    projections_existing_values_out=projections_existing_values_out,
+                    projections_new_values_in=projections_new_values_in,
+                    projections_new_values_out=projections_new_values_out,
                 )
             )

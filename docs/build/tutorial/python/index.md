@@ -194,6 +194,46 @@ Objects in the response are sorted by price now.
 It is useful to use `limit` and `offset` operations together with sort. You can
 read about them in the [documentation](../../documentation/limit/)
 
+## Make projections
+
+To get only the name and price fields I'll use the `project` operation
+
+**Request**:
+
+```python
+from annadb import keep
+
+response = products.all().project({
+    "name": keep,
+    "price": keep
+}).run()
+
+```
+
+The `keep` operator is used to keep the value of the field or subfield in the output.
+
+To set a new field with already existing value I use `root` operator
+
+**Request**:
+
+```python
+from annadb import root
+
+response = products.all().project({
+    "new_field": root.category
+}).run()
+```
+
+It is possible to set any value to the field as well
+
+**Request**:
+
+```python
+response = products.all().project({
+    "new_field": "some value"
+}).run()
+```
+
 ## Delete objects
 
 You can use the `delete` operation after any find-like step to delete all the found

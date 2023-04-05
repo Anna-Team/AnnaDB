@@ -8,6 +8,7 @@ from introduction import build_intro
 from limit import build_limit
 from native_tutorial import build_native_tutorial
 from offset import build_offset
+from project import build_project
 from sort import build_sort
 from update import build_update
 
@@ -45,6 +46,9 @@ build_update(connection)
 
 clean_collections()
 build_delete(connection)
+
+clean_collections()
+build_project(connection)
 
 clean_collections()
 build_native_tutorial(connection)
