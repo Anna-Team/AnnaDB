@@ -134,6 +134,39 @@ Objects in the response are sorted by price now.
 
 It is useful to use `limit` and `offset` operations together with sort. You can read about them in the [documentation](../../documentation/limit/)
 
+## Make projections
+
+To get only the name and price fields I'll use the `project` operation
+
+**Request**:
+
+{{ projections_keep_in }}
+
+The `keep` operator is used to keep the value of the field or subfield in the output.
+
+**Response**:
+
+{{ projections_keep_out }}
+
+To set a new field with already existing value I use `root` operator
+
+**Request**:
+
+{{ projections_existing_values_in }}
+
+**Response**:
+
+{{ projections_existing_values_out }}
+
+It is possible to set any value to the field as well
+
+**Request**:
+
+{{ projections_new_values_in }}
+
+**Response**:
+
+{{ projections_new_values_out }}
 
 ## Delete objects
 

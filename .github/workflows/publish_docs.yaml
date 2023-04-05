@@ -1,0 +1,23 @@
+name: Publish docs
+on:
+  push:
+    branches:
+      - main
+jobs:
+  publish_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.9
+      - name: install poetry
+        run: pip install poetry
+      - name: install dependencies
+        run: poetry install
+        working-directory: docs_gen
+      - name: generate docs
+        run: poetry run python main.py
+        working-directory: docs_gen
+      - name: publish docs
+        run: bash scripts/publish_docs.sh
