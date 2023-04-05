@@ -2,7 +2,7 @@ name: Publish docs
 on:
   push:
     branches:
-      - main
+      - update-docs
 jobs:
   publish_docs:
     runs-on: ubuntu-latest
