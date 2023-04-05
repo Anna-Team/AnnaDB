@@ -3,22 +3,30 @@ from jinja2 import Environment
 from annadb.data_types.journal import Journal
 
 
-def find(connection):
+def project(connection):
     collection = connection["test"]
     objects = [
         {
             "name": f"test_{i}",
-            "num": i
-        } for i in range(10)
+            "num": i,
+            "bool": True,
+            "vec": [1, 2, 3],
+            "map": {"bar": "baz"}
+        } for i in range(3)
     ]
     collection.insert(
         *objects
     ).run()
 
     query = """
-        collection|test|:find[
-            gt{
-                value|num|:n|4|
+        collection|test|:q[
+            find[],
+            project{
+                s|name|:s|foo|,
+                s|num|:keep,
+                s|vec|:v[keep, n|1|],
+                s|map|:m{s|bar|:keep, s|test|:s|test|},
+                s|new_field|:s|new_value|
             }
         ]
         """
@@ -28,12 +36,12 @@ def find(connection):
     return input_data.to_html(), output_data.to_html()
 
 
-def build_find(connection):
-    (find_in, find_out) = find(connection)
+def build_project(connection):
+    (find_in, find_out) = project(connection)
 
     env = Environment()
-    with open("../build/documentation/find.md", "w") as output:
-        with open("templates/documentation/find.md", "r") as f:
+    with open("../build/documentation/project.md", "w") as output:
+        with open("templates/documentation/project.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

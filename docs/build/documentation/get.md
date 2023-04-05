@@ -13,8 +13,8 @@ Get one or many objects by id (link)
 ## Examples
 
 <pre><code><span class="prefix_primitive">collection</span>|<span class="value_primitive">test</span>|:<span class="prefix_vector">get</span>[
-	<span class="prefix_link">test</span>|<span class="value_link">ea63e06f-9d1c-442f-89fd-c5041d863f5f</span>|,
-	<span class="prefix_link">test</span>|<span class="value_link">35db29f3-eba6-4589-bf81-2542b2f5db37</span>|,
+	<span class="prefix_link">test</span>|<span class="value_link">53dce4e4-1bd5-426f-95d6-37d79b0816d3</span>|,
+	<span class="prefix_link">test</span>|<span class="value_link">8b436783-b933-45cc-a9e5-27242c4278d0</span>|,
 ];
 </code></pre>
 
@@ -23,8 +23,8 @@ Output:
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_map">objects</span>{
-			<span class="prefix_link">test</span>|<span class="value_link">ea63e06f-9d1c-442f-89fd-c5041d863f5f</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
-			<span class="prefix_link">test</span>|<span class="value_link">35db29f3-eba6-4589-bf81-2542b2f5db37</span>|:<span class="prefix_string">s</span>|<span class="value_string">bar</span>|,
+			<span class="prefix_link">test</span>|<span class="value_link">53dce4e4-1bd5-426f-95d6-37d79b0816d3</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
+			<span class="prefix_link">test</span>|<span class="value_link">8b436783-b933-45cc-a9e5-27242c4278d0</span>|:<span class="prefix_string">s</span>|<span class="value_string">bar</span>|,
 		},
 		<span class="prefix_string">s</span>|<span class="value_string">meta</span>|:<span class="prefix_map">get_meta</span>{
 			<span class="prefix_string">s</span>|<span class="value_string">count</span>|:<span class="prefix_number">n</span>|<span class="value_number">2</span>|,
