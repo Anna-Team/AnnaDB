@@ -10,7 +10,10 @@ packages = [{include = "docs_gen"}]
 python = ">=3.8,<4.0"
 annadb = "^0.1.4"
 Jinja2 = "^3.1.2"
-
+mkdocs-material = ">=9.0"
+pydoc-markdown = ">=4.6"
+mkdocs = ">=1.4"
+Markdown = ">=3.3"
 
 [build-system]
 requires = ["poetry-core"]
