@@ -6,7 +6,6 @@ use std::io::Write;
 use crate::constants::{
     DELETED, FETCH_DEPTH_LIMIT, INTERNAL_COLLECTION_NAME, NULL, ROOT, STORAGE_MAP, STORAGE_VECTOR,
 };
-use crate::data_types::map::storage::StorageMap;
 use crate::data_types::modifier::ModifierItem;
 use crate::data_types::primitives::path::PathToValue;
 use crate::errors::DBError;
@@ -29,7 +28,6 @@ use crate::response::{
 };
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
-use crate::storage::projection::{Projection, ProjectionRule};
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
@@ -122,7 +120,7 @@ impl Storage {
             let query_set_size = query_set.query_set.items.len() as i32;
             for query in query_set.query_set.items {
                 iteration += 1;
-                let mut query_response: Option<QueryResponse> = match query {
+                let query_response: Option<QueryResponse> = match query {
                     Item::Vector(VectorItem::InsertQuery(o)) => {
                         if next_available.contains(&QueryOperation::InsertOperation) {
                             next_available = o.next_available();

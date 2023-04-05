@@ -1,10 +1,7 @@
 use crate::constants::PROJECT_QUERY;
-use crate::data_types::map::storage::StorageMap;
 use crate::query::operations::QueryOperation;
-use crate::query::project::processor::resolve;
-use crate::storage::projection::Projection;
 use crate::tyson::item::BaseTySONItemInterface;
-use crate::{DBError, Item, MapItem, Primitive, TySONMap, TySONVector, VectorItem};
+use crate::{DBError, Item, MapItem, Primitive, TySONMap};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProjectQuery {
