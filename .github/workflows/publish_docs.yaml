@@ -17,10 +17,10 @@ jobs:
         run: pip install poetry
       - name: install dependencies
         run: poetry install --no-root
-        working-directory: docs/docs_gen
+        working-directory: docs
       - name: generate docs
-        run: poetry run python main.py
-        working-directory: docs/docs_gen
+        run: poetry run python build.py
+        working-directory: docs
       - name: publish docs
-        run: bash publish_docs.sh
-        working-directory: docs/docs_gen
+        run: bash publish.sh
+        working-directory: docs

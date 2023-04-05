@@ -32,8 +32,8 @@ def build_limit(connection):
     (limit_in, limit_out) = limit(connection)
 
     env = Environment()
-    with open("../build/documentation/limit.md", "w") as output:
-        with open("templates/documentation/limit.md", "r") as f:
+    with open("build/documentation/limit.md", "w") as output:
+        with open("docs_gen/templates//documentation/limit.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

@@ -25,8 +25,8 @@ def build_get(connection):
     (get_in, get_out) = get(connection)
 
     env = Environment()
-    with open("../build/documentation/get.md", "w") as output:
-        with open("templates/documentation/get.md", "r") as f:
+    with open("build/documentation/get.md", "w") as output:
+        with open("docs_gen/templates//documentation/get.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

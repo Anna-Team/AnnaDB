@@ -141,8 +141,8 @@ def build_first_article(connection):
     (delete_in, delete_out) = delete_bars(connection)
 
     env = Environment()
-    with open("../build/articles/first.md", "w") as output:
-        with open("templates/articles/first.md", "r") as f:
+    with open("build/articles/first.md", "w") as output:
+        with open("docs_gen/templates//articles/first.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

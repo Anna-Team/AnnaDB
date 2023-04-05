@@ -180,8 +180,8 @@ def build_native_tutorial(connection):
     (projections_new_values_in, projections_new_values_out) = projections_new_values(connection)
 
     env = Environment()
-    with open("../build/tutorial/native/index.md", "w") as output:
-        with open("templates/tutorial/native/index.md", "r") as f:
+    with open("build/tutorial/native/index.md", "w") as output:
+        with open("docs_gen/templates//tutorial/native/index.md", "r") as f:
             template = env.from_string(f.read())
             output.write(
                 template.render(

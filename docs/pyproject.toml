@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "docs-gen"
+name = "docs"
 version = "0.1.0"
 description = ""
 authors = ["Roman <roman-right@protonmail.com>"]

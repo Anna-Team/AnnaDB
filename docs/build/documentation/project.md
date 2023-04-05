@@ -80,43 +80,43 @@ Output:
 <pre><code><span class="prefix_primitive">result</span>:<span class="prefix_vector">ok</span>[
 	<span class="prefix_map">response</span>{
 		<span class="prefix_string">s</span>|<span class="value_string">data</span>|:<span class="prefix_map">objects</span>{
-			<span class="prefix_link">test</span>|<span class="value_link">aec71fe0-562d-4ca0-86ec-e3531e7c717f</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">new_field</span>|:<span class="prefix_string">s</span>|<span class="value_string">new_value</span>|,
-				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
+			<span class="prefix_link">test</span>|<span class="value_link">634a6773-7d34-4eef-ab5e-8991312525c8</span>|:<span class="prefix_map">m</span>{
 				<span class="prefix_string">s</span>|<span class="value_string">num</span>|:<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-				<span class="prefix_string">s</span>|<span class="value_string">map</span>|:<span class="prefix_map">m</span>{
-					<span class="prefix_string">s</span>|<span class="value_string">bar</span>|:<span class="prefix_string">s</span>|<span class="value_string">baz</span>|,
-					<span class="prefix_string">s</span>|<span class="value_string">test</span>|:<span class="prefix_string">s</span>|<span class="value_string">test</span>|,
-				},
-				<span class="prefix_string">s</span>|<span class="value_string">vec</span>|:<span class="prefix_vector">v</span>[
-					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-				],
-			},
-			<span class="prefix_link">test</span>|<span class="value_link">369f78b3-bdd3-470e-84d9-b63d9ec2c5e6</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
-				<span class="prefix_string">s</span>|<span class="value_string">vec</span>|:<span class="prefix_vector">v</span>[
-					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-				],
 				<span class="prefix_string">s</span>|<span class="value_string">new_field</span>|:<span class="prefix_string">s</span>|<span class="value_string">new_value</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">vec</span>|:<span class="prefix_vector">v</span>[
+					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
+					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
+				],
+				<span class="prefix_string">s</span>|<span class="value_string">map</span>|:<span class="prefix_map">m</span>{
+					<span class="prefix_string">s</span>|<span class="value_string">test</span>|:<span class="prefix_string">s</span>|<span class="value_string">test</span>|,
+					<span class="prefix_string">s</span>|<span class="value_string">bar</span>|:<span class="prefix_string">s</span>|<span class="value_string">baz</span>|,
+				},
+				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
+			},
+			<span class="prefix_link">test</span>|<span class="value_link">e3f5e27d-e5c0-4fd7-94b9-7122ff0441f5</span>|:<span class="prefix_map">m</span>{
+				<span class="prefix_string">s</span>|<span class="value_string">num</span>|:<span class="prefix_number">n</span>|<span class="value_number">0</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">vec</span>|:<span class="prefix_vector">v</span>[
+					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
+					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
+				],
+				<span class="prefix_string">s</span>|<span class="value_string">map</span>|:<span class="prefix_map">m</span>{
+					<span class="prefix_string">s</span>|<span class="value_string">test</span>|:<span class="prefix_string">s</span>|<span class="value_string">test</span>|,
+					<span class="prefix_string">s</span>|<span class="value_string">bar</span>|:<span class="prefix_string">s</span>|<span class="value_string">baz</span>|,
+				},
+				<span class="prefix_string">s</span>|<span class="value_string">new_field</span>|:<span class="prefix_string">s</span>|<span class="value_string">new_value</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
+			},
+			<span class="prefix_link">test</span>|<span class="value_link">ebf46099-c742-4e06-86e4-19e025445e83</span>|:<span class="prefix_map">m</span>{
+				<span class="prefix_string">s</span>|<span class="value_string">new_field</span>|:<span class="prefix_string">s</span>|<span class="value_string">new_value</span>|,
+				<span class="prefix_string">s</span>|<span class="value_string">vec</span>|:<span class="prefix_vector">v</span>[
+					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
+					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
+				],
 				<span class="prefix_string">s</span>|<span class="value_string">map</span>|:<span class="prefix_map">m</span>{
 					<span class="prefix_string">s</span>|<span class="value_string">test</span>|:<span class="prefix_string">s</span>|<span class="value_string">test</span>|,
 					<span class="prefix_string">s</span>|<span class="value_string">bar</span>|:<span class="prefix_string">s</span>|<span class="value_string">baz</span>|,
 				},
 				<span class="prefix_string">s</span>|<span class="value_string">num</span>|:<span class="prefix_number">n</span>|<span class="value_number">2</span>|,
-			},
-			<span class="prefix_link">test</span>|<span class="value_link">fc83bd29-1d18-4286-a6f7-65969937ea26</span>|:<span class="prefix_map">m</span>{
-				<span class="prefix_string">s</span>|<span class="value_string">map</span>|:<span class="prefix_map">m</span>{
-					<span class="prefix_string">s</span>|<span class="value_string">bar</span>|:<span class="prefix_string">s</span>|<span class="value_string">baz</span>|,
-					<span class="prefix_string">s</span>|<span class="value_string">test</span>|:<span class="prefix_string">s</span>|<span class="value_string">test</span>|,
-				},
-				<span class="prefix_string">s</span>|<span class="value_string">new_field</span>|:<span class="prefix_string">s</span>|<span class="value_string">new_value</span>|,
-				<span class="prefix_string">s</span>|<span class="value_string">vec</span>|:<span class="prefix_vector">v</span>[
-					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-					<span class="prefix_number">n</span>|<span class="value_number">1</span>|,
-				],
-				<span class="prefix_string">s</span>|<span class="value_string">num</span>|:<span class="prefix_number">n</span>|<span class="value_number">0</span>|,
 				<span class="prefix_string">s</span>|<span class="value_string">name</span>|:<span class="prefix_string">s</span>|<span class="value_string">foo</span>|,
 			},
 		},
