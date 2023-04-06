@@ -31,7 +31,7 @@ nav:
     - Native: tutorial/native/index.md
     - Python: tutorial/python/index.md
   - Release Notes:
-    - 0.2.0: release_notes/0.2.0.md
+    - 0.2: release_notes/0.2.0.md
 
 markdown_extensions:
   - pymdownx.highlight:
