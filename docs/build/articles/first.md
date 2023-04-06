@@ -67,7 +67,7 @@ If the pipeline has only one step, the `q` vector is not needed.
 To run AnnaDB locally please type the next command in the terminal:
 
 ```shell
-docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
+docker run --init -p 10001:10001 -t romanright/annadb:0.2.0
 ```
 
 ### Client
