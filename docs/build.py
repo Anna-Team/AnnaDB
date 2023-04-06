@@ -11,12 +11,18 @@ from docs_gen.offset import build_offset
 from docs_gen.project import build_project
 from docs_gen.sort import build_sort
 from docs_gen.update import build_update
+from docs_gen.release_notes.notes_0_2 import build_0_2
 
 connection = Connection.from_connection_string("annadb://localhost:10001")
 
 
 def clean_collections():
-    collections = [connection["test"], connection["products"], connection["categories"]]
+    collections = [
+        connection["test"],
+        connection["products"],
+        connection["categories"],
+        connection["users"]
+    ]
     for collection in collections:
         collection.delete().run()
 
@@ -55,3 +61,6 @@ build_native_tutorial(connection)
 
 clean_collections()
 build_first_article(connection)
+
+clean_collections()
+build_0_2(connection)
