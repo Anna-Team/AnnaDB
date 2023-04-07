@@ -12,7 +12,7 @@ use crate::data_types::primitives::path::PathToValue;
 use crate::data_types::primitives::string::StringPrimitive;
 use crate::data_types::primitives::Primitive;
 use crate::errors::DBError;
-use crate::storage::main::Storage;
+use crate::storage::Storage;
 use crate::tyson::de::Desereilize;
 use crate::tyson::map::TySONMap;
 use crate::tyson::primitive::TySONPrimitive;
