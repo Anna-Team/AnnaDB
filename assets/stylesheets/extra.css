@@ -1,0 +1,54 @@
+.code_shell{
+    background-color: #282828;
+    padding: 20px;
+    border-radius: 10px;
+    color: #bdae93 !important;
+}
+
+.highlighted {
+    background-color: #a89984;
+}
+
+/* COLORS */
+.prefix_map{
+    color: #a846b9;
+}
+
+.prefix_vector{
+    color: #a846b9;
+}
+
+.prefix_modifier{
+    color: #a846b9;
+}
+
+.prefix_primitive{
+    color: #3f6ec6;
+}
+
+.prefix_string{
+    color: #3f6ec6;
+}
+
+.prefix_number{
+    color: #3f6ec6;
+}
+
+.prefix_link{
+    color: #3f6ec6;
+}
+
+.prefix_bool{
+    color: #3f6ec6;
+}
+.prefix_null{
+    color: #3f6ec6;
+}
+
+
+.value_number{
+    color: #d52a2a;
+}
+.value_bool{
+    color: #a846b9;
+}

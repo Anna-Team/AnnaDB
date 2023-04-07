@@ -1,0 +1,836 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/img/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.5">
+    
+    
+      
+        <title>Roadmap - AnnaDB</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7a7fce14.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../assets/stylesheets/color_scheme.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="bright" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-structures" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="AnnaDB" class="md-header__button md-logo" aria-label="AnnaDB" data-md-component="logo">
+      
+  <img src="../assets/img/small_icon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AnnaDB
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Roadmap
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href=".." class="md-tabs__link">
+      About
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../install/" class="md-tabs__link">
+      Install
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../documentation/introduction/" class="md-tabs__link">
+        Documentation
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tutorial/native/" class="md-tabs__link">
+        Tutorial
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release_notes/0.2.0/" class="md-tabs__link">
+        Release Notes
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="AnnaDB" class="md-nav__button md-logo" aria-label="AnnaDB" data-md-component="logo">
+      
+  <img src="../assets/img/small_icon.svg" alt="logo">
+
+    </a>
+    AnnaDB
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        Install
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/data_types/" class="md-nav__link">
+        Data Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/insert/" class="md-nav__link">
+        Insert
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/get/" class="md-nav__link">
+        Get
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/find/" class="md-nav__link">
+        Find
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/sort/" class="md-nav__link">
+        Sort
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/limit/" class="md-nav__link">
+        Limit
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/offset/" class="md-nav__link">
+        Offset
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/update/" class="md-nav__link">
+        Update
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/delete/" class="md-nav__link">
+        Delete
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Tutorial
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorial
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/native/" class="md-nav__link">
+        Native
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/python/" class="md-nav__link">
+        Python
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Release Notes
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Release Notes
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release_notes/0.2.0/" class="md-nav__link">
+        0.2
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-structures" class="md-nav__link">
+    Data Structures
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#geo-points" class="md-nav__link">
+    Geo Points
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-vertices" class="md-nav__link">
+    Graph Vertices
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#indices" class="md-nav__link">
+    Indices
+  </a>
+  
+    <nav class="md-nav" aria-label="Indices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#b-tree" class="md-nav__link">
+    B-Tree
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text" class="md-nav__link">
+    Text
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geo" class="md-nav__link">
+    Geo
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#query" class="md-nav__link">
+    Query
+  </a>
+  
+    <nav class="md-nav" aria-label="Query">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#projections" class="md-nav__link">
+    Projections
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-search" class="md-nav__link">
+    Text search
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geo-operations" class="md-nav__link">
+    Geo operations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-operations" class="md-nav__link">
+    Graph operations
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-management" class="md-nav__link">
+    User Management
+  </a>
+  
+    <nav class="md-nav" aria-label="User Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#authentification" class="md-nav__link">
+    Authentification
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#roles" class="md-nav__link">
+    Roles
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rights" class="md-nav__link">
+    Rights
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Roadmap</h1>
+
+<div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;nav&quot;:true,&quot;resize&quot;:true,&quot;page&quot;:0,&quot;toolbar&quot;:&quot;pages zoom layers tags lightbox&quot;,&quot;edit&quot;:&quot;_blank&quot;,&quot;xml&quot;:&quot;&lt;mxfile host=\&quot;app.diagrams.net\&quot; modified=\&quot;2022-11-23T19:57:20.096Z\&quot; agent=\&quot;5.0 (X11; Ubuntu)\&quot; etag=\&quot;JOPRG3NJPHY454Kulp1A\&quot; version=\&quot;20.1.4\&quot; type=\&quot;device\&quot; pages=\&quot;2\&quot;&gt;&lt;diagram id=\&quot;qaJNo3Far8v-3JFAa8Bs\&quot; name=\&quot;Page-1\&quot;&gt;7Zzdc+I2EMD/lj4w0z6YETY48Mjn9W6SNhfSdvoobGHUCIvKciD56yvJMtjIyXFzgB3Xl0tiVrK+9qfV7hrScsbr3ScGN6s76iPSsoG/azmTlm13urbdkv+B/6Ilg0EvkQQM+1p2EMzxK9JCoKUx9lGUq8gpJRxv8kKPhiHyeE4GGaPbfLUlJfleNzBAhmDuQWJK/8I+XyXSfg8c5L8iHKzSnjtAl6xhWlkLohX06TYjcqYtZ8wo5cnVejdGRK5eui7JfbM3SvcDYyjkp9wwuwX35NZ5/BtaL8PXL+5DPNlZ/aSVZ0hiPWE9WP6SrgCjcegj2QhoOaPtCnM030BPlm6F0oVsxddEvOqIy4gz+oTGlFAmJCENRbXRkoZ8BteYSAge6IJyqqVzGjPV0opzoVC75wzFDzEF+UNWiNoBpQFBcIOjtkfXqsCLVNXZMmlTXB61mlDU6YvXz4hxLNQ5JDgIhZBTOeIlJiQdZMt2Zu54MgJaPtdTf8XBKwwsgtUcIjFlHAaP8vaJbNhcfq0R2SPaZURaHZ8QXSPOxHiBLnVvNBp6c1gp9NsDaZ2+lq0ylN2kQqjpDvZtHwAQF5qB7+DhpuFB8DAcjWez6/PQrR4PbsOD4GHaG06nk6vzYJfKA5n0n2+3bPB6y52vk8+/0Ts+tboNEMpAOJPZZHB1IKrHQ6cAB5eIbkc+fs5h4f4bS09HrbcVqQUXqgOd/manFictF1eB/D2yHhlCaWticKrBpOzHkCuTrmLc83ChHkRyLucgpp8nxgYFxLgFxOyFZyfGNoh5RDtuaPQbOswr/P+k0QqqtGuoVAy70ejJbl/1NGqe8p+FcnaGTrncuiec55nF0yKoj1dPrBtiBefuGvu+7KbQmudhYZRDjqm8yxqUTc85gMjj4PYMHIpocC4Fg5kjUNsb3FMs1qveZzF0/KU/OPM+L29fpw5jgb8m/NWw0GFbQO8pUEq1vGRhpN/GGQyjdDlGKrN2ml/3zf4ynbBg8bMYsZgrSH/98n5vuiBpVJaElK0hyZQ9Q4ah+C3MDOQxk7nFd+t5cPNWla3WmSzsApCUEMSFQbO0+2/eKU2mpa3fUNVf8kwJFnsn1G2CdFKqRK34UrSUtql4lThR5uf7298ohrh4wuJe2UDCu6XpMzvwkUeZMqQWX2HvKUSRnjkOMce5CWTqZhb73XoZvebq+TjaEPiSlqjwyQY/4fWGMg73eBEK+dHMj9FSOWhR4U91lAjNHoKHhLY8gYa4zg7LOQ2ZWwFDZoYR5wo8J5BDUT7nLPakgTgxBG1coUu4Qp28a1y2K9QxQ517Rv9BnlzzurtCC2+5BBdJS3TLj3g6RYnN8xiUJL8B5ggyb3WiNanX2XNGcqqIjvnQrPb5j3Oq9Dj/UQWVmjHv1xjphptT/7oJkG7pp/7A3OBJqNFs8e+MGKqzxe23I4gmFdKkQj54KmQY85VYPLwUJ4o6GX4sFVKrQGbpev7iMoGMWwG7ZoaojV1r7FpN7NoDJU1e91LGrIrWrGdYswfZr5lra7R6YnhdBa2aybY/IhEE2+AOhjBAaznbJtQuI8Fedqw9MDd882Anz10dsNt/gKYiD3YGH/YdT3Wkwb4pGwczpf9B8r91xKH0BPDAfBzwAf2VOqJxTX+l8ANS5qOBOdoIgfiSckt8f1FZEPHlVJSRgECZBlDXBC4QGe3zQUe9JqWU+YgVDLH4gzBlEidfZ8IqoP6dh8ReLwei1TOjqr1zfRUSC97bOUOLPIp3kDUo1g7FCrJofi5suDmgl5jFmDQs1o7FbvVYNB/0DuMgz+LvHm9YrB2LbvVYdAwWQdtumKsPc0fI3RS8Vf7KyJnPg0G7MXM1Qq6CzJlJfNDuNszVh7ljN68CzJkZfNDuNczVh7ljd+6SzImXh7/Mpsoyf+DOmf4H&lt;/diagram&gt;&lt;diagram id=\&quot;uv7Rr-JOpIjJdv9GNGB8\&quot; name=\&quot;Page-2\&quot;&gt;jZPJboMwEEC/xsdIBpooORaapqrUNhWH9OrGw6IaBhknQL6+Jgyb0khlkTxvFnsWMy/I6p0WRfKGEhRzuayZ98Rc13lwXdZ+XDYdWW+WHYh1KsloBGF6AYKc6CmVUM4MDaIyaTGHR8xzOJoZE1pjNTeLUM13LUQMNyA8CnVLD6k0CWWx5CN/gTRO+p0dTppM9MYEykRIrCbI2zIv0IimW2V1AKotXl+Xzu/5jnY4mIbc/MehiPefl0v8uv9Sj9nD+vDBi92CopyFOlHCIRQW2LflC/u/43kA1zxM0xdH4ymX0MbnzPOrJDUQFuLYais7DpYlJlNWcuwyVqIsyVSJb1A+agk6QIXa4hxz6+dHqVIh7VCiag/vR5gbmgxnRXLvxlyPXx/LS6PxB/4IODEWnozkxnJKHLSB+m5FnaFPdsABMzC6sSbksKbONnOxGufEXRFLJjPSM0GjGQ+Bx+7ZBTWwF8dBueom183b/gI=&lt;/diagram&gt;&lt;/mxfile&gt;&quot;}"></div>
+<script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
+
+<p><em>the dates could be changed during the development</em></p>
+<h2 id="data-structures">Data Structures</h2>
+<p>I plan to add more container data types to make working with different data fields more comfortable.</p>
+<h3 id="geo-points">Geo Points</h3>
+<p>Geo Points are points with coordinates to represent geographical data.</p>
+<h3 id="graph-vertices">Graph Vertices</h3>
+<p>To represent complex graph schemas graph vertices data structure will be added.</p>
+<h2 id="indices">Indices</h2>
+<p>To search data effectively, some kinds of indexes will be implemented.</p>
+<h3 id="b-tree">B-Tree</h3>
+<p>B-Tree is a classic index that helps compare, search and sort many data types effectively.</p>
+<h3 id="text">Text</h3>
+<p>The text index is needed to support full-text search over one or more text fields.</p>
+<h3 id="geo">Geo</h3>
+<p>Geo index helps to use geo operations like search in the area or search the nearest point effectively.</p>
+<h2 id="query">Query</h2>
+<p>Some new query types and operators will be implemented to support more use cases.</p>
+<h3 id="projections">Projections</h3>
+<p>Using projections, you will be allowed to set the output data format.</p>
+<h3 id="text-search">Text search</h3>
+<p>Text search queries are used to search large amounts of text.</p>
+<h3 id="geo-operations">Geo operations</h3>
+<p>To work with geo data, some geo operations will be implemented.</p>
+<h3 id="graph-operations">Graph operations</h3>
+<p>Graph operations help to work with graph structures.</p>
+<h2 id="user-management">User Management</h2>
+<p>User management is an essential part of the database. It will be implemented by version 1.0 too.</p>
+<h3 id="authentification">Authentification</h3>
+<p>The authentification manager checks the user credentials before giving the data access.</p>
+<h3 id="roles">Roles</h3>
+<p>Different user roles will be supported: admin, writer, and reader.</p>
+<h3 id="rights">Rights</h3>
+<p>Per-collection access rights could be customized for each user</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.407015b8.min.js"></script>
+      
+    
+  </body>
+</html>
