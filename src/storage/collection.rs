@@ -1,21 +1,19 @@
-use crate::constants::INTERNAL_COLLECTION_NAME;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::{read_to_string, File};
 
+use crate::constants::INTERNAL_COLLECTION_NAME;
 use crate::data_types::item::Item;
-
-use crate::data_types::primitives::link::Link;
+use crate::data_types::primitives::link::{Link, LinkData};
+use crate::data_types::primitives::path::Path;
 use crate::data_types::primitives::Primitive;
-
-use crate::DBError;
-
 use crate::tyson::de::Desereilize;
+use crate::{DBError, PathToValue};
 
 #[derive(Debug)]
 pub struct Collection {
     pub name: String,
-    pub(crate) values: HashMap<Link, Item>,
+    pub(crate) values: HashMap<Link, LinkData>,
 }
 
 impl Desereilize for Collection {
@@ -40,7 +38,7 @@ impl Desereilize for Collection {
                     self.values.insert(o, data.1);
                 }
             },
-            _ => return Err(DBError::new("Internal storage read error")),
+            _ => return Err(DBError::new("Invalid data for collection")),
         }
 
         Ok(true)

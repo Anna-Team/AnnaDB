@@ -23,6 +23,7 @@ mod config;
 mod constants;
 pub mod data_types;
 mod errors;
+pub mod index;
 pub mod query;
 pub mod response;
 pub mod storage;

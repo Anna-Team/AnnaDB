@@ -36,6 +36,7 @@ impl PathToValue {
     // }
 }
 
+#[derive(Debug)]
 pub enum Path {
     PathToValue(PathToValue),
     Root(RootPrimitive),
