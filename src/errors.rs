@@ -2,7 +2,7 @@ use crate::tyson::de::Rule;
 use pest::error::Error;
 use std::ffi::OsString;
 use std::num::{ParseFloatError, ParseIntError};
-use uuid::ParseError;
+use uuid::Error as UuidError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DBError {
@@ -24,7 +24,7 @@ pub enum DBError {
     ParseFloat(#[from] ParseFloatError),
 
     #[error("UUID parse error: {0}")]
-    UuidParse(#[from] ParseError),
+    UuidParse(#[from] UuidError),
 
     #[error("Unexpected parsing error")]
     UnexpectedParsing,
