@@ -27,7 +27,7 @@ impl TySONMap for EqOperator {
                 self.values.push((k, o));
                 Ok(true)
             }
-            _ => Err(DBError::new("Eq primitive can contain only primitives")),
+            _ => Err(DBError::TypeMismatch("eq operator can contain only primitives".to_string())),
         }
     }
 

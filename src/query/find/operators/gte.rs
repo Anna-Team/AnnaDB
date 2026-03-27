@@ -27,7 +27,7 @@ impl TySONMap for GteOperator {
                 self.values.push((k, o));
                 Ok(true)
             }
-            _ => Err(DBError::new("GT operator can contain only primitives")),
+            _ => Err(DBError::TypeMismatch("gte operator can contain only primitives".to_string())),
         }
     }
 

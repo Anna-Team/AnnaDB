@@ -65,7 +65,9 @@ pub struct ErrorTransactionResponse {
 
 impl From<DBError> for ErrorTransactionResponse {
     fn from(e: DBError) -> Self {
-        Self { error: e.msg }
+        Self {
+            error: e.to_string(),
+        }
     }
 }
 

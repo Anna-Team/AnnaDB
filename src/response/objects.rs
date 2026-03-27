@@ -27,7 +27,7 @@ impl TySONMap for ResponseObjects {
             Primitive::Link(o) => {
                 self.values.push((o, v));
             }
-            _ => return Err(DBError::new("Only Link primitives can be ids")),
+            _ => return Err(DBError::TypeMismatch("only Link primitives can be ids".to_string())),
         }
         Ok(true)
     }

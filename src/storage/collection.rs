@@ -40,7 +40,7 @@ impl Desereilize for Collection {
                     self.values.insert(o, data.1);
                 }
             },
-            _ => return Err(DBError::new("Internal storage read error")),
+            _ => return Err(DBError::StorageRead),
         }
 
         Ok(true)
@@ -63,9 +63,7 @@ impl Collection {
                 })
             }
         } else {
-            Err(DBError::new(
-                format!("Invalid collection name: {}", name).as_str(),
-            ))
+            Err(DBError::InvalidCollectionName(name))
         }
     }
 
@@ -85,9 +83,7 @@ impl Collection {
         Ok(self
             .values
             .get(id)
-            .ok_or(DBError::new(
-                "Internal error: there is no such id in the collection",
-            ))?
+            .ok_or(DBError::ItemNotFound)?
             .clone())
     }
 }

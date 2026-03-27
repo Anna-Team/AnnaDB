@@ -24,7 +24,7 @@ impl TySONVector for GetQuery {
         match &item {
             Item::Primitive(Primitive::Link(_)) => self.items.push(item),
             _ => {
-                return Err(DBError::new("Get query can contain only links"));
+                return Err(DBError::TypeMismatch("get query can contain only links".to_string()));
             }
         }
         Ok(true)
@@ -46,7 +46,7 @@ impl GetQuery {
             match &item {
                 Item::Primitive(Primitive::Link(o)) => ids.push(o),
                 _ => {
-                    return Err(DBError::new("Get query can contain only links"));
+                    return Err(DBError::TypeMismatch("get query can contain only links".to_string()));
                 }
             }
         }

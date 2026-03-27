@@ -105,7 +105,7 @@ pub trait Desereilize {
                 let res = Self::deserialize_primitive(&self, pair)?;
                 Ok(Item::from(res))
             }
-            _ => Err(DBError::new("Deserialization error")),
+            _ => Err(DBError::Deserialization),
         };
     }
 
@@ -138,7 +138,7 @@ pub trait Desereilize {
                 }
                 Ok(result)
             }
-            _ => Err(DBError::new("Deserialization error")),
+            _ => Err(DBError::Deserialization),
         }
     }
 

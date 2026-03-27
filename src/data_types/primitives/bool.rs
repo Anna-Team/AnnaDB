@@ -24,7 +24,7 @@ impl TySONPrimitive for BoolPrimitive {
         match value.as_str() {
             "true" => Ok(Self { value: true }),
             "false" => Ok(Self { value: false }),
-            _ => Err(DBError::new("Bool parsing error")),
+            _ => Err(DBError::BoolParse),
         }
     }
 

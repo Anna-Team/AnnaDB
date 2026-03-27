@@ -34,7 +34,7 @@ impl TransactionStep {
                 collection_name,
                 query_set: QuerySet::from(q),
             }),
-            _ => Err(DBError::new("Unexpected queryset item type")),
+            _ => Err(DBError::UnexpectedType("queryset item".to_string())),
         }
     }
 }
@@ -60,8 +60,8 @@ impl Desereilize for Transaction {
                 self.steps.push(step);
             }
             _ => {
-                return Err(DBError::new(
-                    "Query parsing error. Keys must be collections",
+                return Err(DBError::Validation(
+                    "query keys must be collections".to_string(),
                 ))
             }
         }

@@ -31,9 +31,7 @@ impl TySONModifier for AscOperator {
             Item::Primitive(Primitive::RootPrimitive(_)) => Ok(Self {
                 expr: Box::new(value),
             }),
-            _ => Err(DBError::new(
-                format!("Can not sort by {}", value.serialize()).as_str(),
-            )),
+            _ => Err(DBError::TypeMismatch(format!("cannot sort by {}", value.serialize()))),
         }
     }
 
@@ -106,9 +104,7 @@ impl TySONVector for SortQuery {
                 self.items.push(item);
                 Ok(true)
             }
-            _ => Err(DBError::new(
-                format!("Sort does not support '{}' as operator", item.serialize()).as_str(),
-            )),
+            _ => Err(DBError::UnsupportedOperation(format!("sort operator: {}", item.serialize()))),
         }
     }
 

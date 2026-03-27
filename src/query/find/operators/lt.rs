@@ -27,7 +27,7 @@ impl TySONMap for LtOperator {
                 self.values.push((k, o));
                 Ok(true)
             }
-            _ => Err(DBError::new("GT operator can contain only primitives")),
+            _ => Err(DBError::TypeMismatch("lt operator can contain only primitives".to_string())),
         }
     }
 

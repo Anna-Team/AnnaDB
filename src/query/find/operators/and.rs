@@ -41,7 +41,7 @@ impl TySONVector for AndOperator {
             Item::Map(MapItem::LteOperator(_)) => {
                 self.items.push(item);
             }
-            _ => return Err(DBError::new("Unsupported item for AND operator")),
+            _ => return Err(DBError::UnsupportedOperation("item for AND operator".to_string())),
         };
         Ok(true)
     }

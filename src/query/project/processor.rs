@@ -82,11 +82,11 @@ pub fn resolve(
                             )?,
                         )?;
                     }
-                    _ => return Err(DBError::new("Projection keys must be strings")),
+                    _ => return Err(DBError::TypeMismatch("projection keys must be strings".to_string())),
                 }
             }
             Ok(new_map.to_item())
         }
-        _ => Err(DBError::new("Projection rule is not supported")),
+        _ => Err(DBError::UnsupportedOperation("projection rule".to_string())),
     }
 }

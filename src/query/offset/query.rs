@@ -24,7 +24,7 @@ impl TySONModifier for OffsetQuery {
             Item::Primitive(Primitive::NumberPrimitive(_pr)) => Ok(Self {
                 expr: Box::new(value),
             }),
-            _ => Err(DBError::new("Limit supports only numbers as a parameter")),
+            _ => Err(DBError::TypeMismatch("offset supports only numbers".to_string())),
         }
     }
 

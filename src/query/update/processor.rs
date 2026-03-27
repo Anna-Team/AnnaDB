@@ -77,13 +77,13 @@ fn manage_operator(
                     update_item(storage, found_item, insert_buf, inserted_value)?;
                 }
                 _ => {
-                    return Err(DBError::new("Inc operator supports numbers only"));
+                    return Err(DBError::TypeMismatch("inc operator supports numbers only".to_string()));
                 }
             },
             _ => {}
         },
         _ => {
-            return Err(DBError::new("Unsupported update operation"));
+            return Err(DBError::UnsupportedOperation("update operator".to_string()));
         }
     }
 
@@ -160,7 +160,7 @@ pub(crate) fn update(
             Item::Map(op) => {
                 result.extend(process(op, storage, &filter_buf, &mut insert_buf)?);
             }
-            _ => return Err(DBError::new("Unexpected update operator")),
+            _ => return Err(DBError::UnexpectedType("update operator".to_string())),
         }
     }
     let meta = Meta::UpdateMeta(UpdateMeta::new(result.len()));

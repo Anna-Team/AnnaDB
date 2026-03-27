@@ -24,7 +24,7 @@ impl TySONVector for ResponseIds {
             Item::Primitive(Primitive::Link(_)) => {
                 self.items.push(item);
             }
-            _ => return Err(DBError::new("Only Link primitives can be ids")),
+            _ => return Err(DBError::TypeMismatch("only Link primitives can be ids".to_string())),
         }
         Ok(true)
     }

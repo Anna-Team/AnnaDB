@@ -131,7 +131,7 @@ impl Storage {
                                 &mut insert_buf,
                             )?)
                         } else {
-                            return Err(DBError::new("Insert query is unavailable"));
+                            return Err(DBError::QueryUnavailable("insert".to_string()));
                         }
                     }
                     Item::Vector(VectorItem::FindQuery(o)) => {
@@ -147,7 +147,7 @@ impl Storage {
                                 is_first,
                             )?)
                         } else {
-                            return Err(DBError::new("Find query is unavailable"));
+                            return Err(DBError::QueryUnavailable("find".to_string()));
                         }
                     }
                     Item::Vector(VectorItem::GetQuery(o)) => {
@@ -155,7 +155,7 @@ impl Storage {
                             next_available = o.next_available();
                             Some(get(&self, collection_name.clone(), &o, &mut filter_buf)?)
                         } else {
-                            return Err(DBError::new("Get query is unavailable"));
+                            return Err(DBError::QueryUnavailable("get".to_string()));
                         }
                     }
                     Item::Vector(VectorItem::UpdateQuery(o)) => {
@@ -163,7 +163,7 @@ impl Storage {
                             next_available = o.next_available();
                             Some(update(&self, &o, &mut insert_buf, &filter_buf)?)
                         } else {
-                            return Err(DBError::new("Update query is unavailable"));
+                            return Err(DBError::QueryUnavailable("update".to_string()));
                         }
                     }
                     Item::Vector(VectorItem::SortQuery(o)) => {
@@ -171,7 +171,7 @@ impl Storage {
                             next_available = o.next_available();
                             Some(sort(&o, &self, &mut filter_buf, &insert_buf)?)
                         } else {
-                            return Err(DBError::new("Sort query is unavailable"));
+                            return Err(DBError::QueryUnavailable("sort".to_string()));
                         }
                     }
                     Item::Primitive(Primitive::DeleteQuery(o)) => {
@@ -204,7 +204,7 @@ impl Storage {
                             }
                             Some(delete_res)
                         } else {
-                            return Err(DBError::new("Delete query is unavailable"));
+                            return Err(DBError::QueryUnavailable("delete".to_string()));
                         }
                     }
                     Item::Modifier(ModifierItem::LimitQuery(o)) => {
@@ -212,7 +212,7 @@ impl Storage {
                             next_available = o.next_available();
                             Some(limit(&o, &mut filter_buf)?)
                         } else {
-                            return Err(DBError::new("Limit query is unavailable"));
+                            return Err(DBError::QueryUnavailable("limit".to_string()));
                         }
                     }
                     Item::Modifier(ModifierItem::OffsetQuery(o)) => {
@@ -220,7 +220,7 @@ impl Storage {
                             next_available = o.next_available();
                             Some(offset(&o, &mut filter_buf)?)
                         } else {
-                            return Err(DBError::new("Offset query is unavailable"));
+                            return Err(DBError::QueryUnavailable("offset".to_string()));
                         }
                     }
                     Item::Map(MapItem::ProjectQuery(o)) => {
@@ -232,11 +232,11 @@ impl Storage {
                             let meta = Meta::FindMeta(FindMeta::new(filter_buf.ids.len()));
                             Some(QueryResponse::new(data, meta, QueryStatus::NotFetched))
                         } else {
-                            return Err(DBError::new("Project query is unavailable"));
+                            return Err(DBError::QueryUnavailable("project".to_string()));
                         }
                     }
                     _ => {
-                        return Err(DBError::new("Unexpected query type"));
+                        return Err(DBError::UnexpectedQueryType);
                     }
                 };
                 if query_response.is_some() {
@@ -353,7 +353,7 @@ impl Storage {
                 }
                 buf.insert(link.clone(), Item::Map(m));
             }
-            _ => return Err(DBError::new("Unexpected insert type")),
+            _ => return Err(DBError::UnexpectedType("insert item".to_string())),
         }
         Ok(Item::Primitive(Primitive::Link(link)))
     }
@@ -373,7 +373,7 @@ impl Storage {
                 let collection = self
                     .warehouse
                     .get(id.get_prefix().as_str())
-                    .ok_or(DBError::new("Getting collection internal error"))?;
+                    .ok_or(DBError::CollectionNotFound(id.get_prefix()))?;
                 match collection.values.get(id) {
                     Some(value) => Ok(self.fetch_or_project(
                         value,
@@ -436,7 +436,7 @@ impl Storage {
     ) -> Result<Item, DBError> {
         let counter = counter + 1;
         if counter > FETCH_DEPTH_LIMIT {
-            return Err(DBError::new("Fetch recursion error"));
+            return Err(DBError::FetchRecursion);
         }
         match item {
             Item::Primitive(Primitive::Link(o)) => {
@@ -469,14 +469,14 @@ impl Storage {
 
                 Ok(Item::Map(new_map))
             }
-            _ => Err(DBError::new("Internal fetch error")),
+            _ => Err(DBError::UnexpectedType("fetch item".to_string())),
         }
     }
 
     pub fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError> {
         match self.get_collection(id.get_prefix()) {
             Some(collection) => Ok(collection.get_value(&id)?),
-            None => Err(DBError::new("Getting value by link error")),
+            None => Err(DBError::CollectionNotFound(id.get_prefix())),
         }
     }
 
@@ -501,7 +501,7 @@ impl Storage {
             None => match self.get_collection(id.get_prefix()) {
                 Some(collection) => collection.get_value(&id)?,
                 None => {
-                    return Err(DBError::new("Getting value by link error"));
+                    return Err(DBError::CollectionNotFound(id.get_prefix()));
                 }
             },
         };

@@ -208,6 +208,6 @@ pub fn compare(
                 return Ok(Res::None);
             }
         }
-        _ => Err(DBError::new("Unsupported compare operator")),
+        _ => Err(DBError::UnsupportedOperation("compare operator".to_string())),
     }
 }

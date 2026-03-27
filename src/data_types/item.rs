@@ -29,7 +29,7 @@ impl Item {
     pub(crate) fn to_link(&self) -> Result<Link, DBError> {
         match self {
             Self::Primitive(Primitive::Link(o)) => Ok(o.clone()),
-            _ => Err(DBError::new("Unexpected type. Link was expected")),
+            _ => Err(DBError::TypeMismatch("Link expected".to_string())),
         }
     }
 }

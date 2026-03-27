@@ -46,7 +46,7 @@ impl StorageVector {
             self.items[index] = item;
             Ok(true)
         } else {
-            Err(DBError::new("Vector index does not exist"))
+            Err(DBError::Validation("vector index does not exist".to_string()))
         }
     }
 }

@@ -81,7 +81,7 @@ impl TySONMap for MapItem {
             RESPONSE_OBJECTS => Ok(MapItem::ResponseObjects(ResponseObjects::new(
                 "".to_string(),
             )?)),
-            _ => Err(DBError::new("Unexpected map type")),
+            _ => Err(DBError::UnexpectedType(format!("map: {}", prefix))),
         }
     }
 

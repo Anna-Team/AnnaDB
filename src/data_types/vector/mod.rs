@@ -91,7 +91,7 @@ impl TySONVector for VectorItem {
             RESPONSE_IDS => Ok(VectorItem::ResponseIds(ResponseIds::new("".to_string())?)),
 
             // OTHER
-            _ => Err(DBError::new("Unexpected vector type")),
+            _ => Err(DBError::UnexpectedType(format!("vector: {}", prefix))),
         }
     }
 

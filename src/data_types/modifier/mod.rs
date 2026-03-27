@@ -36,7 +36,7 @@ impl TySONModifier for ModifierItem {
             DESC_OPERATOR => Ok(Self::DescOperator(DescOperator::new(prefix, value)?)),
             LIMIT_QUERY => Ok(Self::LimitQuery(LimitQuery::new(prefix, value)?)),
             OFFSET_QUERY => Ok(Self::OffsetQuery(OffsetQuery::new(prefix, value)?)),
-            _ => Err(DBError::new("Unexpected modifier type")),
+            _ => Err(DBError::UnexpectedType(format!("modifier: {}", prefix))),
         }
     }
 

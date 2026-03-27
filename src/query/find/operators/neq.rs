@@ -27,7 +27,7 @@ impl TySONMap for NeqOperator {
                 self.values.push((k, o));
                 Ok(true)
             }
-            _ => Err(DBError::new("NEQ operator can contain only primitives")),
+            _ => Err(DBError::TypeMismatch("neq operator can contain only primitives".to_string())),
         }
     }
 

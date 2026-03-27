@@ -29,7 +29,7 @@ impl TySONMap for StorageMap {
             Primitive::StringPrimitive(o) => {
                 self.values.insert(o, v.clone());
             }
-            _ => return Err(DBError::new("Storage map allows only string keys")),
+            _ => return Err(DBError::TypeMismatch("storage map allows only string keys".to_string())),
         }
         Ok(true)
     }
