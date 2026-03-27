@@ -2,6 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
+use tracing::{debug, error, info, warn};
 
 use crate::constants::{
     DELETED, FETCH_DEPTH_LIMIT, INTERNAL_COLLECTION_NAME, NULL, ROOT, STORAGE_MAP, STORAGE_VECTOR,
@@ -87,15 +88,20 @@ impl Storage {
         for path in paths {
             let collection_name = path?.file_name().into_string()?.replace(".tyson", "");
             let collection = Collection::new(collection_name.clone(), wh_path.clone())?;
+            info!(collection = %collection_name, "loaded collection");
             warehouse.insert(collection_name.clone(), collection);
         }
+        info!(collections = warehouse.len(), path = %wh_path, "storage ready");
         Ok(Self { warehouse, wh_path })
     }
 
     pub fn run(&mut self, data: String) -> String {
         return match self.run_transaction(data) {
             Ok(response) => response.serialize(),
-            Err(e) => ErrorTransactionResponse::from(e).serialize(),
+            Err(e) => {
+                debug!(error = %e, "transaction failed");
+                ErrorTransactionResponse::from(e).serialize()
+            }
         };
     }
 
@@ -270,6 +276,7 @@ impl Storage {
             for collection_name in &buf.dropped_collections {
                 match self.get_collection(collection_name.to_string()) {
                     Some(collection) => {
+                        info!(collection = %collection_name, "dropping collection");
                         fs::remove_file(collection.get_path(self.wh_path.clone()))?; // TODO clean internal collection too
                         self.warehouse.remove(collection_name);
                     }
