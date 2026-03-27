@@ -29,6 +29,7 @@ use crate::response::{
 };
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
+use crate::storage::wal::Wal;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
@@ -73,10 +74,10 @@ pub struct FoundRootItem {
     pub value: Item,
 }
 
-#[derive(Debug)]
 pub struct Storage {
     pub(crate) warehouse: HashMap<String, Collection>,
     wh_path: String,
+    wal: Wal,
 }
 
 impl Storage {
@@ -86,13 +87,46 @@ impl Storage {
         let mut warehouse: HashMap<String, Collection> = HashMap::new();
         Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.clone())?;
         for path in paths {
-            let collection_name = path?.file_name().into_string()?.replace(".tyson", "");
+            let file_name = path?.file_name().into_string()?;
+            if !file_name.ends_with(".tyson") {
+                continue;
+            }
+            let collection_name = file_name.replace(".tyson", "");
             let collection = Collection::new(collection_name.clone(), wh_path.clone())?;
             info!(collection = %collection_name, "loaded collection");
             warehouse.insert(collection_name.clone(), collection);
         }
+
+        let mut wal = Wal::new(&wh_path)?;
+
+        // Replay WAL entries to recover any data not yet in .tyson files
+        let entries = wal.read_entries()?;
+        let mut max_tx_id: u64 = 0;
+        for entry in &entries {
+            if entry.tx_id > max_tx_id {
+                max_tx_id = entry.tx_id;
+            }
+        }
+        if !entries.is_empty() {
+            info!(count = entries.len(), "replaying WAL entries");
+            let mut storage_tmp = Self {
+                warehouse,
+                wh_path: wh_path.clone(),
+                wal: Wal::new(&wh_path)?,
+            };
+            for entry in entries {
+                storage_tmp.apply_buffer(&entry.buffer)?;
+            }
+            warehouse = storage_tmp.warehouse;
+        }
+        wal.update_tx_counter(max_tx_id);
+
         info!(collections = warehouse.len(), path = %wh_path, "storage ready");
-        Ok(Self { warehouse, wh_path })
+        Ok(Self {
+            warehouse,
+            wh_path,
+            wal,
+        })
     }
 
     pub fn run(&mut self, data: String) -> String {
@@ -267,35 +301,32 @@ impl Storage {
                 }
             }
         }
-        self.sync_buf(&insert_buf)?;
+        // Write to WAL first (durability point), then apply to memory
+        if insert_buf.changed {
+            self.wal.append(&insert_buf)?;
+        }
+        self.apply_buffer(&insert_buf)?;
+        // Also persist to .tyson files for backwards compatibility
+        self.sync_buf_to_disk(&insert_buf)?;
         Ok(transaction_response)
     }
 
-    fn sync_buf(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
-        if buf.dropped_collections.len() > 0 {
-            for collection_name in &buf.dropped_collections {
-                match self.get_collection(collection_name.to_string()) {
-                    Some(collection) => {
-                        info!(collection = %collection_name, "dropping collection");
-                        fs::remove_file(collection.get_path(self.wh_path.clone()))?; // TODO clean internal collection too
-                        self.warehouse.remove(collection_name);
-                    }
-                    _ => {}
-                };
-            }
+    fn apply_buffer(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
+        // Apply dropped collections
+        for collection_name in &buf.dropped_collections {
+            self.warehouse.remove(collection_name);
         }
+        // Apply item changes to in-memory state
         if buf.changed {
             for (link, item) in &buf.items {
                 let collection = match self.warehouse.entry(link.get_prefix()) {
                     Entry::Occupied(o) => o.into_mut(),
                     Entry::Vacant(v) => {
                         let inserting_collection =
-                            Collection::new(link.get_prefix(), self.wh_path.clone())?;
+                            Collection::create_empty(link.get_prefix());
                         v.insert(inserting_collection)
                     }
                 };
-                let mut file = collection.get_file(self.wh_path.clone())?;
-                write!(file, "{}:{};", link.serialize(), item.serialize())?;
                 match item {
                     Item::Primitive(Primitive::DeletedPrimitive(_)) => {
                         collection.values.remove(link);
@@ -304,6 +335,29 @@ impl Storage {
                         collection.values.insert(link.clone(), item.clone());
                     }
                 }
+            }
+        }
+        Ok(())
+    }
+
+    fn sync_buf_to_disk(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
+        if buf.dropped_collections.len() > 0 {
+            for collection_name in &buf.dropped_collections {
+                let path = format!("{}/{}.tyson", self.wh_path, collection_name);
+                if std::path::Path::new(&path).exists() {
+                    info!(collection = %collection_name, "dropping collection file");
+                    fs::remove_file(&path)?;
+                }
+            }
+        }
+        if buf.changed {
+            for (link, item) in &buf.items {
+                let collection = match self.warehouse.entry(link.get_prefix()) {
+                    Entry::Occupied(o) => o.into_mut(),
+                    Entry::Vacant(_) => continue,
+                };
+                let mut file = collection.get_file(self.wh_path.clone())?;
+                write!(file, "{}:{};", link.serialize(), item.serialize())?;
             }
         }
         Ok(())

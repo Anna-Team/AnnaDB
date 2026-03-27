@@ -50,6 +50,13 @@ impl Desereilize for Collection {
 }
 
 impl Collection {
+    pub(crate) fn create_empty(name: String) -> Self {
+        Self {
+            name,
+            values: HashMap::new(),
+        }
+    }
+
     pub(crate) fn new(name: String, wh_path: String) -> Result<Self, DBError> {
         if !name.starts_with("_") || name == INTERNAL_COLLECTION_NAME.to_string() {
             let file_path = format!("{}/{}.tyson", wh_path, name);
@@ -76,6 +83,7 @@ impl Collection {
     pub(crate) fn get_file(&self, wh_path: String) -> Result<File, DBError> {
         let file_path = self.get_path(wh_path);
         Ok(fs::OpenOptions::new()
+            .create(true)
             .write(true)
             .append(true)
             .open(file_path.as_str())?)
