@@ -1,9 +1,11 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::{STORAGE_MAP, STRING};
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, MapItem, Primitive, StringPrimitive, TySONMap, TySONPrimitive};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StorageMap {
     pub(crate) values: HashMap<StringPrimitive, Item>,
 }

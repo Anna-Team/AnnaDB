@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::INTERNAL_COLLECTION_NAME;
 use std::collections::HashMap;
 use std::fs;
@@ -12,7 +14,7 @@ use crate::DBError;
 
 use crate::tyson::de::Desereilize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Collection {
     pub name: String,
     pub(crate) values: HashMap<Link, Item>,

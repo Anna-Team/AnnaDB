@@ -1,8 +1,10 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::STORAGE_VECTOR;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, TySONVector, VectorItem};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StorageVector {
     pub(crate) items: Vec<Item>,
 }

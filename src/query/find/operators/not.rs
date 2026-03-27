@@ -1,11 +1,13 @@
 use std::fmt::Debug;
 
+use serde::{Serialize, Deserialize};
+
 use crate::constants::NOT_OPERATOR;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::modifier::TySONModifier;
 use crate::{DBError, Item};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NotOperator {
     expr: Box<Item>, // TODO looks ugly
 }

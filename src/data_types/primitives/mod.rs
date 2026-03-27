@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::{
     BOOL, COLLECTION_NAME, DELETED, DELETE_QUERY, KEEP, NULL, NUMBER, PATH_TO_VALUE, ROOT, STRING,
     UTS,
@@ -27,7 +29,7 @@ pub mod root;
 pub mod string;
 pub mod unix_timestamp;
 
-#[derive(Debug, Clone, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Primitive {
     Link(Link),
     StringPrimitive(StringPrimitive),

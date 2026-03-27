@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use serde::{Serialize, Deserialize};
+
 use crate::constants::{ASC_OPERATOR, DESC_OPERATOR, SORT_QUERY};
 
 use crate::data_types::modifier::ModifierItem;
@@ -8,7 +10,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::modifier::TySONModifier;
 use crate::{DBError, Item, Primitive, TySONVector, VectorItem};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AscOperator {
     expr: Box<Item>, // TODO looks ugly
 }
@@ -46,7 +48,7 @@ impl AscOperator {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DescOperator {
     expr: Box<Item>, // TODO looks ugly
 }
@@ -78,7 +80,7 @@ impl DescOperator {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SortQuery {
     pub items: Vec<Item>,
 }

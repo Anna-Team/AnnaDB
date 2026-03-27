@@ -1,9 +1,11 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::INC_OPERATOR;
 use crate::{DBError, Item, MapItem, Primitive, TySONMap};
 
 use crate::tyson::item::BaseTySONItemInterface;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct IncOperator {
     values: Vec<(Primitive, Item)>,
 }

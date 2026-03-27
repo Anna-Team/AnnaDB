@@ -1,9 +1,11 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::RESPONSE_OBJECTS;
 use crate::{DBError, Item, Link, MapItem, Primitive, TySONMap};
 
 use crate::tyson::item::BaseTySONItemInterface;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ResponseObjects {
     pub values: Vec<(Link, Item)>,
 }

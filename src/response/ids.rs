@@ -1,9 +1,11 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::RESPONSE_IDS;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, Link, Primitive, TySONVector, VectorItem};
 use std::collections::HashSet;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ResponseIds {
     pub(crate) items: Vec<Item>,
 }

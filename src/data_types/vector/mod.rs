@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use serde::{Serialize, Deserialize};
+
 use crate::query::find::query::FindQuery;
 use crate::query::insert::query::InsertQuery;
 use crate::query::queryset::QuerySet;
@@ -22,7 +24,7 @@ use crate::DBError;
 
 pub mod storage;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum VectorItem {
     StorageVector(StorageVector),
 

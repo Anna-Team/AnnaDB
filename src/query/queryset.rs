@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::QUERY_SET;
 use crate::query::delete::query::DeleteQuery;
 use crate::query::find::query::FindQuery;
@@ -7,7 +9,7 @@ use crate::query::update::query::UpdateQuery;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, TySONVector, VectorItem};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct QuerySet {
     pub(crate) items: Vec<Item>,
 }

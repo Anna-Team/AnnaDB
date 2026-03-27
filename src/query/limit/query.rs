@@ -1,10 +1,12 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::LIMIT_QUERY;
 use crate::query::operations::QueryOperation;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::modifier::TySONModifier;
 use crate::{DBError, Item, Primitive};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LimitQuery {
     expr: Box<Item>, // TODO looks ugly
 }

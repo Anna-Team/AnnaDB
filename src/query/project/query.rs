@@ -1,9 +1,11 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::PROJECT_QUERY;
 use crate::query::operations::QueryOperation;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, MapItem, Primitive, TySONMap};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ProjectQuery {
     pub(crate) values: Vec<(Primitive, Item)>,
 }

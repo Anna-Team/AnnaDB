@@ -1,10 +1,12 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::GET_QUERY;
 use crate::query::operations::QueryOperation;
 use crate::{DBError, Item, Link, Primitive, TySONVector, VectorItem};
 
 use crate::tyson::item::BaseTySONItemInterface;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct GetQuery {
     pub(crate) items: Vec<Item>,
 }

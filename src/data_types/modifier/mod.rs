@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::{ASC_OPERATOR, DESC_OPERATOR, LIMIT_QUERY, NOT_OPERATOR, OFFSET_QUERY};
 use crate::query::find::operators::not::NotOperator;
 use crate::query::limit::query::LimitQuery;
@@ -7,7 +9,7 @@ use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::modifier::TySONModifier;
 use crate::{DBError, Item};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ModifierItem {
     NotOperator(NotOperator),
     AscOperator(AscOperator),

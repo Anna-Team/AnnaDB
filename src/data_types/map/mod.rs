@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::{
     EQ_OPERATOR, GTE_OPERATOR, GT_OPERATOR, INC_OPERATOR, LTE_OPERATOR, LT_OPERATOR, NEQ_OPERATOR,
     PROJECT_QUERY, RESPONSE_OBJECTS, SET_OPERATOR, STORAGE_MAP,
@@ -21,7 +23,7 @@ use crate::DBError;
 
 pub mod storage;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MapItem {
     StorageMap(StorageMap),
 

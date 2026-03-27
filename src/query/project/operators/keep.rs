@@ -1,11 +1,13 @@
 use std::fmt::Debug;
 
+use serde::{Serialize, Deserialize};
+
 use crate::constants::KEEP;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Serialize, Deserialize)]
 pub struct KeepPrimitive;
 
 impl BaseTySONItemInterface for KeepPrimitive {

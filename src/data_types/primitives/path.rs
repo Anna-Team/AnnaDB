@@ -1,12 +1,14 @@
 use std::fmt::Debug;
 
+use serde::{Serialize, Deserialize};
+
 use crate::constants::PATH_TO_VALUE;
 use crate::data_types::primitives::root::RootPrimitive;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::tyson::primitive::TySONPrimitive;
 use crate::DBError;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Serialize, Deserialize)]
 pub struct PathToValue {
     pub value: String,
 }

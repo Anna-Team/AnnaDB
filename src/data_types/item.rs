@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 use crate::data_types::map::MapItem;
 use crate::data_types::modifier::ModifierItem;
 use crate::data_types::primitives::link::Link;
@@ -8,7 +10,7 @@ use crate::tyson::modifier::TySONModifier;
 use crate::tyson::vector::TySONVector;
 use crate::DBError;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Item {
     Primitive(Primitive),
     Map(MapItem),

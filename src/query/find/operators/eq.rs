@@ -1,8 +1,10 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::EQ_OPERATOR;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, MapItem, Primitive, TySONMap};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EqOperator {
     values: Vec<(Primitive, Primitive)>,
 }

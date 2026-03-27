@@ -1,8 +1,10 @@
+use serde::{Serialize, Deserialize};
+
 use crate::constants::OR_OPERATOR;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{DBError, Item, MapItem, Primitive, TySONVector, VectorItem};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OrOperator {
     pub(crate) items: Vec<Item>,
 }
