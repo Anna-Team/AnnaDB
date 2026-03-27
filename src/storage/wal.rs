@@ -146,6 +146,14 @@ impl Wal {
         Ok(())
     }
 
+    pub fn current_tx_id(&self) -> u64 {
+        if self.next_tx_id > 0 {
+            self.next_tx_id - 1
+        } else {
+            0
+        }
+    }
+
     pub fn update_tx_counter(&mut self, max_tx_id: u64) {
         if max_tx_id >= self.next_tx_id {
             self.next_tx_id = max_tx_id + 1;

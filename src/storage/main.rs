@@ -29,6 +29,7 @@ use crate::response::{
 };
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
+use crate::storage::snapshot::SnapshotManager;
 use crate::storage::wal::Wal;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
@@ -78,46 +79,78 @@ pub struct Storage {
     pub(crate) warehouse: HashMap<String, Collection>,
     wh_path: String,
     wal: Wal,
+    snapshot_mgr: SnapshotManager,
+    tx_since_snapshot: u64,
 }
 
 impl Storage {
     pub fn new(wh_path: String) -> Result<Self, DBError> {
         fs::create_dir_all(wh_path.clone())?;
-        let paths = fs::read_dir(format!("{}/", wh_path.clone()))?;
+
+        let snapshot_mgr = SnapshotManager::new(&wh_path);
         let mut warehouse: HashMap<String, Collection> = HashMap::new();
-        Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.clone())?;
-        for path in paths {
-            let file_name = path?.file_name().into_string()?;
-            if !file_name.ends_with(".tyson") {
-                continue;
+        let mut snapshot_tx_id: u64 = 0;
+
+        // Try loading from snapshot first, fall back to .tyson files
+        if let Some(snapshot) = snapshot_mgr.load()? {
+            snapshot_tx_id = snapshot.last_tx_id;
+            for (name, values) in snapshot.collections {
+                let mut collection = Collection::create_empty(name.clone());
+                collection.values = values;
+                warehouse.insert(name, collection);
             }
-            let collection_name = file_name.replace(".tyson", "");
-            let collection = Collection::new(collection_name.clone(), wh_path.clone())?;
-            info!(collection = %collection_name, "loaded collection");
-            warehouse.insert(collection_name.clone(), collection);
+            info!(collections = warehouse.len(), "loaded from snapshot");
+        } else {
+            // Fall back to .tyson files
+            Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.clone())?;
+            let paths = fs::read_dir(format!("{}/", wh_path.clone()))?;
+            for path in paths {
+                let file_name = path?.file_name().into_string()?;
+                if !file_name.ends_with(".tyson") {
+                    continue;
+                }
+                let collection_name = file_name.replace(".tyson", "");
+                let collection = Collection::new(collection_name.clone(), wh_path.clone())?;
+                info!(collection = %collection_name, "loaded collection from .tyson");
+                warehouse.insert(collection_name.clone(), collection);
+            }
         }
 
         let mut wal = Wal::new(&wh_path)?;
 
-        // Replay WAL entries to recover any data not yet in .tyson files
+        // Replay WAL entries after the snapshot point
         let entries = wal.read_entries()?;
-        let mut max_tx_id: u64 = 0;
-        for entry in &entries {
-            if entry.tx_id > max_tx_id {
-                max_tx_id = entry.tx_id;
+        let mut max_tx_id: u64 = snapshot_tx_id;
+        let replay_entries: Vec<_> = entries
+            .into_iter()
+            .filter(|e| e.tx_id > snapshot_tx_id)
+            .collect();
+        if !replay_entries.is_empty() {
+            info!(count = replay_entries.len(), "replaying WAL entries");
+            for entry in &replay_entries {
+                if entry.tx_id > max_tx_id {
+                    max_tx_id = entry.tx_id;
+                }
+                // Apply directly to warehouse
+                for collection_name in &entry.buffer.dropped_collections {
+                    warehouse.remove(collection_name);
+                }
+                if entry.buffer.changed {
+                    for (link, item) in &entry.buffer.items {
+                        let collection = warehouse
+                            .entry(link.get_prefix())
+                            .or_insert_with(|| Collection::create_empty(link.get_prefix()));
+                        match item {
+                            Item::Primitive(Primitive::DeletedPrimitive(_)) => {
+                                collection.values.remove(link);
+                            }
+                            _ => {
+                                collection.values.insert(link.clone(), item.clone());
+                            }
+                        }
+                    }
+                }
             }
-        }
-        if !entries.is_empty() {
-            info!(count = entries.len(), "replaying WAL entries");
-            let mut storage_tmp = Self {
-                warehouse,
-                wh_path: wh_path.clone(),
-                wal: Wal::new(&wh_path)?,
-            };
-            for entry in entries {
-                storage_tmp.apply_buffer(&entry.buffer)?;
-            }
-            warehouse = storage_tmp.warehouse;
         }
         wal.update_tx_counter(max_tx_id);
 
@@ -126,6 +159,8 @@ impl Storage {
             warehouse,
             wh_path,
             wal,
+            snapshot_mgr,
+            tx_since_snapshot: 0,
         })
     }
 
@@ -308,7 +343,27 @@ impl Storage {
         self.apply_buffer(&insert_buf)?;
         // Also persist to .tyson files for backwards compatibility
         self.sync_buf_to_disk(&insert_buf)?;
+
+        // Periodic snapshot: every 100 write transactions
+        if insert_buf.changed {
+            self.tx_since_snapshot += 1;
+            if self.tx_since_snapshot >= 100 {
+                self.write_snapshot()?;
+            }
+        }
         Ok(transaction_response)
+    }
+
+    pub fn write_snapshot(&mut self) -> Result<(), DBError> {
+        let mut collections_data = HashMap::new();
+        for (name, collection) in &self.warehouse {
+            collections_data.insert(name.clone(), collection.values.clone());
+        }
+        let tx_id = self.wal.current_tx_id();
+        self.snapshot_mgr.write(&collections_data, tx_id)?;
+        self.wal.truncate()?;
+        self.tx_since_snapshot = 0;
+        Ok(())
     }
 
     fn apply_buffer(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
