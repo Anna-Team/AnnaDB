@@ -65,8 +65,7 @@ impl<'a> SortProcessor<'a> {
         Ok((paths, directions))
     }
 
-    fn build_vector(&self, link: Link) -> Vec<Option<Primitive>> {
-        // TODO refactor this. It is too ugly
+    fn build_vector(&self, link: &Link) -> Vec<Option<Primitive>> {
         let mut result_vec: Vec<Option<Primitive>> = vec![];
         for path in &self.paths {
             match path {
@@ -79,7 +78,7 @@ impl<'a> SortProcessor<'a> {
                         _ => result_vec.push(None),
                     }
                 }
-                Path::Root(_p) => match self.insert_buf.items.get(&link) {
+                Path::Root(_p) => match self.insert_buf.items.get(link) {
                     Some(o) => match o {
                         Item::Primitive(pr) => result_vec.push(Some(pr.clone())),
                         _ => result_vec.push(None),
@@ -129,8 +128,8 @@ impl<'a> SortProcessor<'a> {
     }
 
     fn cmp(&self, link_a: &Link, link_b: &Link) -> Ordering {
-        let vector_a = self.build_vector(link_a.clone());
-        let vector_b = self.build_vector(link_b.clone());
+        let vector_a = self.build_vector(link_a);
+        let vector_b = self.build_vector(link_b);
         let res = self.cmp_vectors(vector_a, vector_b);
         res
     }
