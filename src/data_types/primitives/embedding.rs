@@ -55,18 +55,18 @@ impl TySONPrimitive for EmbeddingPrimitive {
     fn new(_prefix: String, value: String) -> Result<Self, DBError> {
         let parts: Vec<&str> = value.splitn(2, '|').collect();
         if parts.len() != 2 {
-            return Err(DBError::Deserialization);
+            return Err(DBError::Deserialization("embedding missing dimension separator".to_string()));
         }
         let dims: u16 = parts[0]
             .parse()
-            .map_err(|_| DBError::Deserialization)?;
+            .map_err(|_| DBError::Deserialization("embedding dimension parse error".to_string()))?;
         let values: Result<Vec<f32>, _> = parts[1]
             .split(',')
             .map(|s| s.trim().parse::<f32>())
             .collect();
-        let values = values.map_err(|_| DBError::Deserialization)?;
+        let values = values.map_err(|_| DBError::Deserialization("embedding values parse error".to_string()))?;
         if values.len() != dims as usize {
-            return Err(DBError::Deserialization);
+            return Err(DBError::Deserialization("embedding dimension mismatch".to_string()));
         }
         Ok(Self { dims, values })
     }

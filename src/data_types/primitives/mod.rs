@@ -75,7 +75,7 @@ impl Primitive {
 
             KEEP => Ok(Self::KeepPrimitive(KeepPrimitive::new(prefix, value)?)),
 
-            _ => Err(DBError::Deserialization),
+            _ => Err(DBError::Deserialization(format!("unknown primitive prefix: {}", prefix))),
         }
     }
 

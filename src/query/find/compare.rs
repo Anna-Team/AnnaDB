@@ -108,6 +108,9 @@ fn compare_scalar(
 ) -> Result<Res, DBError> {
     for (k, v) in values {
         let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
+        if compare_res == CompareResult::CanNotCompare {
+            return Ok(Res::None);
+        }
         if match_true(compare_res) {
             return Ok(short_circuit);
         }

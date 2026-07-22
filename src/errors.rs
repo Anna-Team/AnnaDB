@@ -26,11 +26,8 @@ pub enum DBError {
     #[error("UUID parse error: {0}")]
     UuidParse(#[from] UuidError),
 
-    #[error("Unexpected parsing error")]
-    UnexpectedParsing,
-
-    #[error("Deserialization error")]
-    Deserialization,
+    #[error("Deserialization error: {0}")]
+    Deserialization(String),
 
     #[error("Bool parsing error")]
     BoolParse,
@@ -50,6 +47,12 @@ pub enum DBError {
 
     #[error("Fetch recursion limit exceeded")]
     FetchRecursion,
+
+    #[error("WAL serialization error: {0}")]
+    WalSerialization(String),
+
+    #[error("Snapshot error: {0}")]
+    SnapshotError(String),
 
     // Query errors
     #[error("Query unavailable: {0}")]
@@ -74,7 +77,7 @@ pub enum DBError {
 
 impl DBError {
     pub fn unexpected_parsing() -> Self {
-        Self::UnexpectedParsing
+        Self::Deserialization("unexpected parsing state".to_string())
     }
 
     pub fn msg(&self) -> String {

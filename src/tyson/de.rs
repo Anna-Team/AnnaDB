@@ -105,7 +105,7 @@ pub trait Desereilize {
                 let res = Self::deserialize_primitive(&self, pair)?;
                 Ok(Item::from(res))
             }
-            _ => Err(DBError::Deserialization),
+            _ => Err(DBError::Deserialization("unknown rule in route_deserialization".to_string())),
         };
     }
 
@@ -133,12 +133,12 @@ pub trait Desereilize {
                                 )?,
                             ))?;
                         }
-                        _ => return Err(DBError::UnexpectedParsing),
+                        _ => return Err(DBError::unexpected_parsing()),
                     }
                 }
                 Ok(result)
             }
-            _ => Err(DBError::Deserialization),
+            _ => Err(DBError::Deserialization("expected journal rule".to_string())),
         }
     }
 

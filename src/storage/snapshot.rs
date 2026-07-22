@@ -53,7 +53,7 @@ impl SnapshotManager {
         };
 
         let encoded = bincode::serialize(&data).map_err(|e| {
-            DBError::UnsupportedOperation(format!("snapshot serialize error: {}", e))
+            DBError::SnapshotError(format!("serialize: {}", e))
         })?;
 
         // Write atomically: tmp file, then rename
@@ -119,7 +119,7 @@ impl SnapshotManager {
         file.read_exact(&mut data)?;
 
         let snapshot: SnapshotData = bincode::deserialize(&data).map_err(|e| {
-            DBError::UnsupportedOperation(format!("snapshot deserialize error: {}", e))
+            DBError::SnapshotError(format!("deserialize: {}", e))
         })?;
 
         info!(

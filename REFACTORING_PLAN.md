@@ -312,7 +312,7 @@ Phase 8 (Tests)
 | 2: God Functions | ✅ Done | 2026-07-22 | 2026-07-22 | run_transaction 179→40L, compare 114→28L, Storage::new 82→18L |
 | 3: Boilerplate | ✅ Done | 2026-07-22 | 2026-07-22 | 6 ops→1 macro, 5 metas→1 macro, CompareOp enum |
 | 3.5: Vector Search | ✅ Done | 2026-07-22 | 2026-07-22 | EmbeddingPrimitive, HNSW, knn op, hybrid queries, snapshot persistence |
-| 4: Architecture | ⬜ Pending | — | — | Includes ZMQ→HTTP migration |
+| 4: Architecture | ✅ Done | 2026-07-22 | 2026-07-22 | String→&str (15 allocations removed), Storage traits, ZMQ→HTTP deferred |
 | 5: Memory API | ⬜ Pending | — | — | New: remember/recall/relate/forget |
 | 6: Error Handling | ⬜ Pending | — | — | DBError::new() already removed |
 | 7: Clone Reduction | ⬜ Pending | — | — | |

@@ -41,7 +41,7 @@ impl Wal {
         };
 
         let data = bincode::serialize(&entry).map_err(|e| {
-            DBError::UnsupportedOperation(format!("WAL serialize error: {}", e))
+            DBError::WalSerialization(format!("{}", e))
         })?;
 
         let crc = crc32(&data);
