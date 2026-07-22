@@ -63,7 +63,17 @@ impl Collection {
             let is_exists = std::path::Path::new(file_path.as_str()).exists();
             if is_exists {
                 let data = read_to_string(file_path.as_str())?;
-                Ok(<Collection as Desereilize>::deserialize(name.to_string(), data)?)
+                if data.trim().is_empty() {
+                    Ok(Self {
+                        name: name.to_string(),
+                        values: HashMap::new(),
+                    })
+                } else {
+                    Ok(<Collection as Desereilize>::deserialize(
+                        name.to_string(),
+                        data,
+                    )?)
+                }
             } else {
                 File::create(file_path.as_str())?;
                 Ok(Self {

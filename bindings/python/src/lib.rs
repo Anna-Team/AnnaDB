@@ -1,0 +1,157 @@
+use pyo3::prelude::*;
+
+use annadb::storage::main::Storage;
+use annadb::storage::vector::hnsw::HnswMetric;
+
+#[pyclass]
+struct AnnaDB {
+    storage: Storage,
+}
+
+#[pymethods]
+impl AnnaDB {
+    #[staticmethod]
+    fn open(path: &str) -> PyResult<Self> {
+        let storage = Storage::new(path, None)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(Self { storage })
+    }
+
+    fn exec(&mut self, tyson: &str) -> String {
+        self.storage.run(tyson)
+    }
+
+    #[pyo3(signature = (collection, content, key=None))]
+    fn remember(
+        &mut self,
+        collection: &str,
+        content: &str,
+        key: Option<Vec<String>>,
+    ) -> PyResult<String> {
+        let k: Option<(String, String)> = key.map(|v| (v[0].clone(), v[1].clone()));
+        let k_ref: Option<(&str, &str)> = k.as_ref().map(|(a, b)| (a.as_str(), b.as_str()));
+        let link = self
+            .storage
+            .remember(collection, content, k_ref)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(format!("l|{}|{}|", link.collection_name, link.id))
+    }
+
+    fn recall(&self, collection: &str, query: &str, k: usize) -> PyResult<Vec<(String, String)>> {
+        let results = self
+            .storage
+            .recall(collection, query, k)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(results
+            .into_iter()
+            .map(|(link, item)| {
+                (format!("l|{}|{}|", link.collection_name, link.id), format!("{:?}", item))
+            })
+            .collect())
+    }
+
+    fn relate(
+        &mut self,
+        from_link: &str,
+        to_link: &str,
+        relation_type: &str,
+    ) -> PyResult<String> {
+        let from = parse_link(from_link)?;
+        let to = parse_link(to_link)?;
+        let edge = self
+            .storage
+            .relate(&from, &to, relation_type, None)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(format!("l|{}|{}|", edge.collection_name, edge.id))
+    }
+
+    fn neighbors(&self, link_str: &str) -> PyResult<Vec<(String, String)>> {
+        let link = parse_link(link_str)?;
+        let results = self
+            .storage
+            .neighbors(&link, None)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(results
+            .into_iter()
+            .map(|(l, t)| (format!("l|{}|{}|", l.collection_name, l.id), t))
+            .collect())
+    }
+
+    fn traverse(&self, link_str: &str, max_depth: usize) -> PyResult<Vec<(String, usize, String)>> {
+        let link = parse_link(link_str)?;
+        let results = self
+            .storage
+            .traverse(&link, max_depth, None)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(results
+            .into_iter()
+            .map(|(l, d, t)| (format!("l|{}|{}|", l.collection_name, l.id), d, t))
+            .collect())
+    }
+
+    fn path(
+        &self,
+        from_str: &str,
+        to_str: &str,
+        max_depth: usize,
+    ) -> PyResult<Vec<(String, String)>> {
+        let from = parse_link(from_str)?;
+        let to = parse_link(to_str)?;
+        let results = self
+            .storage
+            .path(&from, &to, max_depth, None)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(results
+            .into_iter()
+            .map(|(l, t)| (format!("l|{}|{}|", l.collection_name, l.id), t))
+            .collect())
+    }
+
+    fn forget(&mut self, link_str: &str) -> PyResult<()> {
+        let link = parse_link(link_str)?;
+        self.storage
+            .forget(&link)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+    }
+
+    fn create_vector_index(
+        &mut self,
+        collection: &str,
+        field_path: &str,
+        dims: u16,
+        m: usize,
+        ef_construction: usize,
+        metric: &str,
+    ) {
+        let metric = match metric {
+            "euclidean" => HnswMetric::Euclidean,
+            "dot" => HnswMetric::DotProduct,
+            _ => HnswMetric::Cosine,
+        };
+        self.storage
+            .create_vector_index(collection, field_path, dims, m, ef_construction, metric);
+    }
+}
+
+fn parse_link(s: &str) -> PyResult<annadb::Link> {
+    let s = s.trim().trim_start_matches("l|").trim_end_matches('|');
+    let parts: Vec<&str> = s.splitn(2, '|').collect();
+    if parts.len() != 2 {
+        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            format!("invalid link: {}", s),
+        ));
+    }
+    let id = uuid::Uuid::parse_str(parts[1])
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    Ok(annadb::Link {
+        collection_name: parts[0].to_string(),
+        id,
+        links_to: vec![],
+    })
+}
+
+#[pymodule]
+fn _annadb(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<AnnaDB>()?;
+    Ok(())
+}

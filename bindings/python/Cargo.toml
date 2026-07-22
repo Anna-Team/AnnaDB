@@ -1,0 +1,13 @@
+[package]
+name = "annadb-py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_annadb"
+crate-type = ["cdylib"]
+
+[dependencies]
+annadb = { package = "AnnaDB", path = "../.." }
+pyo3 = { version = "0.22", features = ["extension-module"] }
+uuid = { version = "1", features = ["v4"] }

@@ -10,9 +10,9 @@ use crate::DBError;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct Link {
-    pub(crate) collection_name: String,
-    id: Uuid,
-    links_to: Vec<Link>,
+    pub collection_name: String,
+    pub id: Uuid,
+    pub links_to: Vec<Link>,
 }
 
 impl Link {
