@@ -928,70 +928,242 @@ impl Storage {
 
     // ── Memory API ──
 
-    /// Upsert a document by key. If a document with the same key exists, update it.
-    /// If an embedding provider is configured, automatically generates an embedding
-    /// for the `content` field and stores it as `embedding`.
+    /// Upsert a document. If a key is provided and a document with the same
+    /// key exists, it is updated in-place. If an embedding provider is
+    /// configured, automatically generates an embedding for `content`.
     pub fn remember(
         &mut self,
         collection: &str,
         content: &str,
         key: Option<(&str, &str)>,
     ) -> Result<Link, DBError> {
+        // Look for existing document with the same key
+        let existing_link = key.and_then(|(key_field, key_value)| {
+            self.warehouse.get(collection).and_then(|coll| {
+                coll.values.iter().find_map(|(link, item)| {
+                    let found = match item {
+                        Item::Map(map_item) => {
+                            let items = map_item.get_items();
+                            items.iter().any(|(k, v)| {
+                                matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == key_field)
+                                    && matches!(v, Item::Primitive(Primitive::StringPrimitive(ref s)) if s.get_string_value() == key_value)
+                            })
+                        }
+                        _ => false,
+                    };
+                    if found { Some(link.clone()) } else { None }
+                })
+            })
+        });
+
         let mut insert_buf = InsertBuffer::new();
         let mut storage_map = crate::data_types::map::storage::StorageMap::new("".to_string())?;
 
         storage_map.insert(
             Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(),
-                "content".to_string(),
+                "".to_string(), "content".to_string(),
             )?),
             Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(),
-                content.to_string(),
+                "".to_string(), content.to_string(),
             )?)),
         )?;
 
         if let Some(provider) = &self.embedding_provider {
             let embedding = provider.embed(content)?;
-            let emb_primitive =
-                crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
-                    provider.dimensions(),
-                    embedding,
-                );
+            let emb = crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
+                provider.dimensions(), embedding,
+            );
             storage_map.insert(
                 Primitive::StringPrimitive(crate::StringPrimitive::new(
-                    "".to_string(),
-                    "embedding".to_string(),
+                    "".to_string(), "embedding".to_string(),
                 )?),
-                Item::Primitive(Primitive::EmbeddingPrimitive(emb_primitive)),
+                Item::Primitive(Primitive::EmbeddingPrimitive(emb)),
             )?;
         }
 
-        if let Some((key_field, key_value)) = key {
+        if let Some((kf, kv)) = key {
             storage_map.insert(
                 Primitive::StringPrimitive(crate::StringPrimitive::new(
-                    "".to_string(),
-                    key_field.to_string(),
+                    "".to_string(), kf.to_string(),
                 )?),
                 Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
-                    "".to_string(),
-                    key_value.to_string(),
+                    "".to_string(), kv.to_string(),
                 )?)),
             )?;
         }
 
         let item = storage_map.to_item();
+
+        if let Some(existing) = existing_link {
+            insert_buf.insert(existing.clone(), item);
+            self.persist_transaction(&insert_buf)?;
+            return Ok(existing);
+        }
+
         let result = self.insert_item(collection.to_string(), &mut insert_buf, item)?;
         self.persist_transaction(&insert_buf)?;
-
         match result {
             Item::Primitive(Primitive::Link(l)) => Ok(l),
             _ => unreachable!(),
         }
     }
 
-    /// Semantic recall: generate an embedding for the query text and find the k nearest documents.
-    /// Requires an embedding provider to be configured.
+    /// Follow edges from a link, optionally filtered by relation type.
+    /// Returns pairs of (neighbor_link, relation_type).
+    pub fn neighbors(
+        &self,
+        link: &Link,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<(Link, String)>, DBError> {
+        let edges = match self.warehouse.get("edges") {
+            Some(coll) => &coll.values,
+            None => return Ok(Vec::new()),
+        };
+
+        let mut results = Vec::new();
+        for (_, edge) in edges {
+            if let Item::Map(map_item) = edge {
+                let items = map_item.get_items();
+                let from_link = items.iter().find_map(|(k, v)| {
+                    if let Primitive::StringPrimitive(s) = k {
+                        if s.get_string_value() == "from" {
+                            return v.to_link().ok();
+                        }
+                    }
+                    None
+                });
+                let to_link = items.iter().find_map(|(k, v)| {
+                    if let Primitive::StringPrimitive(s) = k {
+                        if s.get_string_value() == "to" {
+                            return v.to_link().ok();
+                        }
+                    }
+                    None
+                });
+                let edge_type = items.iter().find_map(|(k, v)| {
+                    if let Primitive::StringPrimitive(s) = k {
+                        if s.get_string_value() == "type" {
+                            if let Item::Primitive(Primitive::StringPrimitive(ref val)) = v {
+                                return Some(val.get_string_value());
+                            }
+                        }
+                    }
+                    None
+                });
+
+                let is_match = if &from_link == &Some(link.clone()) {
+                    to_link.clone()
+                } else if &to_link == &Some(link.clone()) {
+                    from_link.clone()
+                } else {
+                    None
+                };
+
+                if let Some(neighbor) = is_match {
+                    let rel_type = edge_type.unwrap_or_default();
+                    if relation_type.map_or(true, |rt| rt == rel_type) {
+                        results.push((neighbor, rel_type));
+                    }
+                }
+            }
+        }
+        Ok(results)
+    }
+
+    /// Traverse the graph from a starting link up to `max_depth` hops,
+    /// optionally filtered by relation type. Returns all visited links.
+    /// Breadth-first, deduplicates visited nodes.
+    pub fn traverse(
+        &self,
+        start: &Link,
+        max_depth: usize,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<(Link, usize, String)>, DBError> {
+        let mut visited: std::collections::HashSet<Link> = std::collections::HashSet::new();
+        let mut results: Vec<(Link, usize, String)> = Vec::new();
+        let mut frontier: Vec<(Link, usize)> = vec![(start.clone(), 0)];
+
+        visited.insert(start.clone());
+
+        while let Some((current, depth)) = frontier.pop() {
+            if depth >= max_depth {
+                continue;
+            }
+            for (neighbor, rel_type) in self.neighbors(&current, relation_type)? {
+                if visited.insert(neighbor.clone()) {
+                    results.push((neighbor.clone(), depth + 1, rel_type.clone()));
+                    frontier.push((neighbor, depth + 1));
+                }
+            }
+        }
+        Ok(results)
+    }
+
+    /// Ego graph: get all documents within `max_depth` hops of `start`.
+    /// Returns the start document plus all reachable documents with their
+    /// relation type and hop distance.
+    pub fn ego_graph(
+        &self,
+        start: &Link,
+        max_depth: usize,
+    ) -> Result<(Item, Vec<(Link, Item, usize, String)>), DBError> {
+        let insert_buf = InsertBuffer::new();
+        let start_doc = self.get_item_by_link(start, &insert_buf, 0, None)?;
+        let traversed = self.traverse(start, max_depth, None)?;
+
+        let mut results = Vec::new();
+        for (link, depth, rel_type) in &traversed {
+            if let Ok(doc) = self.get_item_by_link(link, &insert_buf, 0, None) {
+                results.push((link.clone(), doc, *depth, rel_type.clone()));
+            }
+        }
+
+        Ok((start_doc, results))
+    }
+
+    /// Recall with graph traversal: vector search for k nearest documents,
+    /// then follow edges up to `traverse_depth` hops. Returns a flat list of
+    /// all documents discovered, with metadata about how they were reached.
+    pub fn recall_traverse(
+        &self,
+        collection: &str,
+        query: &str,
+        k: usize,
+        traverse_depth: usize,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<(Link, Item, usize, Option<String>)>, DBError> {
+        // Phase 1: vector search for k nearest seeds
+        let seeds = self.recall(collection, query, k)?;
+
+        let mut visited: std::collections::HashSet<Link> = std::collections::HashSet::new();
+        let mut results: Vec<(Link, Item, usize, Option<String>)> = Vec::new();
+
+        // Add seeds (depth 0, no relation)
+        for (link, item) in &seeds {
+            visited.insert(link.clone());
+            results.push((link.clone(), item.clone(), 0, None));
+        }
+
+        // Phase 2: traverse from each seed
+        if traverse_depth > 0 {
+            for (link, _) in &seeds {
+                for (neighbor, depth, rel) in self.traverse(link, traverse_depth, relation_type)? {
+                    if visited.insert(neighbor.clone()) {
+                        if let Ok(doc) =
+                            self.get_item_by_link(&neighbor, &InsertBuffer::new(), 0, None)
+                        {
+                            results.push((neighbor, doc, depth, Some(rel)));
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(results)
+    }
+
+    /// Semantic recall: generate an embedding for the query text and find
+    /// the k nearest documents. Requires an embedding provider.
     pub fn recall(
         &self,
         collection: &str,
@@ -1000,25 +1172,25 @@ impl Storage {
     ) -> Result<Vec<(Link, Item)>, DBError> {
         let provider = self.embedding_provider.as_ref().ok_or_else(|| {
             DBError::UnsupportedOperation(
-                "recall requires an embedding provider. Set EMBEDDING_PROVIDER and OPENAI_API_KEY.".to_string(),
+                "recall requires an embedding provider. Set EMBEDDING_PROVIDER and OPENAI_API_KEY."
+                    .to_string(),
             )
         })?;
 
         let query_embedding = provider.embed(query)?;
 
-        // Search the vector index
         let vec_index = self
             .index_mgr
             .get_vector_index(collection, "embedding")
             .ok_or_else(|| {
                 DBError::UnsupportedOperation(
-                    "no vector index on 'embedding' field. Create one first with create_vector_index.".to_string(),
+                    "no vector index on 'embedding' field. Create one first with create_vector_index."
+                        .to_string(),
                 )
             })?;
 
         let links = vec_index.search(&query_embedding, k);
 
-        // Fetch full documents
         let insert_buf = InsertBuffer::new();
         let mut results = Vec::new();
         for link in links {
@@ -1041,27 +1213,35 @@ impl Storage {
         let mut storage_map = crate::data_types::map::storage::StorageMap::new("".to_string())?;
 
         storage_map.insert(
-            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "from".to_string())?),
+            Primitive::StringPrimitive(crate::StringPrimitive::new(
+                "".to_string(), "from".to_string(),
+            )?),
             Item::Primitive(Primitive::Link(from.clone())),
         )?;
         storage_map.insert(
-            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "to".to_string())?),
+            Primitive::StringPrimitive(crate::StringPrimitive::new(
+                "".to_string(), "to".to_string(),
+            )?),
             Item::Primitive(Primitive::Link(to.clone())),
         )?;
         storage_map.insert(
-            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "type".to_string())?),
-            Item::Primitive(Primitive::StringPrimitive(
-                crate::StringPrimitive::new("".to_string(), relation_type.to_string())?,
-            )),
+            Primitive::StringPrimitive(crate::StringPrimitive::new(
+                "".to_string(), "type".to_string(),
+            )?),
+            Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
+                "".to_string(), relation_type.to_string(),
+            )?)),
         )?;
 
         if let Some(meta_pairs) = metadata {
             for (k, v) in meta_pairs {
                 storage_map.insert(
-                    Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), k.to_string())?),
-                    Item::Primitive(Primitive::StringPrimitive(
-                        crate::StringPrimitive::new("".to_string(), v.to_string())?,
-                    )),
+                    Primitive::StringPrimitive(crate::StringPrimitive::new(
+                        "".to_string(), k.to_string(),
+                    )?),
+                    Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
+                        "".to_string(), v.to_string(),
+                    )?)),
                 )?;
             }
         }
@@ -1081,8 +1261,7 @@ impl Storage {
         let mut insert_buf = InsertBuffer::new();
         let deleted = Item::Primitive(Primitive::DeletedPrimitive(
             crate::data_types::primitives::deleted::DeletedPrimitive::new(
-                "".to_string(),
-                "".to_string(),
+                "".to_string(), "".to_string(),
             )?,
         ));
         insert_buf.insert(link.clone(), deleted);
