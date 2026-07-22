@@ -5,6 +5,13 @@ Cargo.lock
 .idea/
 poetry.lock
 .pytest_cache
+/warehouse/*
+*.tyson
+wal.bin
+snapshot.bin
+snapshot.bin.tmp
+# Python bindings build artifacts
+*.pdb
 
 config.cnf
 *.pyc
