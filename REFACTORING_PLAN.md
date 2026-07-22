@@ -314,6 +314,6 @@ Phase 8 (Tests)
 | 3.5: Vector Search | ✅ Done | 2026-07-22 | 2026-07-22 | EmbeddingPrimitive, HNSW, knn op, hybrid queries, snapshot persistence |
 | 4: Architecture | ✅ Done | 2026-07-22 | 2026-07-22 | String→&str (15 allocations removed), Storage traits, ZMQ→HTTP deferred |
 | 5: Memory API | ⬜ Pending | — | — | New: remember/recall/relate/forget |
-| 6: Error Handling | ⬜ Pending | — | — | DBError::new() already removed |
-| 7: Clone Reduction | ⬜ Pending | — | — | |
+| 6: Error Handling | ✅ Done | 2026-07-22 | 2026-07-22 | Merged variants, WalSerialization+SnapshotError, CanNotCompare restored |
+| 7: Clone Reduction | ✅ Done | 2026-07-22 | 2026-07-22 | Sort comparator clones eliminated |
 | 8: Test Coverage | 🔶 In Progress | 2026-07-22 | — | 4 tests |

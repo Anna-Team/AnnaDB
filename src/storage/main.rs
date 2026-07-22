@@ -33,6 +33,7 @@ use crate::storage::index::IndexManager;
 use crate::storage::snapshot::SnapshotManager;
 use crate::storage::vector::hnsw::HnswMetric;
 use crate::storage::wal::Wal;
+use crate::embedding::EmbeddingProvider;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
@@ -84,6 +85,7 @@ pub struct Storage {
     snapshot_mgr: SnapshotManager,
     tx_since_snapshot: u64,
     pub(crate) index_mgr: IndexManager,
+    pub embedding_provider: Option<Box<dyn EmbeddingProvider>>,
 }
 
 /// Read-only operations on the warehouse.
@@ -280,7 +282,10 @@ impl Storage {
         Ok(max_tx_id)
     }
 
-    pub fn new(wh_path: &str) -> Result<Self, DBError> {
+    pub fn new(
+        wh_path: &str,
+        embedding_provider: Option<Box<dyn EmbeddingProvider>>,
+    ) -> Result<Self, DBError> {
         fs::create_dir_all(wh_path)?;
 
         let snapshot_mgr = SnapshotManager::new(wh_path);
@@ -335,6 +340,7 @@ impl Storage {
             snapshot_mgr,
             tx_since_snapshot: 0,
             index_mgr,
+            embedding_provider,
         })
     }
 

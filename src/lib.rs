@@ -23,6 +23,7 @@ use storage::transaction::Transaction;
 mod config;
 mod constants;
 pub mod data_types;
+pub mod embedding;
 mod errors;
 pub mod query;
 pub mod response;
@@ -30,7 +31,7 @@ pub mod storage;
 pub mod tyson;
 
 pub fn get_storage(path: &str) -> Result<Storage, DBError> {
-    Storage::new(path)
+    Storage::new(path, None)
 }
 
 pub fn run() {
@@ -44,7 +45,19 @@ pub fn run() {
     info!("AnnaDB starting");
     let config = Config::new();
 
-    let mut storage = match Storage::new(&config.wh_path) {
+    let embedding_provider = match config.build_embedding_provider() {
+        Ok(Some(p)) => {
+            info!(dims = p.dimensions(), "embedding provider configured");
+            Some(p)
+        }
+        Ok(None) => None,
+        Err(e) => {
+            error!(error = %e, "failed to configure embedding provider");
+            std::process::exit(1);
+        }
+    };
+
+    let mut storage = match Storage::new(&config.wh_path, embedding_provider) {
         Ok(s) => {
             info!("storage initialized");
             s
