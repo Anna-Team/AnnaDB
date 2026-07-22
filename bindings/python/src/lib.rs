@@ -131,6 +131,45 @@ impl AnnaDB {
         self.storage
             .create_vector_index(collection, field_path, dims, m, ef_construction, metric);
     }
+
+    /// Semantic search + multi-hop graph expansion.
+    #[pyo3(signature = (collection, query, k=5, traverse_depth=2, relation_type=None))]
+    fn recall_traverse(
+        &self,
+        collection: &str,
+        query: &str,
+        k: usize,
+        traverse_depth: usize,
+        relation_type: Option<&str>,
+    ) -> PyResult<Vec<(String, String, usize, Option<String>)>> {
+        let results = self
+            .storage
+            .recall_traverse(collection, query, k, traverse_depth, relation_type)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        Ok(results
+            .into_iter()
+            .map(|(link, item, depth, rel)| {
+                (format!("l|{}|{}|", link.collection_name, link.id), format!("{:?}", item), depth, rel)
+            })
+            .collect())
+    }
+
+    /// Get a node and its N-hop neighborhood.
+    fn ego_graph(&self, link_str: &str, depth: usize) -> PyResult<(String, Vec<(String, String, usize, String)>)> {
+        let link = parse_link(link_str)?;
+        let (center, neighbors) = self
+            .storage
+            .ego_graph(&link, depth)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        let center_str = format!("{:?}", center);
+        let neighbors: Vec<_> = neighbors
+            .into_iter()
+            .map(|(l, item, d, r)| {
+                (format!("l|{}|{}|", l.collection_name, l.id), format!("{:?}", item), d, r)
+            })
+            .collect();
+        Ok((center_str, neighbors))
+    }
 }
 
 fn parse_link(s: &str) -> PyResult<annadb::Link> {

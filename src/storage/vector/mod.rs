@@ -1,7 +1,5 @@
-use std::collections::HashSet;
 
 use crate::data_types::primitives::link::Link;
-use crate::data_types::primitives::Primitive;
 use crate::storage::vector::hnsw::{HnswIndex, HnswMetric};
 
 pub mod distance;

@@ -2,7 +2,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 use crate::config::Config;
 use crate::errors::DBError;

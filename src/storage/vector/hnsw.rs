@@ -95,7 +95,7 @@ impl HnswIndex {
     pub fn insert(&mut self, vector: &[f32]) -> usize {
         let id = self.nodes.len();
         let level = self.random_level();
-        let mut node = HnswNode {
+        let node = HnswNode {
             id,
             vector: vector.to_vec(),
             layers: vec![Vec::new(); level + 1],

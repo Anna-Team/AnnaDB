@@ -2,7 +2,6 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use tracing::{debug, info};
 
-use crate::data_types::primitives::embedding::EmbeddingPrimitive;
 use crate::data_types::primitives::link::Link;
 use crate::data_types::primitives::Primitive;
 use crate::storage::vector::hnsw::HnswMetric;
