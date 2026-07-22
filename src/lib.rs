@@ -2,23 +2,10 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
-use data_types::map::MapItem;
-use data_types::vector::VectorItem;
 use tracing::{error, info, warn};
 
 use crate::config::Config;
-use crate::data_types::item::Item;
-use crate::data_types::primitives::link::Link;
-use crate::data_types::primitives::path::PathToValue;
-use crate::data_types::primitives::string::StringPrimitive;
-use crate::data_types::primitives::Primitive;
 use crate::errors::DBError;
-use crate::storage::main::Storage;
-use crate::tyson::de::Desereilize;
-use crate::tyson::map::TySONMap;
-use crate::tyson::primitive::TySONPrimitive;
-use crate::tyson::vector::TySONVector;
-use storage::transaction::Transaction;
 
 mod config;
 mod constants;
@@ -27,13 +14,52 @@ pub mod embedding;
 mod errors;
 pub mod query;
 pub mod response;
+mod server;
 pub mod storage;
 pub mod tyson;
 
-pub fn get_storage(path: &str) -> Result<Storage, DBError> {
-    Storage::new(path, None)
+// Re-exports for convenience
+pub use crate::data_types::item::Item;
+pub use crate::data_types::map::MapItem;
+pub use crate::data_types::primitives::link::Link;
+pub use crate::data_types::primitives::path::PathToValue;
+pub use crate::data_types::primitives::string::StringPrimitive;
+pub use crate::data_types::primitives::Primitive;
+pub use crate::data_types::vector::VectorItem;
+pub use crate::errors::DBError as DbError;
+pub use crate::storage::main::Storage;
+pub use crate::storage::transaction::Transaction;
+pub use crate::tyson::de::Desereilize;
+pub use crate::tyson::map::TySONMap;
+pub use crate::tyson::primitive::TySONPrimitive;
+pub use crate::tyson::vector::TySONVector;
+
+/// Open an AnnaDB instance at the given path. Use ":memory:" for a
+/// temporary in-memory database.
+///
+/// # Examples
+/// ```ignore
+/// let mut db = AnnaDB::open("~/.annadb/memory")?;
+/// db.remember("facts", "hello", None)?;
+/// ```
+pub fn open(path: &str, embedding_provider: Option<Box<dyn embedding::EmbeddingProvider>>) -> Result<Storage, DBError> {
+    if path == ":memory:" {
+        let dir = std::env::temp_dir().join(format!("annadb_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir)?;
+        Storage::new(dir.to_str().unwrap(), embedding_provider)
+    } else {
+        Storage::new(path, embedding_provider)
+    }
 }
 
+/// Start the HTTP server. Listens on the configured port and serves
+/// TySON transactions via POST /tx.
+pub fn serve(storage: &mut Storage, port: u16) {
+    server::serve(storage, port)
+}
+
+/// Run AnnaDB as a standalone server. Reads config from environment
+/// variables and starts the HTTP listener.
 pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -59,7 +85,7 @@ pub fn run() {
 
     let mut storage = match Storage::new(&config.wh_path, embedding_provider) {
         Ok(s) => {
-            info!("storage initialized");
+            info!(path = %config.wh_path, "storage initialized");
             s
         }
         Err(e) => {
@@ -68,49 +94,6 @@ pub fn run() {
         }
     };
 
-    let context = zmq::Context::new();
-    let responder = match context.socket(zmq::REP) {
-        Ok(s) => s,
-        Err(e) => {
-            error!(error = %e, "failed to create ZMQ socket");
-            std::process::exit(1);
-        }
-    };
-
-    let bind_addr = format!("tcp://0.0.0.0:{}", config.port);
-    if responder.bind(bind_addr.as_str()).is_err() {
-        error!(port = %config.port, "failed to bind to port");
-        std::process::exit(1);
-    }
-
-    info!(port = %config.port, "AnnaDB listening");
-
-    let mut msg = zmq::Message::new();
-    loop {
-        match responder.recv(&mut msg, 0) {
-            Ok(_) => match msg.as_str() {
-                Some(msg_value) => {
-                    let start = std::time::Instant::now();
-                    let res = storage.run(msg_value);
-                    let duration = start.elapsed();
-                    tracing::debug!(
-                        duration_ms = duration.as_millis() as u64,
-                        "transaction processed"
-                    );
-                    if let Err(e) = responder.send(res.as_str(), 0) {
-                        error!(error = %e, "failed to send response");
-                    }
-                }
-                None => {
-                    warn!("received non-utf8 message");
-                }
-            },
-            Err(e) => {
-                error!(error = %e, "failed to receive message");
-                if let Err(e) = responder.send("Receiving problem", 0) {
-                    error!(error = %e, "failed to send error response");
-                }
-            }
-        }
-    }
+    let port: u16 = config.port.parse().unwrap_or(10001);
+    server::serve(&mut storage, port);
 }

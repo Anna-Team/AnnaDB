@@ -7,7 +7,6 @@ edition = "2021"
 pest = "2.7"
 pest_derive = "2.7"
 uuid = { version = "1", features = ["v4", "serde"] }
-zmq = "0.9.2"
 thiserror = "1"
 serde = { version = "1", features = ["derive"] }
 bincode = "1"
@@ -16,6 +15,3 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.8"
 ureq = { version = "2", features = ["json"] }
 serde_json = "1"
-
-[features]
-vendored-zmq = ['zmq/vendored']
