@@ -95,7 +95,7 @@ fn get_ids_list(
     collection_name: String,
     insert_buf: &InsertBuffer,
 ) -> Vec<Link> {
-    if let Some(collection) = storage.get_collection(collection_name.clone()) {
+    if let Some(collection) = storage.get_collection(&collection_name) {
         if !insert_buf.dropped_collections.contains(&collection_name) {
             let mut res = Vec::from_iter(collection.values.keys().cloned());
             for link in insert_buf.items.keys() {

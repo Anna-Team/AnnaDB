@@ -311,7 +311,7 @@ Phase 8 (Tests)
 | 1: Safety Fixes | ✅ Done | 2026-07-22 | 2026-07-22 | 9 unwraps, bug fix, 6 error swallows, 4 tests |
 | 2: God Functions | ✅ Done | 2026-07-22 | 2026-07-22 | run_transaction 179→40L, compare 114→28L, Storage::new 82→18L |
 | 3: Boilerplate | ✅ Done | 2026-07-22 | 2026-07-22 | 6 ops→1 macro, 5 metas→1 macro, CompareOp enum |
-| 3.5: Vector Search | 🔶 WIP | 2026-07-22 | — | HNSW, EmbeddingPrimitive, distance metrics done. knn op + hybrid + persistence pending |
+| 3.5: Vector Search | ✅ Done | 2026-07-22 | 2026-07-22 | EmbeddingPrimitive, HNSW, knn op, hybrid queries, snapshot persistence |
 | 4: Architecture | ⬜ Pending | — | — | Includes ZMQ→HTTP migration |
 | 5: Memory API | ⬜ Pending | — | — | New: remember/recall/relate/forget |
 | 6: Error Handling | ⬜ Pending | — | — | DBError::new() already removed |

@@ -108,7 +108,7 @@ impl Storage {
             info!(collections = warehouse.len(), "loaded from snapshot");
             Ok((warehouse, snapshot_tx_id, vi))
         } else {
-            Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.to_string())?;
+            Collection::new(INTERNAL_COLLECTION_NAME, wh_path)?;
             let paths = fs::read_dir(format!("{}/", wh_path))?;
             for path in paths {
                 let file_name = path?.file_name().into_string()?;
@@ -117,7 +117,7 @@ impl Storage {
                 }
                 let collection_name = file_name.replace(".tyson", "");
                 let collection =
-                    Collection::new(collection_name.clone(), wh_path.to_string())?;
+                    Collection::new(&collection_name, wh_path)?;
                 info!(collection = %collection_name, "loaded collection from .tyson");
                 warehouse.insert(collection_name.clone(), collection);
             }
@@ -165,14 +165,14 @@ impl Storage {
         Ok(max_tx_id)
     }
 
-    pub fn new(wh_path: String) -> Result<Self, DBError> {
-        fs::create_dir_all(wh_path.clone())?;
+    pub fn new(wh_path: &str) -> Result<Self, DBError> {
+        fs::create_dir_all(wh_path)?;
 
-        let snapshot_mgr = SnapshotManager::new(&wh_path);
+        let snapshot_mgr = SnapshotManager::new(wh_path);
         let (mut warehouse, snapshot_tx_id, vector_index_data) =
-            Self::load_warehouse(&wh_path, &snapshot_mgr)?;
+            Self::load_warehouse(wh_path, &snapshot_mgr)?;
 
-        let mut wal = Wal::new(&wh_path)?;
+        let mut wal = Wal::new(wh_path)?;
         let max_tx_id = Self::replay_wal_entries(&mut warehouse, &wal, snapshot_tx_id)?;
         wal.update_tx_counter(max_tx_id);
 
@@ -215,7 +215,7 @@ impl Storage {
         info!(collections = warehouse.len(), path = %wh_path, "storage ready");
         Ok(Self {
             warehouse,
-            wh_path,
+            wh_path: wh_path.to_string(),
             wal,
             snapshot_mgr,
             tx_since_snapshot: 0,
@@ -223,8 +223,8 @@ impl Storage {
         })
     }
 
-    pub fn run(&mut self, data: String) -> String {
-        return match self.run_transaction(data) {
+    pub fn run(&mut self, data: &str) -> String {
+        return match self.run_transaction(data.to_string()) {
             Ok(response) => response.serialize(),
             Err(e) => {
                 debug!(error = %e, "transaction failed");
@@ -266,7 +266,7 @@ impl Storage {
             Item::Vector(VectorItem::GetQuery(o)) => {
                 if next_available.contains(&QueryOperation::GetOperation) {
                     let next = o.next_available();
-                    let resp = get(self, collection_name.to_string(), o, filter_buf)?;
+                    let resp = get(self, collection_name, o, filter_buf)?;
                     (Some(resp), next)
                 } else {
                     return Err(DBError::QueryUnavailable("get".to_string()));
@@ -540,7 +540,7 @@ impl Storage {
                     Entry::Occupied(o) => o.into_mut(),
                     Entry::Vacant(_) => continue,
                 };
-                let mut file = collection.get_file(self.wh_path.clone())?;
+                let mut file = collection.get_file(&self.wh_path)?;
                 write!(file, "{}:{};", TySONPrimitive::serialize(link), item.to_tyson())?;
             }
         }
@@ -711,7 +711,7 @@ impl Storage {
     }
 
     pub fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError> {
-        match self.get_collection(id.get_prefix()) {
+        match self.get_collection(&id.get_prefix()) {
             Some(collection) => Ok(collection.get_value(&id)?),
             None => Err(DBError::CollectionNotFound(id.get_prefix())),
         }
@@ -735,7 +735,7 @@ impl Storage {
     ) -> Result<Option<FoundSubItem>, DBError> {
         let value = match insert_buf.items.get(&id) {
             Some(v) => v.clone(),
-            None => match self.get_collection(id.get_prefix()) {
+            None => match self.get_collection(&id.get_prefix()) {
                 Some(collection) => collection.get_value(&id)?,
                 None => {
                     return Err(DBError::CollectionNotFound(id.get_prefix()));
@@ -796,7 +796,7 @@ impl Storage {
         Ok(sub_item)
     }
 
-    pub fn get_collection(&self, collection_name: String) -> Option<&Collection> {
-        self.warehouse.get(collection_name.as_str())
+    pub fn get_collection(&self, collection_name: &str) -> Option<&Collection> {
+        self.warehouse.get(collection_name)
     }
 }

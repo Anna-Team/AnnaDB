@@ -29,7 +29,7 @@ pub mod response;
 pub mod storage;
 pub mod tyson;
 
-pub fn get_storage(path: String) -> Result<Storage, DBError> {
+pub fn get_storage(path: &str) -> Result<Storage, DBError> {
     Storage::new(path)
 }
 
@@ -44,7 +44,7 @@ pub fn run() {
     info!("AnnaDB starting");
     let config = Config::new();
 
-    let mut storage = match Storage::new(config.wh_path) {
+    let mut storage = match Storage::new(&config.wh_path) {
         Ok(s) => {
             info!("storage initialized");
             s
@@ -78,7 +78,7 @@ pub fn run() {
             Ok(_) => match msg.as_str() {
                 Some(msg_value) => {
                     let start = std::time::Instant::now();
-                    let res = storage.run(msg_value.to_string());
+                    let res = storage.run(msg_value);
                     let duration = start.elapsed();
                     tracing::debug!(
                         duration_ms = duration.as_millis() as u64,

@@ -57,30 +57,30 @@ impl Collection {
         }
     }
 
-    pub(crate) fn new(name: String, wh_path: String) -> Result<Self, DBError> {
-        if !name.starts_with("_") || name == INTERNAL_COLLECTION_NAME.to_string() {
+    pub(crate) fn new(name: &str, wh_path: &str) -> Result<Self, DBError> {
+        if !name.starts_with("_") || name == INTERNAL_COLLECTION_NAME {
             let file_path = format!("{}/{}.tyson", wh_path, name);
             let is_exists = std::path::Path::new(file_path.as_str()).exists();
             if is_exists {
                 let data = read_to_string(file_path.as_str())?;
-                Ok(<Collection as Desereilize>::deserialize(name, data)?)
+                Ok(<Collection as Desereilize>::deserialize(name.to_string(), data)?)
             } else {
                 File::create(file_path.as_str())?;
                 Ok(Self {
-                    name,
+                    name: name.to_string(),
                     values: HashMap::new(),
                 })
             }
         } else {
-            Err(DBError::InvalidCollectionName(name))
+            Err(DBError::InvalidCollectionName(name.to_string()))
         }
     }
 
-    pub(crate) fn get_path(&self, wh_path: String) -> String {
+    pub(crate) fn get_path(&self, wh_path: &str) -> String {
         format!("{}/{}.tyson", wh_path, self.name)
     }
 
-    pub(crate) fn get_file(&self, wh_path: String) -> Result<File, DBError> {
+    pub(crate) fn get_file(&self, wh_path: &str) -> Result<File, DBError> {
         let file_path = self.get_path(wh_path);
         Ok(fs::OpenOptions::new()
             .create(true)

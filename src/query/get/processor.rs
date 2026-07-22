@@ -7,7 +7,7 @@ use crate::{DBError, Item, Link, Primitive, Storage};
 
 pub fn get(
     storage: &Storage,
-    collection_name: String,
+    collection_name: &str,
     query: &GetQuery,
     buf: &mut FilterBuffer,
 ) -> Result<QueryResponse, DBError> {
