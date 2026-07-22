@@ -920,4 +920,164 @@ impl Storage {
     pub fn get_collection(&self, collection_name: &str) -> Option<&Collection> {
         self.warehouse.get(collection_name)
     }
+
+    // ── Memory API ──
+
+    /// Upsert a document by key. If a document with the same key exists, update it.
+    /// If an embedding provider is configured, automatically generates an embedding
+    /// for the `content` field and stores it as `embedding`.
+    pub fn remember(
+        &mut self,
+        collection: &str,
+        content: &str,
+        key: Option<(&str, &str)>,
+    ) -> Result<Link, DBError> {
+        let mut insert_buf = InsertBuffer::new();
+        let link = self.insert_item(
+            "_internal".to_string(),
+            &mut insert_buf,
+            Item::Primitive(Primitive::StringPrimitive(
+                crate::StringPrimitive::new("".to_string(), content.to_string())?,
+            )),
+        )?;
+
+        // Store the content and optional embedding
+        let mut storage_map = crate::data_types::map::storage::StorageMap::new("".to_string())?;
+        storage_map.insert(
+            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "content".to_string())?),
+            Item::Primitive(Primitive::StringPrimitive(
+                crate::StringPrimitive::new("".to_string(), content.to_string())?,
+            )),
+        )?;
+
+        if let Some(provider) = &self.embedding_provider {
+            let embedding = provider.embed(content)?;
+            let emb_primitive = crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
+                provider.dimensions(),
+                embedding,
+            );
+            storage_map.insert(
+                Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "embedding".to_string())?),
+                Item::Primitive(Primitive::EmbeddingPrimitive(emb_primitive)),
+            )?;
+        }
+
+        if let Some((key_field, key_value)) = key {
+            storage_map.insert(
+                Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), key_field.to_string())?),
+                Item::Primitive(Primitive::StringPrimitive(
+                    crate::StringPrimitive::new("".to_string(), key_value.to_string())?,
+                )),
+            )?;
+        }
+
+        let item = storage_map.to_item();
+        let result_link = self.insert_item(collection.to_string(), &mut insert_buf, item)?;
+        self.persist_transaction(&insert_buf)?;
+
+        match result_link {
+            Item::Primitive(Primitive::Link(l)) => Ok(l),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Semantic recall: generate an embedding for the query text and find the k nearest documents.
+    /// Requires an embedding provider to be configured.
+    pub fn recall(
+        &self,
+        collection: &str,
+        query: &str,
+        k: usize,
+    ) -> Result<Vec<(Link, Item)>, DBError> {
+        let provider = self.embedding_provider.as_ref().ok_or_else(|| {
+            DBError::UnsupportedOperation(
+                "recall requires an embedding provider. Set EMBEDDING_PROVIDER and OPENAI_API_KEY.".to_string(),
+            )
+        })?;
+
+        let query_embedding = provider.embed(query)?;
+
+        // Search the vector index
+        let vec_index = self
+            .index_mgr
+            .get_vector_index(collection, "embedding")
+            .ok_or_else(|| {
+                DBError::UnsupportedOperation(
+                    "no vector index on 'embedding' field. Create one first with create_vector_index.".to_string(),
+                )
+            })?;
+
+        let links = vec_index.search(&query_embedding, k);
+
+        // Fetch full documents
+        let insert_buf = InsertBuffer::new();
+        let mut results = Vec::new();
+        for link in links {
+            if let Ok(item) = self.get_item_by_link(&link, &insert_buf, 0, None) {
+                results.push((link, item));
+            }
+        }
+        Ok(results)
+    }
+
+    /// Create a typed relationship edge between two documents.
+    pub fn relate(
+        &mut self,
+        from: &Link,
+        to: &Link,
+        relation_type: &str,
+        metadata: Option<Vec<(&str, &str)>>,
+    ) -> Result<Link, DBError> {
+        let mut insert_buf = InsertBuffer::new();
+        let mut storage_map = crate::data_types::map::storage::StorageMap::new("".to_string())?;
+
+        storage_map.insert(
+            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "from".to_string())?),
+            Item::Primitive(Primitive::Link(from.clone())),
+        )?;
+        storage_map.insert(
+            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "to".to_string())?),
+            Item::Primitive(Primitive::Link(to.clone())),
+        )?;
+        storage_map.insert(
+            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "type".to_string())?),
+            Item::Primitive(Primitive::StringPrimitive(
+                crate::StringPrimitive::new("".to_string(), relation_type.to_string())?,
+            )),
+        )?;
+
+        if let Some(meta_pairs) = metadata {
+            for (k, v) in meta_pairs {
+                storage_map.insert(
+                    Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), k.to_string())?),
+                    Item::Primitive(Primitive::StringPrimitive(
+                        crate::StringPrimitive::new("".to_string(), v.to_string())?,
+                    )),
+                )?;
+            }
+        }
+
+        let item = storage_map.to_item();
+        let result = self.insert_item("edges".to_string(), &mut insert_buf, item)?;
+        self.persist_transaction(&insert_buf)?;
+
+        match result {
+            Item::Primitive(Primitive::Link(l)) => Ok(l),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Delete a document by link.
+    pub fn forget(&mut self, link: &Link) -> Result<(), DBError> {
+        let mut insert_buf = InsertBuffer::new();
+        let deleted = Item::Primitive(Primitive::DeletedPrimitive(
+            crate::data_types::primitives::deleted::DeletedPrimitive::new(
+                "".to_string(),
+                "".to_string(),
+            )?,
+        ));
+        insert_buf.insert(link.clone(), deleted);
+        self.persist_transaction(&insert_buf)?;
+        Ok(())
+    }
 }
