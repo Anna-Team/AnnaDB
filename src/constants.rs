@@ -28,6 +28,7 @@ pub const PROJECT_QUERY: &str = "project";
 // FIND OPERATORS
 pub const EQ_OPERATOR: &str = "eq";
 pub const NEQ_OPERATOR: &str = "neq";
+pub const KNN_OPERATOR: &str = "knn";
 pub const GT_OPERATOR: &str = "gt";
 pub const GTE_OPERATOR: &str = "gte";
 pub const LT_OPERATOR: &str = "lt";

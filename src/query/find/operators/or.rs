@@ -43,6 +43,9 @@ impl TySONVector for OrOperator {
             Item::Map(MapItem::LteOperator(_)) => {
                 self.items.push(item);
             }
+            Item::Map(MapItem::KnnOperator(_)) => {
+                self.items.push(item);
+            }
             _ => return Err(DBError::UnsupportedOperation("item for OR operator".to_string())),
         };
         Ok(true)

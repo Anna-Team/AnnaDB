@@ -1,8 +1,8 @@
 use serde::{Serialize, Deserialize};
 
 use crate::constants::{
-    EQ_OPERATOR, GTE_OPERATOR, GT_OPERATOR, INC_OPERATOR, LTE_OPERATOR, LT_OPERATOR, NEQ_OPERATOR,
-    PROJECT_QUERY, RESPONSE_OBJECTS, SET_OPERATOR, STORAGE_MAP,
+    EQ_OPERATOR, GTE_OPERATOR, GT_OPERATOR, INC_OPERATOR, KNN_OPERATOR, LTE_OPERATOR,
+    LT_OPERATOR, NEQ_OPERATOR, PROJECT_QUERY, RESPONSE_OBJECTS, SET_OPERATOR, STORAGE_MAP,
 };
 use crate::data_types::item::Item;
 use crate::data_types::map::storage::StorageMap;
@@ -10,6 +10,7 @@ use crate::data_types::primitives::Primitive;
 use crate::query::find::operators::eq::EqOperator;
 use crate::query::find::operators::gt::GtOperator;
 use crate::query::find::operators::gte::GteOperator;
+use crate::query::find::operators::knn::KnnOperator;
 use crate::query::find::operators::lt::LtOperator;
 use crate::query::find::operators::lte::LteOperator;
 use crate::query::find::operators::neq::NeqOperator;
@@ -37,6 +38,7 @@ pub enum MapItem {
     GteOperator(GteOperator),
     LtOperator(LtOperator),
     LteOperator(LteOperator),
+    KnnOperator(KnnOperator),
 
     // UPDATE OPERATORS
     SetOperator(SetOperator),
@@ -58,6 +60,7 @@ impl BaseTySONItemInterface for MapItem {
             MapItem::GteOperator(o) => o.get_prefix(),
             MapItem::LtOperator(o) => o.get_prefix(),
             MapItem::LteOperator(o) => o.get_prefix(),
+            MapItem::KnnOperator(o) => o.get_prefix(),
             MapItem::IncOperator(o) => o.get_prefix(),
             MapItem::ResponseObjects(o) => o.get_prefix(),
         }
@@ -79,6 +82,7 @@ impl TySONMap for MapItem {
             GTE_OPERATOR => Ok(MapItem::GteOperator(GteOperator::new("".to_string())?)),
             LT_OPERATOR => Ok(MapItem::LtOperator(LtOperator::new("".to_string())?)),
             LTE_OPERATOR => Ok(MapItem::LteOperator(LteOperator::new("".to_string())?)),
+            KNN_OPERATOR => Ok(MapItem::KnnOperator(KnnOperator::new("".to_string())?)),
             INC_OPERATOR => Ok(MapItem::IncOperator(IncOperator::new("".to_string())?)),
             RESPONSE_OBJECTS => Ok(MapItem::ResponseObjects(ResponseObjects::new(
                 "".to_string(),
@@ -98,6 +102,7 @@ impl TySONMap for MapItem {
             MapItem::GteOperator(o) => o.insert(k, v),
             MapItem::LtOperator(o) => o.insert(k, v),
             MapItem::LteOperator(o) => o.insert(k, v),
+            MapItem::KnnOperator(o) => o.insert(k, v),
             MapItem::IncOperator(o) => o.insert(k, v),
             MapItem::ResponseObjects(o) => o.insert(k, v),
         }
@@ -114,6 +119,7 @@ impl TySONMap for MapItem {
             MapItem::GteOperator(o) => o.get_items(),
             MapItem::LtOperator(o) => o.get_items(),
             MapItem::LteOperator(o) => o.get_items(),
+            MapItem::KnnOperator(o) => o.get_items(),
             MapItem::IncOperator(o) => o.get_items(),
             MapItem::ResponseObjects(o) => o.get_items(),
         }

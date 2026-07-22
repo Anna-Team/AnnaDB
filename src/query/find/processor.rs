@@ -5,7 +5,37 @@ use crate::response::meta::{FindMeta, Meta};
 use crate::response::{QueryResponse, QueryStatus};
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::index::{CompareOp, IndexKey};
+use crate::storage::vector::hnsw::HnswMetric;
 use crate::{DBError, Item, Link, MapItem, Primitive, Storage};
+
+fn try_knn_lookup(
+    storage: &Storage,
+    collection_name: &str,
+    op: &Item,
+) -> Option<Vec<Link>> {
+    match op {
+        Item::Map(MapItem::KnnOperator(knn)) => {
+            let field_path = knn.get_field();
+            if field_path.is_empty() {
+                return None;
+            }
+            let vec_index = storage.index_mgr.get_vector_index(collection_name, field_path)?;
+            let embedding = knn.get_query_embedding();
+            let metric = match knn.get_metric() {
+                "euclidean" => HnswMetric::Euclidean,
+                "dot" => HnswMetric::DotProduct,
+                _ => HnswMetric::Cosine,
+            };
+            if vec_index.metric != metric {
+                return None;
+            }
+            let k = knn.get_k();
+            let results = vec_index.search(embedding.values(), k);
+            Some(results)
+        }
+        _ => None,
+    }
+}
 
 fn get_ids_list(
     storage: &Storage,
@@ -124,13 +154,17 @@ pub fn find(
         } else {
             started = true;
 
+            // Try knn (vector search) for the first filter
+            if insert_buf.items.is_empty() {
+                if let Some(knn_ids) = try_knn_lookup(storage, &collection_name, op) {
+                    found_ids = knn_ids;
+                    continue;
+                }
+            }
+
             // Try index lookup for the first filter on this collection
             if insert_buf.items.is_empty() {
                 if let Some(indexed_ids) = try_index_lookup(storage, &collection_name, op) {
-                    // Index hit: use indexed results directly, but still verify
-                    // against the compare function for correctness (handles edge
-                    // cases like type mismatches the index doesn't track).
-                    // For simple cases this is redundant but safe.
                     found_ids = indexed_ids;
                     continue;
                 }
