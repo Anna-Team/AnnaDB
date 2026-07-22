@@ -632,6 +632,7 @@ impl Storage {
     }
 
     /// Create a vector index on a field path for a collection.
+    /// Immediately populates the index from existing data.
     pub fn create_vector_index(
         &mut self,
         collection_name: &str,
@@ -643,6 +644,10 @@ impl Storage {
     ) {
         self.index_mgr
             .create_vector_index(collection_name, field_path, dims, m, ef_construction, metric);
+        if let Some(collection) = self.warehouse.get(collection_name) {
+            let data = collection.values.clone();
+            self.index_mgr.rebuild_collection(collection_name, &data);
+        }
     }
 
     fn sync_buf_to_disk(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
@@ -933,49 +938,53 @@ impl Storage {
         key: Option<(&str, &str)>,
     ) -> Result<Link, DBError> {
         let mut insert_buf = InsertBuffer::new();
-        let link = self.insert_item(
-            "_internal".to_string(),
-            &mut insert_buf,
-            Item::Primitive(Primitive::StringPrimitive(
-                crate::StringPrimitive::new("".to_string(), content.to_string())?,
-            )),
-        )?;
-
-        // Store the content and optional embedding
         let mut storage_map = crate::data_types::map::storage::StorageMap::new("".to_string())?;
+
         storage_map.insert(
-            Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "content".to_string())?),
-            Item::Primitive(Primitive::StringPrimitive(
-                crate::StringPrimitive::new("".to_string(), content.to_string())?,
-            )),
+            Primitive::StringPrimitive(crate::StringPrimitive::new(
+                "".to_string(),
+                "content".to_string(),
+            )?),
+            Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
+                "".to_string(),
+                content.to_string(),
+            )?)),
         )?;
 
         if let Some(provider) = &self.embedding_provider {
             let embedding = provider.embed(content)?;
-            let emb_primitive = crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
-                provider.dimensions(),
-                embedding,
-            );
+            let emb_primitive =
+                crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
+                    provider.dimensions(),
+                    embedding,
+                );
             storage_map.insert(
-                Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), "embedding".to_string())?),
+                Primitive::StringPrimitive(crate::StringPrimitive::new(
+                    "".to_string(),
+                    "embedding".to_string(),
+                )?),
                 Item::Primitive(Primitive::EmbeddingPrimitive(emb_primitive)),
             )?;
         }
 
         if let Some((key_field, key_value)) = key {
             storage_map.insert(
-                Primitive::StringPrimitive(crate::StringPrimitive::new("".to_string(), key_field.to_string())?),
-                Item::Primitive(Primitive::StringPrimitive(
-                    crate::StringPrimitive::new("".to_string(), key_value.to_string())?,
-                )),
+                Primitive::StringPrimitive(crate::StringPrimitive::new(
+                    "".to_string(),
+                    key_field.to_string(),
+                )?),
+                Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
+                    "".to_string(),
+                    key_value.to_string(),
+                )?)),
             )?;
         }
 
         let item = storage_map.to_item();
-        let result_link = self.insert_item(collection.to_string(), &mut insert_buf, item)?;
+        let result = self.insert_item(collection.to_string(), &mut insert_buf, item)?;
         self.persist_transaction(&insert_buf)?;
 
-        match result_link {
+        match result {
             Item::Primitive(Primitive::Link(l)) => Ok(l),
             _ => unreachable!(),
         }

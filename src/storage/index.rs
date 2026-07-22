@@ -293,6 +293,32 @@ impl IndexManager {
                 }
             }
         }
+
+        if let Some(vec_fields) = self.vector_indexes.get(collection_name) {
+            let fields: Vec<String> = vec_fields.keys().cloned().collect();
+            for field_path in &fields {
+                let (dims, m, ef, metric) = {
+                    let idx = self
+                        .vector_indexes
+                        .get(collection_name)
+                        .and_then(|m| m.get(field_path));
+                    match idx {
+                        Some(i) => (i.dims, i.hnsw.M, i.hnsw.ef_construction, i.metric),
+                        None => continue,
+                    }
+                };
+                let mut new_idx = VectorIndex::new(field_path.clone(), dims, m, ef, metric);
+                for (link, item) in data {
+                    if let Some(emb) = extract_embedding(item, field_path) {
+                        new_idx.insert(&emb, link.clone());
+                    }
+                }
+                self.vector_indexes
+                    .get_mut(collection_name)
+                    .and_then(|m| m.insert(field_path.clone(), new_idx));
+            }
+        }
+
         info!(collection = collection_name, documents = data.len(), "indexes rebuilt");
     }
 }
