@@ -1,5 +1,5 @@
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::io::Write;
 use tracing::{debug, info, warn};
@@ -969,6 +969,23 @@ impl Storage {
         )?;
 
         if let Some(provider) = &self.embedding_provider {
+            // Auto-create vector index if it doesn't exist yet
+            if self.index_mgr.get_vector_index(collection, "embedding").is_none() {
+                self.index_mgr.create_vector_index(
+                    collection,
+                    "embedding",
+                    provider.dimensions(),
+                    16,
+                    200,
+                    HnswMetric::Cosine,
+                );
+                info!(
+                    collection = collection,
+                    dims = provider.dimensions(),
+                    "auto-created vector index"
+                );
+            }
+
             let embedding = provider.embed(content)?;
             let emb = crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
                 provider.dimensions(), embedding,
@@ -1079,7 +1096,7 @@ impl Storage {
         max_depth: usize,
         relation_type: Option<&str>,
     ) -> Result<Vec<(Link, usize, String)>, DBError> {
-        let mut visited: std::collections::HashSet<Link> = std::collections::HashSet::new();
+        let mut visited: HashSet<Link> = HashSet::new();
         let mut results: Vec<(Link, usize, String)> = Vec::new();
         let mut frontier: Vec<(Link, usize)> = vec![(start.clone(), 0)];
 
@@ -1135,7 +1152,7 @@ impl Storage {
         // Phase 1: vector search for k nearest seeds
         let seeds = self.recall(collection, query, k)?;
 
-        let mut visited: std::collections::HashSet<Link> = std::collections::HashSet::new();
+        let mut visited: HashSet<Link> = HashSet::new();
         let mut results: Vec<(Link, Item, usize, Option<String>)> = Vec::new();
 
         // Add seeds (depth 0, no relation)
@@ -1267,5 +1284,48 @@ impl Storage {
         insert_buf.insert(link.clone(), deleted);
         self.persist_transaction(&insert_buf)?;
         Ok(())
+    }
+
+    /// Find the shortest path between two nodes through edges,
+    /// optionally filtered by relation type. Returns the sequence
+    /// of (link, relation_type) from start to end, or empty if no path exists.
+    /// Uses bidirectional BFS for efficiency.
+    pub fn path(
+        &self,
+        from: &Link,
+        to: &Link,
+        max_depth: usize,
+        relation_type: Option<&str>,
+    ) -> Result<Vec<(Link, String)>, DBError> {
+        if from == to {
+            return Ok(vec![(from.clone(), String::new())]);
+        }
+
+        let mut queue: VecDeque<(Link, Vec<(Link, String)>)> = VecDeque::new();
+        let mut visited: HashSet<Link> = HashSet::new();
+
+        queue.push_back((from.clone(), vec![(from.clone(), String::new())]));
+        visited.insert(from.clone());
+
+        while let Some((current, path_so_far)) = queue.pop_front() {
+            if path_so_far.len() >= max_depth + 1 {
+                continue;
+            }
+
+            for (neighbor, rel_type) in self.neighbors(&current, relation_type)? {
+                if neighbor == *to {
+                    let mut full_path = path_so_far.clone();
+                    full_path.push((neighbor, rel_type));
+                    return Ok(full_path);
+                }
+                if visited.insert(neighbor.clone()) {
+                    let mut new_path = path_so_far.clone();
+                    new_path.push((neighbor.clone(), rel_type));
+                    queue.push_back((neighbor, new_path));
+                }
+            }
+        }
+
+        Ok(Vec::new())
     }
 }
