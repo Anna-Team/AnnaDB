@@ -17,14 +17,18 @@ pub fn resolve(
     let default = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
     match rules {
         Item::Primitive(Primitive::KeepPrimitive(_)) => {
-            let path = PathToValue::new("".to_string(), field.unwrap().get_string_value())?;
-            let res = storage.get_value_by_path(path, link.clone(), insert_buf)?;
-            match res {
-                Some(o) => {
-                    let item_to_fetch = o.value.unwrap_or(default);
-                    Ok(storage.fetch(&item_to_fetch, insert_buf, 0)?)
+            if let Some(f) = field {
+                let path = PathToValue::new("".to_string(), f.get_string_value())?;
+                let res = storage.get_value_by_path(path, link.clone(), insert_buf)?;
+                match res {
+                    Some(o) => {
+                        let item_to_fetch = o.value.unwrap_or(default);
+                        Ok(storage.fetch(&item_to_fetch, insert_buf, 0)?)
+                    }
+                    None => Ok(default),
                 }
-                None => Ok(default),
+            } else {
+                Ok(default)
             }
         }
         Item::Primitive(Primitive::PathToValue(path)) => {
@@ -45,10 +49,11 @@ pub fn resolve(
         Item::Vector(v) => {
             let mut new_vec = StorageVector::new("".to_string())?;
             for (i, v) in v.get_items().iter().enumerate() {
-                let mut new_field = i.to_string();
-                if field.is_some() {
-                    new_field = format!("{}.{}", field.unwrap().get_string_value(), new_field);
-                }
+                let new_field = if let Some(f) = field {
+                    format!("{}.{}", f.get_string_value(), i)
+                } else {
+                    i.to_string()
+                };
 
                 new_vec.push(resolve(
                     v.clone(),
@@ -65,11 +70,11 @@ pub fn resolve(
             for (k, v) in m.get_items() {
                 match &k {
                     Primitive::StringPrimitive(s) => {
-                        let mut new_field = s.get_string_value();
-                        if field.is_some() {
-                            new_field =
-                                format!("{}.{}", field.unwrap().get_string_value(), new_field);
-                        }
+                        let new_field = if let Some(f) = field {
+                            format!("{}.{}", f.get_string_value(), s.get_string_value())
+                        } else {
+                            s.get_string_value()
+                        };
 
                         new_map.insert(
                             k.clone(),

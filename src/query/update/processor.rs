@@ -80,7 +80,14 @@ fn manage_operator(
                     return Err(DBError::TypeMismatch("inc operator supports numbers only".to_string()));
                 }
             },
-            _ => {}
+            None | Some(Item::Primitive(Primitive::DeletedPrimitive(_))) => {
+                return Err(DBError::TypeMismatch(
+                    "inc operator requires a number value".to_string(),
+                ));
+            }
+            _ => return Err(DBError::TypeMismatch(
+                "inc operator requires a number value".to_string(),
+            )),
         },
         _ => {
             return Err(DBError::UnsupportedOperation("update operator".to_string()));
@@ -138,7 +145,9 @@ fn process(
                     updated = true;
                     manage_operator(op, storage, insert_buf, v, o)?;
                 }
-                _ => {}
+        _ => return Err(DBError::TypeMismatch(
+            "cannot update non-map, non-vector container".to_string(),
+        )),
             }
         }
         if updated {

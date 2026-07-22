@@ -5,7 +5,7 @@ use crate::response::{QueryResponse, QueryStatus};
 use crate::storage::buffer::FilterBuffer;
 use crate::{DBError, Item, Primitive};
 
-pub fn offset(query: &OffsetQuery, mut buf: &mut FilterBuffer) -> Result<QueryResponse, DBError> {
+pub fn offset(query: &OffsetQuery, buf: &mut FilterBuffer) -> Result<QueryResponse, DBError> {
     match query.get_value() {
         Item::Primitive(Primitive::NumberPrimitive(n)) => {
             let number = n.get_value() as usize;
@@ -15,7 +15,7 @@ pub fn offset(query: &OffsetQuery, mut buf: &mut FilterBuffer) -> Result<QueryRe
                 buf.ids = vec![];
             }
         }
-        _ => {}
+        _ => return Err(DBError::TypeMismatch("offset expects a number".to_string())),
     }
     let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
     let meta = Meta::FindMeta(FindMeta::new(buf.ids.len()));

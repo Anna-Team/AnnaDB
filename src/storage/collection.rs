@@ -63,7 +63,7 @@ impl Collection {
             let is_exists = std::path::Path::new(file_path.as_str()).exists();
             if is_exists {
                 let data = read_to_string(file_path.as_str())?;
-                Ok(Self::deserialize(name, data)?)
+                Ok(<Collection as Desereilize>::deserialize(name, data)?)
             } else {
                 File::create(file_path.as_str())?;
                 Ok(Self {

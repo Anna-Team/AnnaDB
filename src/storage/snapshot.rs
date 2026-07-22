@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use crate::data_types::item::Item;
 use crate::data_types::primitives::link::Link;

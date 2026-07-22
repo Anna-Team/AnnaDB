@@ -15,7 +15,7 @@ pub trait TySONVector: BaseTySONItemInterface {
         let prefix = self.get_prefix();
         let mut contents: Vec<String> = vec![];
         for i in self.get_items() {
-            contents.push(i.serialize())
+            contents.push(i.to_tyson())
         }
         format!("{}[{}]", prefix, contents.join(","))
     }

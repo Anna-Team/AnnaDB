@@ -17,7 +17,7 @@ pub trait TySONMap: BaseTySONItemInterface {
     fn serialize(&self) -> String {
         let mut contents: Vec<String> = vec![];
         for (k, v) in self.get_items() {
-            let s = format!("{}:{}", k.serialize(), v.serialize());
+            let s = format!("{}:{}", k.serialize(), v.to_tyson());
             contents.push(s);
         }
         format!("{}{{{}}}", self.get_prefix(), contents.join(","))

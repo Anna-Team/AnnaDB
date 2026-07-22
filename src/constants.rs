@@ -7,6 +7,7 @@ pub const COLLECTION_NAME: &str = "collection";
 pub const PATH_TO_VALUE: &str = "value";
 pub const DELETED: &str = "deleted";
 pub const UTS: &str = "uts";
+pub const EMBEDDING: &str = "e";
 
 pub const STORAGE_MAP: &str = "m";
 

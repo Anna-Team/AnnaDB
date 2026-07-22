@@ -19,12 +19,12 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn serialize(&self) -> String {
+    pub fn to_tyson(&self) -> String {
         match self {
-            Self::Primitive(o) => o.serialize(),
-            Self::Map(o) => o.serialize(),
-            Self::Vector(o) => o.serialize(),
-            Self::Modifier(o) => o.serialize(),
+            Self::Primitive(o) => Primitive::serialize(o),
+            Self::Map(o) => TySONMap::serialize(o),
+            Self::Vector(o) => TySONVector::serialize(o),
+            Self::Modifier(o) => TySONModifier::serialize(o),
         }
     }
 

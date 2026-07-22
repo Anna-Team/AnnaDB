@@ -26,7 +26,7 @@ impl QueryResponse {
     }
 
     pub fn serialize(&self) -> String {
-        let data_string = self.data.serialize();
+        let data_string = self.data.to_tyson();
         let meta_string = self.meta.serialize();
         format!(
             "{}{{s|data|:{},s|meta|:{},}}",

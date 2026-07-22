@@ -33,12 +33,12 @@ impl TySONModifier for AscOperator {
             Item::Primitive(Primitive::RootPrimitive(_)) => Ok(Self {
                 expr: Box::new(value),
             }),
-            _ => Err(DBError::TypeMismatch(format!("cannot sort by {}", value.serialize()))),
+            _ => Err(DBError::TypeMismatch(format!("cannot sort by {}", value.to_tyson()))),
         }
     }
 
     fn get_serialized_value(&self) -> String {
-        self.expr.serialize()
+        self.expr.to_tyson()
     }
 }
 
@@ -70,7 +70,7 @@ impl TySONModifier for DescOperator {
     }
 
     fn get_serialized_value(&self) -> String {
-        self.expr.serialize()
+        self.expr.to_tyson()
     }
 }
 
@@ -106,7 +106,7 @@ impl TySONVector for SortQuery {
                 self.items.push(item);
                 Ok(true)
             }
-            _ => Err(DBError::UnsupportedOperation(format!("sort operator: {}", item.serialize()))),
+            _ => Err(DBError::UnsupportedOperation(format!("sort operator: {}", item.to_tyson()))),
         }
     }
 

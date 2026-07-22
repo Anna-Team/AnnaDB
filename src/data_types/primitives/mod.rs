@@ -1,11 +1,12 @@
 use serde::{Serialize, Deserialize};
 
 use crate::constants::{
-    BOOL, COLLECTION_NAME, DELETED, DELETE_QUERY, KEEP, NULL, NUMBER, PATH_TO_VALUE, ROOT, STRING,
-    UTS,
+    BOOL, COLLECTION_NAME, DELETED, DELETE_QUERY, EMBEDDING, KEEP, NULL, NUMBER, PATH_TO_VALUE,
+    ROOT, STRING, UTS,
 };
 use crate::data_types::primitives::bool::BoolPrimitive;
 use crate::data_types::primitives::deleted::DeletedPrimitive;
+use crate::data_types::primitives::embedding::EmbeddingPrimitive;
 use crate::data_types::primitives::link::Link;
 use crate::data_types::primitives::null::NullPrimitive;
 use crate::data_types::primitives::number::NumberPrimitive;
@@ -21,6 +22,7 @@ use crate::{DBError, PathToValue};
 
 pub mod bool;
 pub mod deleted;
+pub mod embedding;
 pub mod link;
 mod null;
 pub mod number;
@@ -38,6 +40,7 @@ pub enum Primitive {
     BoolPrimitive(BoolPrimitive),
     NullPrimitive(NullPrimitive),
     DeletedPrimitive(DeletedPrimitive),
+    EmbeddingPrimitive(EmbeddingPrimitive),
 
     CollectionName(CollectionName),
     PathToValue(PathToValue),
@@ -59,6 +62,9 @@ impl Primitive {
             DELETED => Ok(Self::DeletedPrimitive(DeletedPrimitive::new(
                 prefix, value,
             )?)),
+            EMBEDDING => Ok(Self::EmbeddingPrimitive(TySONPrimitive::new(
+                prefix, value,
+            )?)),
 
             COLLECTION_NAME => Ok(Self::CollectionName(CollectionName::new(prefix, value)?)),
 
@@ -69,28 +75,29 @@ impl Primitive {
 
             KEEP => Ok(Self::KeepPrimitive(KeepPrimitive::new(prefix, value)?)),
 
-            _ => Ok(Self::Link(Link::new(prefix, value)?)),
+            _ => Err(DBError::Deserialization),
         }
     }
 
     pub(crate) fn serialize(&self) -> String {
         match self {
-            Self::Link(o) => o.serialize(),
+            Self::Link(o) => TySONPrimitive::serialize(o),
 
-            Self::StringPrimitive(o) => o.serialize(),
-            Self::NumberPrimitive(o) => o.serialize(),
-            Self::UTSPrimitive(o) => o.serialize(),
-            Self::BoolPrimitive(o) => o.serialize(),
-            Self::NullPrimitive(o) => o.serialize(),
-            Self::DeletedPrimitive(o) => o.serialize(),
+            Self::StringPrimitive(o) => TySONPrimitive::serialize(o),
+            Self::NumberPrimitive(o) => TySONPrimitive::serialize(o),
+            Self::UTSPrimitive(o) => TySONPrimitive::serialize(o),
+            Self::BoolPrimitive(o) => TySONPrimitive::serialize(o),
+            Self::NullPrimitive(o) => TySONPrimitive::serialize(o),
+            Self::DeletedPrimitive(o) => TySONPrimitive::serialize(o),
+            Self::EmbeddingPrimitive(o) => TySONPrimitive::serialize(o),
 
-            Self::CollectionName(o) => o.serialize(),
-            Self::PathToValue(o) => o.serialize(),
-            Self::RootPrimitive(o) => o.serialize(),
+            Self::CollectionName(o) => TySONPrimitive::serialize(o),
+            Self::PathToValue(o) => TySONPrimitive::serialize(o),
+            Self::RootPrimitive(o) => TySONPrimitive::serialize(o),
 
-            Self::DeleteQuery(o) => o.serialize(),
+            Self::DeleteQuery(o) => TySONPrimitive::serialize(o),
 
-            Self::KeepPrimitive(o) => o.serialize(),
+            Self::KeepPrimitive(o) => TySONPrimitive::serialize(o),
         }
     }
 
@@ -104,6 +111,7 @@ impl Primitive {
             Self::BoolPrimitive(o) => o.get_prefix(),
             Self::NullPrimitive(o) => o.get_prefix(),
             Self::DeletedPrimitive(o) => o.get_prefix(),
+            Self::EmbeddingPrimitive(o) => o.get_prefix(),
 
             Self::CollectionName(o) => o.get_prefix(),
             Self::PathToValue(o) => o.get_prefix(),
@@ -131,5 +139,36 @@ impl From<StringPrimitive> for Primitive {
 impl From<CollectionName> for Primitive {
     fn from(data: CollectionName) -> Self {
         Primitive::CollectionName(data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unknown_prefix_with_valid_uuid_returns_error() {
+        let result = Primitive::new(
+            "nosuchprefix".to_string(),
+            "550e8400-e29b-41d4-a716-446655440000".to_string(),
+        );
+        assert!(
+            result.is_err(),
+            "Unknown prefix should return Err, not silently become a Link"
+        );
+    }
+
+    #[test]
+    fn unknown_prefix_with_garbage_value_returns_error() {
+        let result = Primitive::new("nosuchprefix".to_string(), "some_value".to_string());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn known_prefixes_succeed() {
+        assert!(Primitive::new("s".to_string(), "hello".to_string()).is_ok());
+        assert!(Primitive::new("n".to_string(), "42".to_string()).is_ok());
+        assert!(Primitive::new("b".to_string(), "true".to_string()).is_ok());
+        assert!(Primitive::new("null".to_string(), "".to_string()).is_ok());
     }
 }

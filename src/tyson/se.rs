@@ -8,7 +8,7 @@ pub trait Serialize {
         let mut contents: Vec<String> = vec![];
 
         for (k, v) in self.items() {
-            contents.push(format!("{}:{}", k.serialize(), v.serialize()));
+            contents.push(format!("{}:{}", k.serialize(), v.to_tyson()));
         }
         format!("{}", contents.join(";"))
     }

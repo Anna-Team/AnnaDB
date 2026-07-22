@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info};
 
 use crate::constants::{
     DELETED, FETCH_DEPTH_LIMIT, INTERNAL_COLLECTION_NAME, NULL, ROOT, STORAGE_MAP, STORAGE_VECTOR,
@@ -29,7 +29,9 @@ use crate::response::{
 };
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::collection::Collection;
+use crate::storage::index::IndexManager;
 use crate::storage::snapshot::SnapshotManager;
+use crate::storage::vector::hnsw::HnswMetric;
 use crate::storage::wal::Wal;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
@@ -81,46 +83,50 @@ pub struct Storage {
     wal: Wal,
     snapshot_mgr: SnapshotManager,
     tx_since_snapshot: u64,
+    pub(crate) index_mgr: IndexManager,
 }
 
 impl Storage {
-    pub fn new(wh_path: String) -> Result<Self, DBError> {
-        fs::create_dir_all(wh_path.clone())?;
-
-        let snapshot_mgr = SnapshotManager::new(&wh_path);
+    fn load_warehouse(
+        wh_path: &str,
+        snapshot_mgr: &SnapshotManager,
+    ) -> Result<(HashMap<String, Collection>, u64), DBError> {
         let mut warehouse: HashMap<String, Collection> = HashMap::new();
-        let mut snapshot_tx_id: u64 = 0;
 
-        // Try loading from snapshot first, fall back to .tyson files
         if let Some(snapshot) = snapshot_mgr.load()? {
-            snapshot_tx_id = snapshot.last_tx_id;
+            let snapshot_tx_id = snapshot.last_tx_id;
             for (name, values) in snapshot.collections {
                 let mut collection = Collection::create_empty(name.clone());
                 collection.values = values;
                 warehouse.insert(name, collection);
             }
             info!(collections = warehouse.len(), "loaded from snapshot");
+            Ok((warehouse, snapshot_tx_id))
         } else {
-            // Fall back to .tyson files
-            Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.clone())?;
-            let paths = fs::read_dir(format!("{}/", wh_path.clone()))?;
+            Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.to_string())?;
+            let paths = fs::read_dir(format!("{}/", wh_path))?;
             for path in paths {
                 let file_name = path?.file_name().into_string()?;
                 if !file_name.ends_with(".tyson") {
                     continue;
                 }
                 let collection_name = file_name.replace(".tyson", "");
-                let collection = Collection::new(collection_name.clone(), wh_path.clone())?;
+                let collection =
+                    Collection::new(collection_name.clone(), wh_path.to_string())?;
                 info!(collection = %collection_name, "loaded collection from .tyson");
                 warehouse.insert(collection_name.clone(), collection);
             }
+            Ok((warehouse, 0))
         }
+    }
 
-        let mut wal = Wal::new(&wh_path)?;
-
-        // Replay WAL entries after the snapshot point
+    fn replay_wal_entries(
+        warehouse: &mut HashMap<String, Collection>,
+        wal: &Wal,
+        snapshot_tx_id: u64,
+    ) -> Result<u64, DBError> {
         let entries = wal.read_entries()?;
-        let mut max_tx_id: u64 = snapshot_tx_id;
+        let mut max_tx_id = snapshot_tx_id;
         let replay_entries: Vec<_> = entries
             .into_iter()
             .filter(|e| e.tx_id > snapshot_tx_id)
@@ -131,7 +137,6 @@ impl Storage {
                 if entry.tx_id > max_tx_id {
                     max_tx_id = entry.tx_id;
                 }
-                // Apply directly to warehouse
                 for collection_name in &entry.buffer.dropped_collections {
                     warehouse.remove(collection_name);
                 }
@@ -152,7 +157,21 @@ impl Storage {
                 }
             }
         }
+        Ok(max_tx_id)
+    }
+
+    pub fn new(wh_path: String) -> Result<Self, DBError> {
+        fs::create_dir_all(wh_path.clone())?;
+
+        let snapshot_mgr = SnapshotManager::new(&wh_path);
+        let (mut warehouse, snapshot_tx_id) =
+            Self::load_warehouse(&wh_path, &snapshot_mgr)?;
+
+        let mut wal = Wal::new(&wh_path)?;
+        let max_tx_id = Self::replay_wal_entries(&mut warehouse, &wal, snapshot_tx_id)?;
         wal.update_tx_counter(max_tx_id);
+
+        let index_mgr = IndexManager::new();
 
         info!(collections = warehouse.len(), path = %wh_path, "storage ready");
         Ok(Self {
@@ -161,6 +180,7 @@ impl Storage {
             wal,
             snapshot_mgr,
             tx_since_snapshot: 0,
+            index_mgr,
         })
     }
 
@@ -174,183 +194,206 @@ impl Storage {
         };
     }
 
-    fn run_transaction(&mut self, data: String) -> Result<OkTransactionResponse, DBError> {
-        let transaction = Transaction::deserialize("".to_string(), data)?;
-
-        let mut transaction_response: OkTransactionResponse = OkTransactionResponse::new();
-        // let mut bufs: Vec<InsertBuffer> = vec![];
-        let mut insert_buf: InsertBuffer = InsertBuffer::new();
-        let mut projection: Option<ProjectQuery> = None;
-
-        for query_set in transaction.steps {
-            let mut filter_buf: FilterBuffer = FilterBuffer::new();
-            let mut next_available: Vec<QueryOperation> = vec![
-                QueryOperation::InsertOperation,
-                QueryOperation::FindOperation,
-                QueryOperation::GetOperation,
-                QueryOperation::DeleteOperation,
-            ];
-            let collection_name = query_set.collection_name.clone();
-            let mut iteration = 0;
-            let query_set_size = query_set.query_set.items.len() as i32;
-            for query in query_set.query_set.items {
-                iteration += 1;
-                let query_response: Option<QueryResponse> = match query {
-                    Item::Vector(VectorItem::InsertQuery(o)) => {
-                        if next_available.contains(&QueryOperation::InsertOperation) {
-                            next_available = o.next_available();
-                            Some(insert(
-                                &self,
-                                collection_name.clone(),
-                                &o.items,
-                                &mut insert_buf,
-                            )?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("insert".to_string()));
-                        }
-                    }
-                    Item::Vector(VectorItem::FindQuery(o)) => {
-                        if next_available.contains(&QueryOperation::FindOperation) {
-                            next_available = o.next_available();
-                            let is_first: bool = if iteration == 1 { true } else { false };
-                            Some(find(
-                                &self,
-                                collection_name.clone(),
-                                &o,
-                                &mut filter_buf,
-                                &insert_buf,
-                                is_first,
-                            )?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("find".to_string()));
-                        }
-                    }
-                    Item::Vector(VectorItem::GetQuery(o)) => {
-                        if next_available.contains(&QueryOperation::GetOperation) {
-                            next_available = o.next_available();
-                            Some(get(&self, collection_name.clone(), &o, &mut filter_buf)?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("get".to_string()));
-                        }
-                    }
-                    Item::Vector(VectorItem::UpdateQuery(o)) => {
-                        if next_available.contains(&QueryOperation::UpdateOperation) {
-                            next_available = o.next_available();
-                            Some(update(&self, &o, &mut insert_buf, &filter_buf)?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("update".to_string()));
-                        }
-                    }
-                    Item::Vector(VectorItem::SortQuery(o)) => {
-                        if next_available.contains(&QueryOperation::SortOperation) {
-                            next_available = o.next_available();
-                            Some(sort(&o, &self, &mut filter_buf, &insert_buf)?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("sort".to_string()));
-                        }
-                    }
-                    Item::Primitive(Primitive::DeleteQuery(o)) => {
-                        // TODO rework this
-                        if next_available.contains(&QueryOperation::DeleteOperation) {
-                            next_available = o.next_available();
-                            let delete_res: QueryResponse;
-                            if iteration == 1 {
-                                insert_buf.add_collection_to_drop(collection_name.clone());
-                                let data = Item::Primitive(Primitive::new(
-                                    NULL.to_string(),
-                                    "".to_string(),
-                                )?);
-                                let meta = Meta::DeleteMeta(DeleteMeta::new(0 as usize));
-                                delete_res = QueryResponse::new(data, meta, QueryStatus::Ready);
-                            } else {
-                                let set_operator = Item::Map(MapItem::SetOperator(SetOperator {
-                                    values: vec![(
-                                        Primitive::new(ROOT.to_string(), "".to_string())?,
-                                        Item::Primitive(Primitive::new(
-                                            DELETED.to_string(),
-                                            "".to_string(),
-                                        )?),
-                                    )],
-                                }));
-                                let query = UpdateQuery {
-                                    items: vec![set_operator],
-                                };
-                                delete_res = update(self, &query, &mut insert_buf, &filter_buf)?;
-                            }
-                            Some(delete_res)
-                        } else {
-                            return Err(DBError::QueryUnavailable("delete".to_string()));
-                        }
-                    }
-                    Item::Modifier(ModifierItem::LimitQuery(o)) => {
-                        if next_available.contains(&QueryOperation::LimitOperation) {
-                            next_available = o.next_available();
-                            Some(limit(&o, &mut filter_buf)?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("limit".to_string()));
-                        }
-                    }
-                    Item::Modifier(ModifierItem::OffsetQuery(o)) => {
-                        if next_available.contains(&QueryOperation::LimitOperation) {
-                            next_available = o.next_available();
-                            Some(offset(&o, &mut filter_buf)?)
-                        } else {
-                            return Err(DBError::QueryUnavailable("offset".to_string()));
-                        }
-                    }
-                    Item::Map(MapItem::ProjectQuery(o)) => {
-                        if next_available.contains(&QueryOperation::ProjectOperation) {
-                            next_available = o.next_available();
-                            projection = Some(o.clone());
-                            let data =
-                                Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
-                            let meta = Meta::FindMeta(FindMeta::new(filter_buf.ids.len()));
-                            Some(QueryResponse::new(data, meta, QueryStatus::NotFetched))
-                        } else {
-                            return Err(DBError::QueryUnavailable("project".to_string()));
-                        }
-                    }
-                    _ => {
-                        return Err(DBError::UnexpectedQueryType);
-                    }
-                };
-                if query_response.is_some() {
-                    let mut query_response_unwrapped = query_response.unwrap();
-                    if iteration == query_set_size {
-                        if query_response_unwrapped.status == QueryStatus::NotFetched {
-                            match &projection {
-                                // TODO make it more beautiful
-                                Some(r) => {
-                                    query_response_unwrapped.data =
-                                        self.fetch_found_ids(&filter_buf, &insert_buf, Some(r))?;
-                                }
-                                None => {
-                                    query_response_unwrapped.data =
-                                        self.fetch_found_ids(&filter_buf, &insert_buf, None)?;
-                                }
-                            }
-                            query_response_unwrapped.status = QueryStatus::Ready;
-                        }
-                        transaction_response.add_response(query_response_unwrapped);
-                    }
+    fn dispatch_query(
+        &self,
+        query: &Item,
+        collection_name: &str,
+        iteration: i32,
+        next_available: &[QueryOperation],
+        filter_buf: &mut FilterBuffer,
+        insert_buf: &mut InsertBuffer,
+        projection: &mut Option<ProjectQuery>,
+    ) -> Result<(Option<QueryResponse>, Vec<QueryOperation>), DBError> {
+        let (response, next) = match query {
+            Item::Vector(VectorItem::InsertQuery(o)) => {
+                if next_available.contains(&QueryOperation::InsertOperation) {
+                    let next = o.next_available();
+                    let resp = insert(self, collection_name.to_string(), &o.items, insert_buf)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("insert".to_string()));
                 }
             }
-        }
-        // Write to WAL first (durability point), then apply to memory
-        if insert_buf.changed {
-            self.wal.append(&insert_buf)?;
-        }
-        self.apply_buffer(&insert_buf)?;
-        // Also persist to .tyson files for backwards compatibility
-        self.sync_buf_to_disk(&insert_buf)?;
+            Item::Vector(VectorItem::FindQuery(o)) => {
+                if next_available.contains(&QueryOperation::FindOperation) {
+                    let next = o.next_available();
+                    let is_first = iteration == 1;
+                    let resp = find(self, collection_name.to_string(), o, filter_buf, insert_buf, is_first)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("find".to_string()));
+                }
+            }
+            Item::Vector(VectorItem::GetQuery(o)) => {
+                if next_available.contains(&QueryOperation::GetOperation) {
+                    let next = o.next_available();
+                    let resp = get(self, collection_name.to_string(), o, filter_buf)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("get".to_string()));
+                }
+            }
+            Item::Vector(VectorItem::UpdateQuery(o)) => {
+                if next_available.contains(&QueryOperation::UpdateOperation) {
+                    let next = o.next_available();
+                    let resp = update(self, o, insert_buf, filter_buf)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("update".to_string()));
+                }
+            }
+            Item::Vector(VectorItem::SortQuery(o)) => {
+                if next_available.contains(&QueryOperation::SortOperation) {
+                    let next = o.next_available();
+                    let resp = sort(o, self, filter_buf, insert_buf)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("sort".to_string()));
+                }
+            }
+            Item::Primitive(Primitive::DeleteQuery(o)) => {
+                if next_available.contains(&QueryOperation::DeleteOperation) {
+                    let next = o.next_available();
+                    let resp = if iteration == 1 {
+                        insert_buf.add_collection_to_drop(collection_name.to_string());
+                        let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+                        let meta = Meta::DeleteMeta(DeleteMeta::new(0));
+                        QueryResponse::new(data, meta, QueryStatus::Ready)
+                    } else {
+                        let set_operator = Item::Map(MapItem::SetOperator(SetOperator {
+                            values: vec![(
+                                Primitive::new(ROOT.to_string(), "".to_string())?,
+                                Item::Primitive(Primitive::new(DELETED.to_string(), "".to_string())?),
+                            )],
+                        }));
+                        let query = UpdateQuery { items: vec![set_operator] };
+                        update(self, &query, insert_buf, filter_buf)?
+                    };
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("delete".to_string()));
+                }
+            }
+            Item::Modifier(ModifierItem::LimitQuery(o)) => {
+                if next_available.contains(&QueryOperation::LimitOperation) {
+                    let next = o.next_available();
+                    let resp = limit(o, filter_buf)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("limit".to_string()));
+                }
+            }
+            Item::Modifier(ModifierItem::OffsetQuery(o)) => {
+                if next_available.contains(&QueryOperation::LimitOperation) {
+                    let next = o.next_available();
+                    let resp = offset(o, filter_buf)?;
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("offset".to_string()));
+                }
+            }
+            Item::Map(MapItem::ProjectQuery(o)) => {
+                if next_available.contains(&QueryOperation::ProjectOperation) {
+                    let next = o.next_available();
+                    *projection = Some(o.clone());
+                    let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+                    let meta = Meta::FindMeta(FindMeta::new(filter_buf.ids.len()));
+                    let resp = QueryResponse::new(data, meta, QueryStatus::NotFetched);
+                    (Some(resp), next)
+                } else {
+                    return Err(DBError::QueryUnavailable("project".to_string()));
+                }
+            }
+            _ => return Err(DBError::UnexpectedQueryType),
+        };
+        Ok((response, next))
+    }
 
-        // Periodic snapshot: every 100 write transactions
+    fn finalize_query_response(
+        &self,
+        query_response: &mut QueryResponse,
+        iteration: i32,
+        query_set_size: i32,
+        filter_buf: &FilterBuffer,
+        insert_buf: &InsertBuffer,
+        projection: &Option<ProjectQuery>,
+    ) -> Result<Option<QueryResponse>, DBError> {
+        if iteration != query_set_size {
+            return Ok(None);
+        }
+        if query_response.status != QueryStatus::NotFetched {
+            return Ok(Some(query_response.clone()));
+        }
+        query_response.data = match projection {
+            Some(r) => self.fetch_found_ids(filter_buf, insert_buf, Some(r))?,
+            None => self.fetch_found_ids(filter_buf, insert_buf, None)?,
+        };
+        query_response.status = QueryStatus::Ready;
+        Ok(Some(query_response.clone()))
+    }
+
+    fn persist_transaction(&mut self, insert_buf: &InsertBuffer) -> Result<(), DBError> {
+        if insert_buf.changed {
+            self.wal.append(insert_buf)?;
+        }
+        self.apply_buffer(insert_buf)?;
+        self.sync_buf_to_disk(insert_buf)?;
         if insert_buf.changed {
             self.tx_since_snapshot += 1;
             if self.tx_since_snapshot >= 100 {
                 self.write_snapshot()?;
             }
         }
+        Ok(())
+    }
+
+    fn run_transaction(&mut self, data: String) -> Result<OkTransactionResponse, DBError> {
+        let transaction = Transaction::deserialize("".to_string(), data)?;
+        let mut transaction_response = OkTransactionResponse::new();
+        let mut insert_buf = InsertBuffer::new();
+        let mut projection: Option<ProjectQuery> = None;
+
+        for query_set in transaction.steps {
+            let mut filter_buf = FilterBuffer::new();
+            let mut next_available = vec![
+                QueryOperation::InsertOperation,
+                QueryOperation::FindOperation,
+                QueryOperation::GetOperation,
+                QueryOperation::DeleteOperation,
+            ];
+            let collection_name = query_set.collection_name.clone();
+            let query_set_size = query_set.query_set.items.len() as i32;
+            let mut iteration = 0;
+
+            for query in query_set.query_set.items {
+                iteration += 1;
+                let (query_response, next) = self.dispatch_query(
+                    &query,
+                    &collection_name,
+                    iteration,
+                    &next_available,
+                    &mut filter_buf,
+                    &mut insert_buf,
+                    &mut projection,
+                )?;
+                next_available = next;
+
+                if let Some(mut qr) = query_response {
+                    if let Some(finalized) = self.finalize_query_response(
+                        &mut qr,
+                        iteration,
+                        query_set_size,
+                        &filter_buf,
+                        &insert_buf,
+                        &projection,
+                    )? {
+                        transaction_response.add_response(finalized);
+                    }
+                }
+            }
+        }
+
+        self.persist_transaction(&insert_buf)?;
         Ok(transaction_response)
     }
 
@@ -370,29 +413,64 @@ impl Storage {
         // Apply dropped collections
         for collection_name in &buf.dropped_collections {
             self.warehouse.remove(collection_name);
+            self.index_mgr.drop_collection_indexes(collection_name);
         }
         // Apply item changes to in-memory state
         if buf.changed {
             for (link, item) in &buf.items {
-                let collection = match self.warehouse.entry(link.get_prefix()) {
+                let col_name = link.get_prefix();
+                let collection = match self.warehouse.entry(col_name.clone()) {
                     Entry::Occupied(o) => o.into_mut(),
                     Entry::Vacant(v) => {
                         let inserting_collection =
-                            Collection::create_empty(link.get_prefix());
+                            Collection::create_empty(col_name.clone());
                         v.insert(inserting_collection)
                     }
                 };
                 match item {
                     Item::Primitive(Primitive::DeletedPrimitive(_)) => {
-                        collection.values.remove(link);
+                        let old_item = collection.values.remove(link);
+                        if let Some(old) = &old_item {
+                            self.index_mgr.on_delete(&col_name, link, old);
+                        }
                     }
                     _ => {
-                        collection.values.insert(link.clone(), item.clone());
+                        let old_item = collection.values.insert(link.clone(), item.clone());
+                        self.index_mgr.on_insert(&col_name, link, item, old_item.as_ref());
                     }
                 }
             }
         }
         Ok(())
+    }
+
+    /// Create an index on a field path for a collection.
+    /// Immediately populates the index from existing data.
+    pub fn create_index(&mut self, collection_name: &str, field_path: &str) {
+        self.index_mgr.create_index(collection_name, field_path);
+        if let Some(collection) = self.warehouse.get(collection_name) {
+            let data = collection.values.clone();
+            self.index_mgr.rebuild_collection(collection_name, &data);
+        }
+    }
+
+    /// Drop an index.
+    pub fn drop_index(&mut self, collection_name: &str, field_path: &str) -> bool {
+        self.index_mgr.drop_index(collection_name, field_path)
+    }
+
+    /// Create a vector index on a field path for a collection.
+    pub fn create_vector_index(
+        &mut self,
+        collection_name: &str,
+        field_path: &str,
+        dims: u16,
+        m: usize,
+        ef_construction: usize,
+        metric: HnswMetric,
+    ) {
+        self.index_mgr
+            .create_vector_index(collection_name, field_path, dims, m, ef_construction, metric);
     }
 
     fn sync_buf_to_disk(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
@@ -412,7 +490,7 @@ impl Storage {
                     Entry::Vacant(_) => continue,
                 };
                 let mut file = collection.get_file(self.wh_path.clone())?;
-                write!(file, "{}:{};", link.serialize(), item.serialize())?;
+                write!(file, "{}:{};", TySONPrimitive::serialize(link), item.to_tyson())?;
             }
         }
         Ok(())
@@ -426,23 +504,15 @@ impl Storage {
     ) -> Result<Item, DBError> {
         let link = Link::create(collection_name);
         match item {
-            Item::Primitive(Primitive::Link(o)) => {
-                buf.insert(link.clone(), Item::Primitive(Primitive::Link(o)));
-            }
-            Item::Primitive(Primitive::StringPrimitive(o)) => {
-                buf.insert(link.clone(), Item::Primitive(Primitive::StringPrimitive(o)));
-            }
-            Item::Primitive(Primitive::NumberPrimitive(o)) => {
-                buf.insert(link.clone(), Item::Primitive(Primitive::NumberPrimitive(o)));
-            }
-            Item::Primitive(Primitive::UTSPrimitive(o)) => {
-                buf.insert(link.clone(), Item::Primitive(Primitive::UTSPrimitive(o)));
-            }
-            Item::Primitive(Primitive::BoolPrimitive(o)) => {
-                buf.insert(link.clone(), Item::Primitive(Primitive::BoolPrimitive(o)));
-            }
-            Item::Primitive(Primitive::NullPrimitive(o)) => {
-                buf.insert(link.clone(), Item::Primitive(Primitive::NullPrimitive(o)));
+            Item::Primitive(
+                Primitive::Link(_)
+                | Primitive::StringPrimitive(_)
+                | Primitive::NumberPrimitive(_)
+                | Primitive::UTSPrimitive(_)
+                | Primitive::BoolPrimitive(_)
+                | Primitive::NullPrimitive(_)
+            ) => {
+                buf.insert(link.clone(), item);
             }
             Item::Vector(o) => {
                 let mut v: VectorItem = VectorItem::new(STORAGE_VECTOR.to_string())?;
@@ -515,9 +585,9 @@ impl Storage {
         projection_rules: Option<&ProjectQuery>,
         counter: i32,
     ) -> Result<Item, DBError> {
-        if projection_rules.is_some() {
+        if let Some(rules) = projection_rules {
             let result = resolve(
-                projection_rules.unwrap().clone().to_item(),
+                rules.clone().to_item(),
                 None,
                 link,
                 self,

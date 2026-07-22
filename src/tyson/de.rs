@@ -133,7 +133,7 @@ pub trait Desereilize {
                                 )?,
                             ))?;
                         }
-                        _ => {}
+                        _ => return Err(DBError::UnexpectedParsing),
                     }
                 }
                 Ok(result)

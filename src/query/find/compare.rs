@@ -88,12 +88,68 @@ fn check_bool(
     match item {
         Item::Primitive(Primitive::BoolPrimitive(o)) => {
             if o.val() {
-                return Ok(Res::True);
+                Ok(Res::True)
             } else {
-                return Ok(Res::False);
+                Ok(Res::False)
             }
         }
         _ => compare(item, id, storage, insert_buf),
+    }
+}
+
+fn compare_scalar(
+    values: Vec<(&Primitive, &Primitive)>,
+    id: &Link,
+    storage: &Storage,
+    insert_buf: &InsertBuffer,
+    match_true: fn(CompareResult) -> bool,
+    short_circuit: Res,
+    default: Res,
+) -> Result<Res, DBError> {
+    for (k, v) in values {
+        let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
+        if match_true(compare_res) {
+            return Ok(short_circuit);
+        }
+    }
+    Ok(default)
+}
+
+fn compare_logical(
+    op: &Item,
+    id: &Link,
+    storage: &Storage,
+    insert_buf: &InsertBuffer,
+) -> Result<Res, DBError> {
+    match op {
+        Item::Vector(VectorItem::AndOperator(o)) => {
+            for i in o.get_items() {
+                match check_bool(i, id, storage, insert_buf)? {
+                    Res::False => return Ok(Res::False),
+                    Res::None => return Ok(Res::None),
+                    _ => {}
+                }
+            }
+            Ok(Res::True)
+        }
+        Item::Vector(VectorItem::OrOperator(o)) => {
+            for i in o.get_items() {
+                match check_bool(i, id, storage, insert_buf)? {
+                    Res::True => return Ok(Res::True),
+                    Res::None => return Ok(Res::None),
+                    _ => {}
+                }
+            }
+            Ok(Res::False)
+        }
+        Item::Modifier(ModifierItem::NotOperator(o)) => {
+            match check_bool(o.get_value(), id, storage, insert_buf)? {
+                Res::True => Ok(Res::False),
+                Res::False => Ok(Res::True),
+                _ => Ok(Res::None),
+            }
+        }
+        _ => Err(DBError::UnsupportedOperation("compare operator".to_string())),
     }
 }
 
@@ -104,110 +160,30 @@ pub fn compare(
     insert_buf: &InsertBuffer,
 ) -> Result<Res, DBError> {
     match op {
-        Item::Map(MapItem::EqOperator(o)) => {
-            for (k, v) in o.get_values() {
-                let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
-                // if compare_res == CompareResult::CanNotCompare {
-                //     return Ok(Res::None);
-                // } else
-                if compare_res != CompareResult::Equal {
-                    return Ok(Res::False);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Map(MapItem::NeqOperator(o)) => {
-            for (k, v) in o.get_values() {
-                let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
-                // if compare_res == CompareResult::CanNotCompare {
-                //     return Ok(Res::None);
-                // } else
-                if compare_res == CompareResult::Equal {
-                    return Ok(Res::False);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Map(MapItem::GtOperator(o)) => {
-            for (k, v) in o.get_values() {
-                let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
-                // if compare_res == CompareResult::CanNotCompare {
-                //     return Ok(Res::None);
-                // } else
-                if compare_res != CompareResult::Greater {
-                    return Ok(Res::False);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Map(MapItem::GteOperator(o)) => {
-            for (k, v) in o.get_values() {
-                let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
-                // if compare_res == CompareResult::CanNotCompare {
-                //     return Ok(Res::None);
-                // } else
-                if compare_res != CompareResult::Greater && compare_res != CompareResult::Equal {
-                    return Ok(Res::False);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Map(MapItem::LtOperator(o)) => {
-            for (k, v) in o.get_values() {
-                let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
-                // if compare_res == CompareResult::CanNotCompare {
-                //     return Ok(Res::None);
-                // } else
-                if compare_res != CompareResult::Less {
-                    return Ok(Res::False);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Map(MapItem::LteOperator(o)) => {
-            for (k, v) in o.get_values() {
-                let compare_res = compare_primitives(k, v, id, storage, insert_buf)?;
-                // if compare_res == CompareResult::CanNotCompare {
-                //     return Ok(Res::None);
-                // } else
-                if compare_res != CompareResult::Less && compare_res != CompareResult::Equal {
-                    return Ok(Res::False);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Vector(VectorItem::AndOperator(o)) => {
-            for i in o.get_items() {
-                let bool_res = check_bool(i, id, storage, insert_buf)?;
-                if bool_res == Res::False {
-                    return Ok(Res::False);
-                } else if bool_res == Res::None {
-                    return Ok(Res::None);
-                }
-            }
-            Ok(Res::True)
-        }
-        Item::Vector(VectorItem::OrOperator(o)) => {
-            for i in o.get_items() {
-                let bool_res = check_bool(i, id, storage, insert_buf)?;
-                if bool_res == Res::True {
-                    return Ok(Res::True);
-                } else if bool_res == Res::None {
-                    return Ok(Res::None);
-                }
-            }
-            Ok(Res::False)
-        }
-        Item::Modifier(ModifierItem::NotOperator(o)) => {
-            let bool_res = check_bool(o.get_value(), id, storage, insert_buf)?;
-            if bool_res == Res::True {
-                return Ok(Res::False);
-            } else if bool_res == Res::False {
-                return Ok(Res::True);
-            } else {
-                return Ok(Res::None);
-            }
-        }
-        _ => Err(DBError::UnsupportedOperation("compare operator".to_string())),
+        Item::Map(MapItem::EqOperator(o)) => compare_scalar(
+            o.get_values(), id, storage, insert_buf,
+            |r| r != CompareResult::Equal, Res::False, Res::True,
+        ),
+        Item::Map(MapItem::NeqOperator(o)) => compare_scalar(
+            o.get_values(), id, storage, insert_buf,
+            |r| r == CompareResult::Equal, Res::False, Res::True,
+        ),
+        Item::Map(MapItem::GtOperator(o)) => compare_scalar(
+            o.get_values(), id, storage, insert_buf,
+            |r| r != CompareResult::Greater, Res::False, Res::True,
+        ),
+        Item::Map(MapItem::GteOperator(o)) => compare_scalar(
+            o.get_values(), id, storage, insert_buf,
+            |r| r != CompareResult::Greater && r != CompareResult::Equal, Res::False, Res::True,
+        ),
+        Item::Map(MapItem::LtOperator(o)) => compare_scalar(
+            o.get_values(), id, storage, insert_buf,
+            |r| r != CompareResult::Less, Res::False, Res::True,
+        ),
+        Item::Map(MapItem::LteOperator(o)) => compare_scalar(
+            o.get_values(), id, storage, insert_buf,
+            |r| r != CompareResult::Less && r != CompareResult::Equal, Res::False, Res::True,
+        ),
+        _ => compare_logical(op, id, storage, insert_buf),
     }
 }

@@ -29,7 +29,7 @@ impl TySONModifier for NotOperator {
     }
 
     fn get_serialized_value(&self) -> String {
-        self.expr.serialize()
+        self.expr.to_tyson()
     }
 }
 

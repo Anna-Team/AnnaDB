@@ -22,14 +22,14 @@ struct SortProcessor<'a> {
 }
 
 impl<'a> SortProcessor<'a> {
-    fn new(storage: &'a Storage, query: &SortQuery, insert_buf: &'a InsertBuffer) -> Self {
-        let (paths, directions) = SortProcessor::build_paths_and_directions(query);
-        Self {
+    fn new(storage: &'a Storage, query: &SortQuery, insert_buf: &'a InsertBuffer) -> Result<Self, DBError> {
+        let (paths, directions) = SortProcessor::build_paths_and_directions(query)?;
+        Ok(Self {
             storage,
             insert_buf,
             paths,
             directions,
-        }
+        })
     }
 
     fn path_from_item(item: &Item) -> Option<Path> {
@@ -40,7 +40,7 @@ impl<'a> SortProcessor<'a> {
         }
     }
 
-    fn build_paths_and_directions(query: &SortQuery) -> (Vec<Path>, Vec<Direction>) {
+    fn build_paths_and_directions(query: &SortQuery) -> Result<(Vec<Path>, Vec<Direction>), DBError> {
         let mut directions: Vec<Direction> = vec![];
         let mut paths: Vec<Path> = vec![];
         for item in &query.items {
@@ -57,10 +57,12 @@ impl<'a> SortProcessor<'a> {
                         paths.push(path);
                     }
                 }
-                _ => {}
+                _ => return Err(DBError::UnexpectedType(
+                    "sort query can only contain asc and desc operators".to_string(),
+                )),
             }
         }
-        (paths, directions)
+        Ok((paths, directions))
     }
 
     fn build_vector(&self, link: Link) -> Vec<Option<Primitive>> {
@@ -140,7 +142,7 @@ pub fn sort(
     buf: &mut FilterBuffer,
     insert_buf: &InsertBuffer,
 ) -> Result<QueryResponse, DBError> {
-    let processor = SortProcessor::new(storage, query, insert_buf);
+    let processor = SortProcessor::new(storage, query, insert_buf)?;
     buf.ids.sort_by(|a, b| processor.cmp(a, b));
     let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
     let meta = Meta::FindMeta(FindMeta::new(buf.ids.len()));

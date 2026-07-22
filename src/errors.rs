@@ -73,12 +73,6 @@ pub enum DBError {
 }
 
 impl DBError {
-    pub(crate) fn new(msg: &str) -> Self {
-        // Backwards compatibility - route known messages to proper variants
-        // New code should use specific variants directly
-        Self::UnsupportedOperation(msg.to_string())
-    }
-
     pub fn unexpected_parsing() -> Self {
         Self::UnexpectedParsing
     }

@@ -29,8 +29,8 @@ pub mod response;
 pub mod storage;
 pub mod tyson;
 
-pub fn get_storage(path: String) -> Storage {
-    Storage::new(path).unwrap()
+pub fn get_storage(path: String) -> Result<Storage, DBError> {
+    Storage::new(path)
 }
 
 pub fn run() {
@@ -56,7 +56,13 @@ pub fn run() {
     };
 
     let context = zmq::Context::new();
-    let responder = context.socket(zmq::REP).unwrap();
+    let responder = match context.socket(zmq::REP) {
+        Ok(s) => s,
+        Err(e) => {
+            error!(error = %e, "failed to create ZMQ socket");
+            std::process::exit(1);
+        }
+    };
 
     let bind_addr = format!("tcp://0.0.0.0:{}", config.port);
     if responder.bind(bind_addr.as_str()).is_err() {

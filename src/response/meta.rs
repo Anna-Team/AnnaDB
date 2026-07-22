@@ -1,91 +1,37 @@
 use crate::constants::{DELETE_META, FIND_META, GET_META, INSERT_META, UPDATE_META};
 use crate::data_types::primitives::number::NumberPrimitive;
-use crate::TySONPrimitive;
+use crate::tyson::primitive::TySONPrimitive;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct InsertMeta {
-    pub count: NumberPrimitive,
-}
-
-impl InsertMeta {
-    pub fn new(count: usize) -> Self {
-        Self {
-            count: NumberPrimitive::from(count),
+macro_rules! meta_type {
+    ($name:ident, $const_name:ident) => {
+        #[derive(Debug, Clone, Eq, PartialEq)]
+        pub struct $name {
+            pub count: NumberPrimitive,
         }
-    }
 
-    pub fn serialize(&self) -> String {
-        format!("{}{{s|count|:{}}}", INSERT_META, self.count.serialize())
-    }
-}
+        impl $name {
+            pub fn new(count: usize) -> Self {
+                Self {
+                    count: NumberPrimitive::from(count),
+                }
+            }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GetMeta {
-    pub count: NumberPrimitive,
-}
-
-impl GetMeta {
-    pub fn new(count: usize) -> Self {
-        Self {
-            count: NumberPrimitive::from(count),
+            pub fn serialize(&self) -> String {
+                format!(
+                    "{}{{s|count|:{}}}",
+                    $const_name,
+                    TySONPrimitive::serialize(&self.count)
+                )
+            }
         }
-    }
-
-    pub fn serialize(&self) -> String {
-        format!("{}{{s|count|:{}}}", GET_META, self.count.serialize())
-    }
+    };
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct DeleteMeta {
-    pub count: NumberPrimitive,
-}
-
-impl DeleteMeta {
-    pub fn new(count: usize) -> Self {
-        Self {
-            count: NumberPrimitive::from(count),
-        }
-    }
-
-    pub fn serialize(&self) -> String {
-        format!("{}{{s|count|:{}}}", DELETE_META, self.count.serialize())
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct UpdateMeta {
-    pub count: NumberPrimitive,
-}
-
-impl UpdateMeta {
-    pub fn new(count: usize) -> Self {
-        Self {
-            count: NumberPrimitive::from(count),
-        }
-    }
-
-    pub fn serialize(&self) -> String {
-        format!("{}{{s|count|:{}}}", UPDATE_META, self.count.serialize())
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct FindMeta {
-    pub count: NumberPrimitive,
-}
-
-impl FindMeta {
-    pub fn new(count: usize) -> Self {
-        Self {
-            count: NumberPrimitive::from(count),
-        }
-    }
-
-    pub fn serialize(&self) -> String {
-        format!("{}{{s|count|:{}}}", FIND_META, self.count.serialize())
-    }
-}
+meta_type!(InsertMeta, INSERT_META);
+meta_type!(GetMeta, GET_META);
+meta_type!(DeleteMeta, DELETE_META);
+meta_type!(UpdateMeta, UPDATE_META);
+meta_type!(FindMeta, FIND_META);
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Meta {
