@@ -86,6 +86,121 @@ pub struct Storage {
     pub(crate) index_mgr: IndexManager,
 }
 
+/// Read-only operations on the warehouse.
+pub trait StorageRead {
+    fn get_collection(&self, collection_name: &str) -> Option<&Collection>;
+    fn get_item_by_link(
+        &self, id: &Link, insert_buf: &InsertBuffer, counter: i32,
+        projection_rules: Option<&ProjectQuery>,
+    ) -> Result<Item, DBError>;
+    fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError>;
+    fn get_value_by_path(
+        &self, path: PathToValue, id: Link, insert_buf: &InsertBuffer,
+    ) -> Result<Option<FoundSubItem>, DBError>;
+    fn fetch(&self, item: &Item, insert_buf: &InsertBuffer, counter: i32) -> Result<Item, DBError>;
+    fn fetch_found_ids(
+        &self, buf: &FilterBuffer, insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectQuery>,
+    ) -> Result<Item, DBError>;
+    fn fetch_or_project(
+        &self, value: &Item, link: &Link, insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectQuery>, counter: i32,
+    ) -> Result<Item, DBError>;
+}
+
+/// Write operations that mutate the warehouse.
+pub trait StorageWrite {
+    fn insert_item(
+        &self, collection_name: String, buf: &mut InsertBuffer, item: Item,
+    ) -> Result<Item, DBError>;
+    fn run_transaction(&mut self, data: String) -> Result<OkTransactionResponse, DBError>;
+    fn write_snapshot(&mut self) -> Result<(), DBError>;
+}
+
+/// Index management operations.
+pub trait IndexOps {
+    fn create_index(&mut self, collection_name: &str, field_path: &str);
+    fn drop_index(&mut self, collection_name: &str, field_path: &str) -> bool;
+    fn create_vector_index(
+        &mut self, collection_name: &str, field_path: &str,
+        dims: u16, m: usize, ef_construction: usize, metric: HnswMetric,
+    );
+}
+
+impl StorageRead for Storage {
+    fn get_collection(&self, collection_name: &str) -> Option<&Collection> {
+        self.warehouse.get(collection_name)
+    }
+
+    fn get_item_by_link(
+        &self, id: &Link, insert_buf: &InsertBuffer, counter: i32,
+        projection_rules: Option<&ProjectQuery>,
+    ) -> Result<Item, DBError> {
+        Storage::get_item_by_link(self, id, insert_buf, counter, projection_rules)
+    }
+
+    fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError> {
+        Storage::get_value_by_link(self, id)
+    }
+
+    fn get_value_by_path(
+        &self, path: PathToValue, id: Link, insert_buf: &InsertBuffer,
+    ) -> Result<Option<FoundSubItem>, DBError> {
+        Storage::get_value_by_path(self, path, id, insert_buf)
+    }
+
+    fn fetch(&self, item: &Item, insert_buf: &InsertBuffer, counter: i32) -> Result<Item, DBError> {
+        Storage::fetch(self, item, insert_buf, counter)
+    }
+
+    fn fetch_found_ids(
+        &self, buf: &FilterBuffer, insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectQuery>,
+    ) -> Result<Item, DBError> {
+        Storage::fetch_found_ids(self, buf, insert_buf, projection_rules)
+    }
+
+    fn fetch_or_project(
+        &self, value: &Item, link: &Link, insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectQuery>, counter: i32,
+    ) -> Result<Item, DBError> {
+        Storage::fetch_or_project(self, value, link, insert_buf, projection_rules, counter)
+    }
+}
+
+impl StorageWrite for Storage {
+    fn insert_item(
+        &self, collection_name: String, buf: &mut InsertBuffer, item: Item,
+    ) -> Result<Item, DBError> {
+        Storage::insert_item(self, collection_name, buf, item)
+    }
+
+    fn run_transaction(&mut self, data: String) -> Result<OkTransactionResponse, DBError> {
+        Storage::run_transaction(self, data)
+    }
+
+    fn write_snapshot(&mut self) -> Result<(), DBError> {
+        Storage::write_snapshot(self)
+    }
+}
+
+impl IndexOps for Storage {
+    fn create_index(&mut self, collection_name: &str, field_path: &str) {
+        Storage::create_index(self, collection_name, field_path)
+    }
+
+    fn drop_index(&mut self, collection_name: &str, field_path: &str) -> bool {
+        Storage::drop_index(self, collection_name, field_path)
+    }
+
+    fn create_vector_index(
+        &mut self, collection_name: &str, field_path: &str,
+        dims: u16, m: usize, ef_construction: usize, metric: HnswMetric,
+    ) {
+        Storage::create_vector_index(self, collection_name, field_path, dims, m, ef_construction, metric)
+    }
+}
+
 impl Storage {
     fn load_warehouse(
         wh_path: &str,
