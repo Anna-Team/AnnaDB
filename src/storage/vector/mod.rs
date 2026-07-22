@@ -61,4 +61,24 @@ impl VectorIndex {
     pub fn len(&self) -> usize {
         self.hnsw.len()
     }
+
+    pub fn to_bytes(&self) -> Result<Vec<u8>, crate::DBError> {
+        bincode::serialize(&(&self.hnsw, &self.links, &self.metric)).map_err(|e| {
+            crate::DBError::UnsupportedOperation(format!("vector index serialize error: {}", e))
+        })
+    }
+
+    pub fn from_bytes(field_path: String, dims: u16, data: &[u8]) -> Result<Self, crate::DBError> {
+        let (hnsw, links, metric): (HnswIndex, Vec<Link>, HnswMetric) =
+            bincode::deserialize(data).map_err(|e| {
+                crate::DBError::UnsupportedOperation(format!("vector index deserialize error: {}", e))
+            })?;
+        Ok(Self {
+            field_path,
+            dims,
+            hnsw,
+            links,
+            metric,
+        })
+    }
 }

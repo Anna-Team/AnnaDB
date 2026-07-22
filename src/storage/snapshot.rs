@@ -16,6 +16,8 @@ const SNAPSHOT_VERSION: u8 = 1;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SnapshotData {
     pub collections: HashMap<String, HashMap<Link, Item>>,
+    /// Serialized vector index data: collection → field_path → (dims, bytes)
+    pub vector_indexes: HashMap<String, HashMap<String, (u16, Vec<u8>)>>,
     pub last_tx_id: u64,
 }
 
@@ -41,10 +43,12 @@ impl SnapshotManager {
     pub fn write(
         &self,
         collections: &HashMap<String, HashMap<Link, Item>>,
+        vector_indexes: &HashMap<String, HashMap<String, (u16, Vec<u8>)>>,
         last_tx_id: u64,
     ) -> Result<(), DBError> {
         let data = SnapshotData {
             collections: collections.clone(),
+            vector_indexes: vector_indexes.clone(),
             last_tx_id,
         };
 

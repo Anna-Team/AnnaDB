@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::constants::{
     DELETED, FETCH_DEPTH_LIMIT, INTERNAL_COLLECTION_NAME, NULL, ROOT, STORAGE_MAP, STORAGE_VECTOR,
@@ -90,7 +90,7 @@ impl Storage {
     fn load_warehouse(
         wh_path: &str,
         snapshot_mgr: &SnapshotManager,
-    ) -> Result<(HashMap<String, Collection>, u64), DBError> {
+    ) -> Result<(HashMap<String, Collection>, u64, Option<HashMap<String, HashMap<String, (u16, Vec<u8>)>>>), DBError> {
         let mut warehouse: HashMap<String, Collection> = HashMap::new();
 
         if let Some(snapshot) = snapshot_mgr.load()? {
@@ -100,8 +100,13 @@ impl Storage {
                 collection.values = values;
                 warehouse.insert(name, collection);
             }
+            let vi = if snapshot.vector_indexes.is_empty() {
+                None
+            } else {
+                Some(snapshot.vector_indexes)
+            };
             info!(collections = warehouse.len(), "loaded from snapshot");
-            Ok((warehouse, snapshot_tx_id))
+            Ok((warehouse, snapshot_tx_id, vi))
         } else {
             Collection::new(INTERNAL_COLLECTION_NAME.to_string(), wh_path.to_string())?;
             let paths = fs::read_dir(format!("{}/", wh_path))?;
@@ -116,7 +121,7 @@ impl Storage {
                 info!(collection = %collection_name, "loaded collection from .tyson");
                 warehouse.insert(collection_name.clone(), collection);
             }
-            Ok((warehouse, 0))
+            Ok((warehouse, 0, None))
         }
     }
 
@@ -164,14 +169,48 @@ impl Storage {
         fs::create_dir_all(wh_path.clone())?;
 
         let snapshot_mgr = SnapshotManager::new(&wh_path);
-        let (mut warehouse, snapshot_tx_id) =
+        let (mut warehouse, snapshot_tx_id, vector_index_data) =
             Self::load_warehouse(&wh_path, &snapshot_mgr)?;
 
         let mut wal = Wal::new(&wh_path)?;
         let max_tx_id = Self::replay_wal_entries(&mut warehouse, &wal, snapshot_tx_id)?;
         wal.update_tx_counter(max_tx_id);
 
-        let index_mgr = IndexManager::new();
+        let mut index_mgr = IndexManager::new();
+
+        // Restore vector indexes from snapshot
+        if let Some(vi_data) = vector_index_data {
+            for (coll_name, fields) in &vi_data {
+                for (field_path, (dims, bytes)) in fields {
+                    match crate::storage::vector::VectorIndex::from_bytes(
+                        field_path.clone(),
+                        *dims,
+                        bytes,
+                    ) {
+                        Ok(idx) => {
+                            index_mgr
+                                .vector_indexes
+                                .entry(coll_name.clone())
+                                .or_default()
+                                .insert(field_path.clone(), idx);
+                            info!(
+                                collection = %coll_name,
+                                field = %field_path,
+                                "vector index restored"
+                            );
+                        }
+                        Err(e) => {
+                            warn!(
+                                collection = %coll_name,
+                                field = %field_path,
+                                error = %e,
+                                "failed to restore vector index"
+                            );
+                        }
+                    }
+                }
+            }
+        }
 
         info!(collections = warehouse.len(), path = %wh_path, "storage ready");
         Ok(Self {
@@ -403,7 +442,19 @@ impl Storage {
             collections_data.insert(name.clone(), collection.values.clone());
         }
         let tx_id = self.wal.current_tx_id();
-        self.snapshot_mgr.write(&collections_data, tx_id)?;
+
+        // Serialize vector indexes
+        let mut vector_indexes = HashMap::new();
+        for (coll_name, fields) in &self.index_mgr.vector_indexes {
+            let mut field_data = HashMap::new();
+            for (field_path, idx) in fields {
+                field_data.insert(field_path.clone(), (idx.dims, idx.to_bytes()?));
+            }
+            vector_indexes.insert(coll_name.clone(), field_data);
+        }
+
+        self.snapshot_mgr
+            .write(&collections_data, &vector_indexes, tx_id)?;
         self.wal.truncate()?;
         self.tx_since_snapshot = 0;
         Ok(())

@@ -55,7 +55,7 @@ impl Ord for Candidate {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HnswMetric {
     Cosine = 0,
     Euclidean = 1,

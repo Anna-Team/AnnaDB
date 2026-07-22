@@ -1,12 +1,14 @@
 use crate::constants::NULL;
 use crate::query::find::compare::{compare, Res};
+use crate::query::find::operators::and::AndOperator;
 use crate::query::find::query::FindQuery;
 use crate::response::meta::{FindMeta, Meta};
 use crate::response::{QueryResponse, QueryStatus};
 use crate::storage::buffer::{FilterBuffer, InsertBuffer};
 use crate::storage::index::{CompareOp, IndexKey};
 use crate::storage::vector::hnsw::HnswMetric;
-use crate::{DBError, Item, Link, MapItem, Primitive, Storage};
+use crate::tyson::vector::TySONVector;
+use crate::{DBError, Item, Link, MapItem, Primitive, Storage, VectorItem};
 
 fn try_knn_lookup(
     storage: &Storage,
@@ -32,6 +34,57 @@ fn try_knn_lookup(
             let k = knn.get_k();
             let results = vec_index.search(embedding.values(), k);
             Some(results)
+        }
+        _ => None,
+    }
+}
+
+/// If `op` is an AND/OR containing a knn sub-expression plus other filters,
+/// run the vector search first and return (candidates, remaining_filter).
+fn try_hybrid_candidates(
+    storage: &Storage,
+    collection_name: &str,
+    op: &Item,
+) -> Option<(Vec<Link>, Option<Item>)> {
+    // Standalone knn
+    if let Some(links) = try_knn_lookup(storage, collection_name, op) {
+        return Some((links, None));
+    }
+
+    // AND[knn, eq{...}] — extract knn, get candidates, return remaining filter
+    match op {
+        Item::Vector(VectorItem::AndOperator(and_op)) => {
+            let items = and_op.get_items();
+            let mut knn_idx: Option<usize> = None;
+            for (i, sub) in items.iter().enumerate() {
+                if matches!(sub, Item::Map(MapItem::KnnOperator(_))) {
+                    knn_idx = Some(i);
+                    break;
+                }
+            }
+            if let Some(idx) = knn_idx {
+                let knn_item = &items[idx];
+                let links = try_knn_lookup(storage, collection_name, knn_item)?;
+                let remaining: Vec<&Item> = items
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| *i != idx)
+                    .map(|(_, item)| item)
+                    .collect();
+                let filter = match remaining.len() {
+                    0 => None,
+                    1 => Some(remaining[0].clone()),
+                    _ => {
+                        let mut a = AndOperator::new("".to_string()).ok()?;
+                        for item in remaining {
+                            a.push(item.clone()).ok()?;
+                        }
+                        Some(a.to_item())
+                    }
+                };
+                return Some((links, filter));
+            }
+            None
         }
         _ => None,
     }
@@ -154,10 +207,23 @@ pub fn find(
         } else {
             started = true;
 
-            // Try knn (vector search) for the first filter
+            // Try hybrid (knn + structural) or standalone knn lookup
             if insert_buf.items.is_empty() {
-                if let Some(knn_ids) = try_knn_lookup(storage, &collection_name, op) {
-                    found_ids = knn_ids;
+                if let Some((hybrid_ids, remaining_filter)) =
+                    try_hybrid_candidates(storage, &collection_name, op)
+                {
+                    if let Some(filter_op) = remaining_filter {
+                        // knn narrowed candidates, now apply structural filter
+                        let mut filtered = Vec::new();
+                        for k in hybrid_ids {
+                            if compare(&filter_op, &k, storage, insert_buf)? == Res::True {
+                                filtered.push(k);
+                            }
+                        }
+                        found_ids = filtered;
+                    } else {
+                        found_ids = hybrid_ids;
+                    }
                     continue;
                 }
             }

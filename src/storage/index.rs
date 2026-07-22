@@ -155,7 +155,7 @@ impl BTreeIndex {
 #[derive(Debug)]
 pub struct IndexManager {
     indexes: HashMap<String, HashMap<String, BTreeIndex>>,
-    vector_indexes: HashMap<String, HashMap<String, VectorIndex>>,
+    pub vector_indexes: HashMap<String, HashMap<String, VectorIndex>>,
 }
 
 impl IndexManager {
