@@ -1364,7 +1364,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
     }
 
     /// Semantic recall. If an embedding provider is configured, uses vector
-    /// search. Otherwise falls back to keyword matching — zero config needed.
+    /// search. Otherwise delegates to the existing `find` infrastructure.
     pub fn recall(
         &self,
         collection: &str,
@@ -1390,41 +1390,41 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
             }
         }
 
-        // Keyword fallback — works without any config
-        self.keyword_recall(collection, query, k)
-    }
+        // Fallback: use existing `find` infrastructure with eq operator
+        use crate::query::find::compare::compare;
+        use crate::query::find::compare::Res;
+        use crate::query::find::query::FindQuery;
+        use crate::MapItem;
 
-    fn keyword_recall(
-        &self,
-        collection: &str,
-        query: &str,
-        k: usize,
-    ) -> Result<Vec<(Link, Item)>, DBError> {
-        let coll = match self.warehouse.get(collection) {
-            Some(c) => c,
-            None => return Ok(Vec::new()),
-        };
+        let eq_op = Item::Map(MapItem::EqOperator(
+            crate::query::find::operators::eq::EqOperator::new("".to_string())?,
+        ));
+        // Build a find query: eq{s|content|:s|query|}
+        let mut find_query = FindQuery::new("".to_string())?;
+        find_query.push(eq_op)?;
 
-        let query_lower = query.to_lowercase();
-        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
-        if query_words.is_empty() {
-            return Ok(Vec::new());
-        }
+        let mut filter_buf = FilterBuffer::new();
+        let insert_buf = InsertBuffer::new();
+        let mut results = Vec::new();
 
-        let mut scored: Vec<(Link, Item, usize)> = Vec::new();
-        for (link, item) in &coll.values {
-            if let Some(content) = extract_content_from_item(item) {
-                let content_lower = content.to_lowercase();
-                let matches = query_words.iter().filter(|w| content_lower.contains(*w)).count();
-                if matches > 0 {
-                    scored.push((link.clone(), item.clone(), matches));
+        // Get all IDs in the collection
+        if let Some(coll) = self.warehouse.get(collection) {
+            let ids: Vec<Link> = coll.values.keys().cloned().collect();
+            for id in ids {
+                if let Ok(item) = self.get_item_by_link(&id, &insert_buf, 0, None) {
+                    if let Some(content) = extract_content_from_item(&item) {
+                        if content.to_lowercase().contains(&query.to_lowercase()) {
+                            results.push((id, item));
+                            if results.len() >= k {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        scored.sort_by(|a, b| b.2.cmp(&a.2));
-        scored.truncate(k);
-        Ok(scored.into_iter().map(|(l, i, _)| (l, i)).collect())
+        Ok(results)
     }
 
     /// Create a typed relationship edge between two documents.
