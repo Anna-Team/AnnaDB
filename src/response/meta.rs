@@ -53,3 +53,37 @@ impl Meta {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn insert_meta_serialize() {
+        let m = InsertMeta::new(5);
+        let s = m.serialize();
+        assert!(s.contains("insert_meta"));
+        assert!(s.contains("count"));
+    }
+
+    #[test]
+    fn find_meta_serialize() {
+        let m = FindMeta::new(10);
+        let s = m.serialize();
+        assert!(s.contains("find_meta"));
+    }
+
+    #[test]
+    fn meta_enum_dispatch() {
+        let m = Meta::FindMeta(FindMeta::new(3));
+        let s = m.serialize();
+        assert!(!s.is_empty());
+    }
+
+    #[test]
+    fn delete_meta_serialize() {
+        let m = DeleteMeta::new(0);
+        let s = m.serialize();
+        assert!(s.contains("delete_meta"));
+    }
+}

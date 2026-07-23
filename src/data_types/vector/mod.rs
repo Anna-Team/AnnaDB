@@ -143,3 +143,26 @@ impl TySONVector for VectorItem {
         Item::Vector(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vector_item_new_storage_vector() {
+        let v = VectorItem::new("v".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::StorageVector(_)));
+    }
+
+    #[test]
+    fn vector_item_new_insert_query() {
+        let v = VectorItem::new("insert".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::InsertQuery(_)));
+    }
+
+    #[test]
+    fn vector_item_new_unknown_returns_err() {
+        let v = VectorItem::new("nonexistent".to_string());
+        assert!(v.is_err());
+    }
+}

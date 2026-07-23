@@ -147,3 +147,26 @@ impl From<SetOperator> for MapItem {
 //         MapItem::Response(data)
 //     }
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn map_item_new_storage_map() {
+        let m = MapItem::new("m".to_string()).unwrap();
+        assert!(matches!(m, MapItem::StorageMap(_)));
+    }
+
+    #[test]
+    fn map_item_new_eq_operator() {
+        let m = MapItem::new("eq".to_string()).unwrap();
+        assert!(matches!(m, MapItem::EqOperator(_)));
+    }
+
+    #[test]
+    fn map_item_new_unknown_returns_err() {
+        let m = MapItem::new("nonexistent".to_string());
+        assert!(m.is_err());
+    }
+}

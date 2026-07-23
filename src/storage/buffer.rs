@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Item, Link};
+use crate::{Item, Link, Primitive};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,5 +43,42 @@ impl FilterBuffer {
 
     pub(crate) fn update(&mut self, ids: Vec<Link>) {
         self.ids = ids;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn insert_buffer_new_is_empty() {
+        let buf = InsertBuffer::new();
+        assert!(!buf.changed);
+        assert!(buf.items.is_empty());
+        assert!(buf.dropped_collections.is_empty());
+    }
+
+    #[test]
+    fn insert_buffer_insert_changes() {
+        let mut buf = InsertBuffer::new();
+        let link = Link::create("test".to_string());
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        buf.insert(link.clone(), item);
+        assert!(buf.changed);
+        assert!(buf.items.contains_key(&link));
+    }
+
+    #[test]
+    fn filter_buffer_new_is_empty() {
+        let buf = FilterBuffer::new();
+        assert!(buf.ids.is_empty());
+    }
+
+    #[test]
+    fn filter_buffer_update() {
+        let mut buf = FilterBuffer::new();
+        let link = Link::create("test".to_string());
+        buf.update(vec![link.clone()]);
+        assert_eq!(buf.ids, vec![link]);
     }
 }

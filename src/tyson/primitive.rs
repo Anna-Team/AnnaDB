@@ -20,3 +20,30 @@ pub trait TySONPrimitive: BaseTySONItemInterface {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tyson::item::TySONItem;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn tyson_primitive_serialize() {
+        let s = crate::StringPrimitive::new("s".to_string(), "hello".to_string()).unwrap();
+        let serialized = TySONPrimitive::serialize(&s);
+        assert_eq!(serialized, "s|hello|");
+    }
+
+    #[test]
+    fn tyson_primitive_get_string_value() {
+        let s = crate::StringPrimitive::new("s".to_string(), "hello".to_string()).unwrap();
+        assert_eq!(s.get_string_value(), "hello");
+    }
+
+    #[test]
+    fn base_tyson_item_interface_prefix() {
+        use crate::tyson::item::BaseTySONItemInterface;
+        let s = crate::StringPrimitive::new("s".to_string(), "hello".to_string()).unwrap();
+        assert_eq!(s.get_prefix(), "s");
+    }
+}

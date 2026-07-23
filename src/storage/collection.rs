@@ -107,3 +107,32 @@ impl Collection {
             .clone())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn collection_create_empty() {
+        let c = Collection::create_empty("test_coll".to_string());
+        assert_eq!(c.name, "test_coll");
+        assert!(c.values.is_empty());
+    }
+
+    #[test]
+    fn collection_insert_and_get() {
+        let mut c = Collection::create_empty("test_coll".to_string());
+        let link = Link::create("test_coll".to_string());
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        c.values.insert(link.clone(), item.clone());
+        let val = c.get_value(&link).unwrap();
+        assert_eq!(val, item);
+    }
+
+    #[test]
+    fn collection_get_missing_returns_err() {
+        let c = Collection::create_empty("test_coll".to_string());
+        let link = Link::create("test_coll".to_string());
+        assert!(c.get_value(&link).is_err());
+    }
+}
