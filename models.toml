@@ -1,0 +1,15 @@
+# Model URLs for local embedding provider
+# Users may override these URLs to use mirrors or custom models
+
+[all-MiniLM-L6-v2]
+model = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx"
+tokenizer = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json"
+dims = 384
+description = "Lightweight English embedding model (80MB, 384 dims)"
+
+# Future models can be added here:
+# [bge-small-en]
+# model = "https://huggingface.co/BAAI/bge-small-en/resolve/main/onnx/model.onnx"
+# tokenizer = "https://huggingface.co/BAAI/bge-small-en/resolve/main/onnx/tokenizer.json"
+# dims = 384
+# description = "BGE small English model"
