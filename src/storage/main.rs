@@ -241,6 +241,30 @@ impl IndexOps for Storage {
     }
 }
 
+fn extract_embedding_from_item(item: &Item) -> Option<Vec<f32>> {
+    match item {
+        Item::Map(map_item) => {
+            for (k, v) in &map_item.get_items() {
+                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "embedding") {
+                    if let Item::Primitive(Primitive::EmbeddingPrimitive(ref e)) = v {
+                        return Some(e.values().to_vec());
+                    }
+                }
+            }
+            None
+        }
+        Item::Primitive(Primitive::EmbeddingPrimitive(e)) => Some(e.values().to_vec()),
+        _ => None,
+    }
+}
+
+fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
+    let (dot, na, nb) = a.iter().zip(b.iter())
+        .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| (d + x * y, na + x * x, nb + y * y));
+    let denom = (na * nb).sqrt();
+    if denom == 0.0 { 0.0 } else { 1.0 - dot / denom }
+}
+
 impl Storage {
     fn load_warehouse(
         wh_path: &str,
@@ -966,16 +990,38 @@ impl Storage {
 
     // ── Memory API ──
 
-    /// Upsert a document. If a key is provided and a document with the same
-    /// key exists, it is updated in-place. If an embedding provider is
-    /// configured, automatically generates an embedding for `content`.
+    /// Upsert a document. If `link_similar` is true, finds similar existing
+    /// memories and creates `related_to` edges. If `dedup_threshold` is set
+    /// (e.g. 0.95), skips creation if a near-duplicate already exists.
     pub fn remember(
         &mut self,
         collection: &str,
         content: &str,
         key: Option<(&str, &str)>,
+        link_similar: bool,
+        dedup_threshold: Option<f32>,
     ) -> Result<Link, DBError> {
-        // Look for existing document with the same key
+
+        // Dedup check: if embedding provider exists, check for near-duplicates
+        if let (Some(provider), Some(threshold)) = (&self.embedding_provider, dedup_threshold) {
+            let emb = provider.embed(content)?;
+            let dist_threshold = 1.0 - threshold; // cosine distance threshold
+            if let Some(vec_index) = self.index_mgr.get_vector_index(collection, "embedding") {
+                let nearest = vec_index.search(&emb, 1);
+                if let Some(first) = nearest.first() {
+                    // Check actual distance via the stored embedding
+                    if let Ok(item) = self.get_item_by_link(first, &InsertBuffer::new(), 0, None) {
+                        if let Some(stored_emb) = extract_embedding_from_item(&item) {
+                            if cosine_distance(&emb, &stored_emb) < dist_threshold {
+                                return Ok(first.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Key-based upsert check
         let existing_link = key.and_then(|(key_field, key_value)| {
             self.warehouse.get(collection).and_then(|coll| {
                 coll.values.iter().find_map(|(link, item)| {
@@ -1049,18 +1095,66 @@ impl Storage {
 
         let item = storage_map.to_item();
 
-        if let Some(existing) = existing_link {
+        let result_link = if let Some(existing) = existing_link {
             insert_buf.insert(existing.clone(), item);
             self.persist_transaction(&insert_buf)?;
-            return Ok(existing);
+            existing
+        } else {
+            let result = self.insert_item(collection.to_string(), &mut insert_buf, item)?;
+            self.persist_transaction(&insert_buf)?;
+            match result {
+                Item::Primitive(Primitive::Link(l)) => l,
+                _ => unreachable!(),
+            }
+        };
+
+        // Auto-link to similar memories
+        if link_similar {
+            if let Some(provider) = &self.embedding_provider {
+                let emb = provider.embed(content)?;
+                if let Some(vec_index) = self.index_mgr.get_vector_index(collection, "embedding") {
+                    let similar = vec_index.search(&emb, 5);
+                    for s_link in similar {
+                        if s_link != result_link {
+                            // Only link if they're actually similar (cosine distance < 0.3)
+                            if let Ok(s_item) = self.get_item_by_link(&s_link, &InsertBuffer::new(), 0, None) {
+                                if let Some(s_emb) = extract_embedding_from_item(&s_item) {
+                                    if cosine_distance(&emb, &s_emb) < 0.3 {
+                                        let _ = self.relate(&result_link, &s_link, "related_to", None);
+    }
+}
+
+fn extract_embedding_from_item(item: &Item) -> Option<Vec<f32>> {
+    match item {
+        Item::Map(map_item) => {
+            for (k, v) in &map_item.get_items() {
+                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "embedding") {
+                    if let Item::Primitive(Primitive::EmbeddingPrimitive(ref e)) = v {
+                        return Some(e.values().to_vec());
+                    }
+                }
+            }
+            None
+        }
+        Item::Primitive(Primitive::EmbeddingPrimitive(e)) => Some(e.values().to_vec()),
+        _ => None,
+    }
+}
+
+fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
+    let (dot, na, nb) = a.iter().zip(b.iter())
+        .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| (d + x * y, na + x * x, nb + y * y));
+    let denom = (na * nb).sqrt();
+    if denom == 0.0 { 0.0 } else { 1.0 - dot / denom }
+}
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        let result = self.insert_item(collection.to_string(), &mut insert_buf, item)?;
-        self.persist_transaction(&insert_buf)?;
-        match result {
-            Item::Primitive(Primitive::Link(l)) => Ok(l),
-            _ => unreachable!(),
-        }
+        Ok(result_link)
     }
 
     /// Follow edges from a link, optionally filtered by relation type.

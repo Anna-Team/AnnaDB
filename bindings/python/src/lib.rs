@@ -21,18 +21,20 @@ impl AnnaDB {
         self.storage.run(tyson)
     }
 
-    #[pyo3(signature = (collection, content, key=None))]
+    #[pyo3(signature = (collection, content, key=None, link_similar=false, dedup_threshold=None))]
     fn remember(
         &mut self,
         collection: &str,
         content: &str,
         key: Option<Vec<String>>,
+        link_similar: bool,
+        dedup_threshold: Option<f32>,
     ) -> PyResult<String> {
         let k: Option<(String, String)> = key.map(|v| (v[0].clone(), v[1].clone()));
         let k_ref: Option<(&str, &str)> = k.as_ref().map(|(a, b)| (a.as_str(), b.as_str()));
         let link = self
             .storage
-            .remember(collection, content, k_ref)
+            .remember(collection, content, k_ref, link_similar, dedup_threshold)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
         Ok(format!("l|{}|{}|", link.collection_name, link.id))
     }
