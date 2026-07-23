@@ -39,3 +39,14 @@ impl DeleteQuery {
         Item::Primitive(Primitive::DeleteQuery(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn delete_query_prefix() {
+        let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
+        assert_eq!(dq.get_prefix(), "delete");
+    }
+}

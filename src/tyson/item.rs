@@ -24,3 +24,18 @@ impl TySONItem {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tyson_item_serialize_primitive() {
+        use crate::data_types::primitives::string::StringPrimitive;
+        use crate::tyson::primitive::TySONPrimitive;
+        let s = StringPrimitive::new("s".to_string(), "hello".to_string()).unwrap();
+        let item = TySONItem::Primitive(Box::new(s));
+        let serialized = item.serialize();
+        assert!(serialized.contains("hello"));
+    }
+}

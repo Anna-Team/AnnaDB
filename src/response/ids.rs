@@ -49,3 +49,22 @@ impl From<HashSet<Link>> for ResponseIds {
         Self { items }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn response_ids_new() {
+        let ids = ResponseIds::new("".to_string()).unwrap();
+        assert_eq!(ids.get_prefix(), "ids");
+    }
+
+    #[test]
+    fn response_ids_from_hashset() {
+        use std::collections::HashSet;
+        let links = HashSet::new();
+        let ids = ResponseIds::from(links);
+        assert!(ids.get_items().is_empty());
+    }
+}

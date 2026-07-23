@@ -22,3 +22,26 @@ pub trait TySONVector: BaseTySONItemInterface {
 
     fn to_item(self) -> Item;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tyson_vector_serialize_empty() {
+        use crate::data_types::vector::storage::StorageVector;
+        let v = StorageVector::new("".to_string()).unwrap();
+        let s = TySONVector::serialize(&v);
+        assert_eq!(s, "v[]");
+    }
+
+    #[test]
+    fn tyson_vector_serialize_with_items() {
+        use crate::data_types::vector::storage::StorageVector;
+        let mut v = StorageVector::new("".to_string()).unwrap();
+        let item = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "hi".to_string()).unwrap());
+        v.push(item).unwrap();
+        let s = TySONVector::serialize(&v);
+        assert!(s.contains("hi"));
+    }
+}

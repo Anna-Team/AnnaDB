@@ -55,3 +55,14 @@ impl InsertQuery {
     //     Ok(Response { data })
     // }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn insert_query_prefix() {
+        let iq = InsertQuery::new("".to_string()).unwrap();
+        assert_eq!(iq.get_prefix(), "insert");
+    }
+}

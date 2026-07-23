@@ -46,3 +46,14 @@ impl TySONMap for ResponseObjects {
         Item::Map(MapItem::ResponseObjects(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn response_objects_new() {
+        let objs = ResponseObjects::new("".to_string()).unwrap();
+        assert_eq!(objs.get_prefix(), "objects");
+    }
+}

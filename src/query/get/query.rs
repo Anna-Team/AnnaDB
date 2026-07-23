@@ -65,3 +65,14 @@ impl GetQuery {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_query_prefix() {
+        let gq = GetQuery::new("".to_string()).unwrap();
+        assert_eq!(gq.get_prefix(), "get");
+    }
+}

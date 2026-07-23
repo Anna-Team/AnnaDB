@@ -90,3 +90,49 @@ impl TransactionResponse {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::response::meta::FindMeta;
+
+    #[test]
+    fn query_response_new() {
+        let data = Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let meta = Meta::FindMeta(FindMeta::new(5));
+        let resp = QueryResponse::new(data, meta, QueryStatus::Ready);
+        assert!(resp.serialize().contains("response"));
+    }
+
+    #[test]
+    fn query_status_not_fetched() {
+        let data = Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let meta = Meta::FindMeta(FindMeta::new(0));
+        let resp = QueryResponse::new(data, meta, QueryStatus::NotFetched);
+        assert!(resp.serialize().contains("response"));
+    }
+
+    #[test]
+    fn ok_transaction_response() {
+        let mut ok = OkTransactionResponse::new();
+        assert!(ok.responses.is_empty());
+        let data = Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let meta = Meta::FindMeta(FindMeta::new(1));
+        ok.add_response(QueryResponse::new(data, meta, QueryStatus::Ready));
+        assert!(!ok.responses.is_empty());
+        assert!(ok.serialize().contains("ok"));
+    }
+
+    #[test]
+    fn error_transaction_response() {
+        let err = ErrorTransactionResponse::from(crate::DBError::ItemNotFound);
+        assert!(err.serialize().contains("error"));
+    }
+
+    #[test]
+    fn transaction_response_ok() {
+        let mut ok = OkTransactionResponse::new();
+        let resp = TransactionResponse::Ok(ok);
+        assert!(resp.serialize().contains("ok"));
+    }
+}
