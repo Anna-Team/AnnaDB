@@ -258,6 +258,23 @@ fn extract_embedding_from_item(item: &Item) -> Option<Vec<f32>> {
     }
 }
 
+fn extract_content_from_item(item: &Item) -> Option<String> {
+    match item {
+        Item::Map(map_item) => {
+            for (k, v) in &map_item.get_items() {
+                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "content") {
+                    if let Item::Primitive(Primitive::StringPrimitive(ref s)) = v {
+                        return Some(s.get_string_value());
+                    }
+                }
+            }
+            None
+        }
+        Item::Primitive(Primitive::StringPrimitive(s)) => Some(s.get_string_value()),
+        _ => None,
+    }
+}
+
 fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
     let (dot, na, nb) = a.iter().zip(b.iter())
         .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| (d + x * y, na + x * x, nb + y * y));
@@ -1316,43 +1333,68 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
         Ok(results)
     }
 
-    /// Semantic recall: generate an embedding for the query text and find
-    /// the k nearest documents. Requires an embedding provider.
+    /// Semantic recall. If an embedding provider is configured, uses vector
+    /// search. Otherwise falls back to keyword matching — zero config needed.
     pub fn recall(
         &self,
         collection: &str,
         query: &str,
         k: usize,
     ) -> Result<Vec<(Link, Item)>, DBError> {
-        let provider = self.embedding_provider.as_ref().ok_or_else(|| {
-            DBError::UnsupportedOperation(
-                "recall requires an embedding provider. Set EMBEDDING_PROVIDER and OPENAI_API_KEY."
-                    .to_string(),
-            )
-        })?;
-
-        let query_embedding = provider.embed(query)?;
-
-        let vec_index = self
-            .index_mgr
-            .get_vector_index(collection, "embedding")
-            .ok_or_else(|| {
-                DBError::UnsupportedOperation(
-                    "no vector index on 'embedding' field. Create one first with create_vector_index."
-                        .to_string(),
-                )
-            })?;
-
-        let links = vec_index.search(&query_embedding, k);
-
-        let insert_buf = InsertBuffer::new();
-        let mut results = Vec::new();
-        for link in links {
-            if let Ok(item) = self.get_item_by_link(&link, &insert_buf, 0, None) {
-                results.push((link, item));
+        // Try vector search first if provider and index exist
+        if let Some(provider) = &self.embedding_provider {
+            if let Ok(query_embedding) = provider.embed(query) {
+                if let Some(vec_index) = self.index_mgr.get_vector_index(collection, "embedding") {
+                    let links = vec_index.search(&query_embedding, k);
+                    let insert_buf = InsertBuffer::new();
+                    let mut results = Vec::new();
+                    for link in links {
+                        if let Ok(item) = self.get_item_by_link(&link, &insert_buf, 0, None) {
+                            results.push((link, item));
+                        }
+                    }
+                    if !results.is_empty() {
+                        return Ok(results);
+                    }
+                }
             }
         }
-        Ok(results)
+
+        // Keyword fallback — works without any config
+        self.keyword_recall(collection, query, k)
+    }
+
+    fn keyword_recall(
+        &self,
+        collection: &str,
+        query: &str,
+        k: usize,
+    ) -> Result<Vec<(Link, Item)>, DBError> {
+        let coll = match self.warehouse.get(collection) {
+            Some(c) => c,
+            None => return Ok(Vec::new()),
+        };
+
+        let query_lower = query.to_lowercase();
+        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
+        if query_words.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut scored: Vec<(Link, Item, usize)> = Vec::new();
+        for (link, item) in &coll.values {
+            if let Some(content) = extract_content_from_item(item) {
+                let content_lower = content.to_lowercase();
+                let matches = query_words.iter().filter(|w| content_lower.contains(*w)).count();
+                if matches > 0 {
+                    scored.push((link.clone(), item.clone(), matches));
+                }
+            }
+        }
+
+        scored.sort_by(|a, b| b.2.cmp(&a.2));
+        scored.truncate(k);
+        Ok(scored.into_iter().map(|(l, i, _)| (l, i)).collect())
     }
 
     /// Create a typed relationship edge between two documents.
