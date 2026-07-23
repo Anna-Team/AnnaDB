@@ -78,3 +78,22 @@ impl From<DeleteQuery> for QuerySet {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_set_from_insert() {
+        let iq = InsertQuery::new("".to_string()).unwrap();
+        let qs = QuerySet::from(iq);
+        assert_eq!(qs.items.len(), 1);
+    }
+
+    #[test]
+    fn query_set_from_find() {
+        let fq = FindQuery::new("".to_string()).unwrap();
+        let qs = QuerySet::from(fq);
+        assert_eq!(qs.items.len(), 1);
+    }
+}

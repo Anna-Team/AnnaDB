@@ -55,3 +55,14 @@ impl UpdateQuery {
     //     Ok(Response { data })
     // }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn update_query_new() {
+        let uq = UpdateQuery::new("".to_string()).unwrap();
+        assert_eq!(uq.get_prefix(), "update");
+    }
+}

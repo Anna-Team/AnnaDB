@@ -30,3 +30,15 @@ impl TySONPrimitive for CollectionName {
         self.value.to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn collection_name_prefix() {
+        let cn = CollectionName::new("".to_string(), "test".to_string()).unwrap();
+        assert_eq!(cn.get_prefix(), "collection");
+        assert_eq!(cn.get_string_value(), "test");
+    }
+}

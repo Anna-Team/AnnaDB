@@ -64,3 +64,14 @@ impl ModifierItem {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn modifier_unknown_prefix() {
+        let val = crate::Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        assert!(ModifierItem::new("unknown".to_string(), val).is_err());
+    }
+}

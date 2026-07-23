@@ -41,3 +41,14 @@ impl TySONMap for SetOperator {
         Item::Map(MapItem::SetOperator(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn set_operator_new() {
+        let s = SetOperator::new("".to_string()).unwrap();
+        assert_eq!(s.get_prefix(), "set");
+    }
+}

@@ -52,3 +52,25 @@ impl StorageVector {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn storage_vector_push_and_get() {
+        let mut v = StorageVector::new("".to_string()).unwrap();
+        let item = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "a".to_string()).unwrap());
+        v.push(item.clone()).unwrap();
+        assert_eq!(v.get_items().len(), 1);
+    }
+
+    #[test]
+    fn storage_vector_replace() {
+        let mut v = StorageVector::new("".to_string()).unwrap();
+        let item = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "a".to_string()).unwrap());
+        v.push(item).unwrap();
+        let link = crate::Link::create("test".to_string());
+        assert!(v.replace_by_string("0".to_string(), crate::Item::Primitive(crate::Primitive::Link(link))).is_ok());
+    }
+}

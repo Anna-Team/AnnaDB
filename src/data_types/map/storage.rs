@@ -61,3 +61,31 @@ impl StorageMap {
         Ok(true)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::TySONPrimitive;
+
+    #[test]
+    fn storage_map_get_by_str() {
+        let mut m = StorageMap::new("".to_string()).unwrap();
+        let key = crate::StringPrimitive::new("".to_string(), "name".to_string()).unwrap();
+        let val = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "Ann".to_string()).unwrap());
+        m.insert(crate::Primitive::StringPrimitive(key.clone()), val).unwrap();
+        assert!(m.get_by_str("name").unwrap().is_some());
+        assert!(m.get_by_str("missing").unwrap().is_none());
+    }
+
+    #[test]
+    fn storage_map_replace() {
+        let mut m = StorageMap::new("".to_string()).unwrap();
+        let key = crate::StringPrimitive::new("".to_string(), "x".to_string()).unwrap();
+        let val1 = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "old".to_string()).unwrap());
+        m.insert(crate::Primitive::StringPrimitive(key.clone()), val1).unwrap();
+        let val2 = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "new".to_string()).unwrap());
+        m.replace_by_string("x".to_string(), val2).unwrap();
+        let found = m.get_by_str("x").unwrap();
+        assert!(found.is_some(), "replaced key should still exist");
+    }
+}

@@ -49,3 +49,22 @@ impl FindQuery {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn find_query_new() {
+        let fq = FindQuery::new("".to_string()).unwrap();
+        assert_eq!(fq.get_prefix(), "find");
+        assert!(fq.items.is_empty());
+    }
+
+    #[test]
+    fn find_query_next_available() {
+        let fq = FindQuery::new("".to_string()).unwrap();
+        let ops = fq.next_available();
+        assert!(!ops.is_empty());
+    }
+}
