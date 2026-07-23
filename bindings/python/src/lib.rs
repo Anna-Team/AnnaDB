@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-use annadb::storage::main::Storage;
+use annadb::storage::main::{Storage, UnwrapConfig, UnwrapOrder};
 use annadb::storage::vector::hnsw::HnswMetric;
 
 #[pyclass]
@@ -169,6 +169,21 @@ impl AnnaDB {
             })
             .collect();
         Ok((center_str, neighbors))
+    }
+
+    #[pyo3(signature = (link_str, depth=2, include_types=None, exclude_types=None, max_nodes=None))]
+    fn ego_graph_with_config(
+        &self, link_str: &str, depth: usize,
+        include_types: Option<Vec<String>>, exclude_types: Option<Vec<String>>,
+        max_nodes: Option<usize>,
+    ) -> PyResult<(String, Vec<(String, String, usize, String)>, bool, usize)> {
+        let link = parse_link(link_str)?;
+        let config = UnwrapConfig { depth, include_link_types: include_types, exclude_link_types: exclude_types, max_nodes, max_per_link_type: None, order_by: UnwrapOrder::Natural };
+        let (center, neighbors, meta) = self.storage.ego_graph_with_config(&link, &config)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        let ns: Vec<_> = neighbors.into_iter().map(|(l, item, d, r)|
+            (format!("l|{}|{}|", l.collection_name, l.id), format!("{:?}", item), d, r)).collect();
+        Ok((format!("{:?}", center), ns, meta.truncated, meta.expanded_nodes))
     }
 }
 

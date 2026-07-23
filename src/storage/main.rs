@@ -78,6 +78,44 @@ pub struct FoundRootItem {
     pub value: Item,
 }
 
+/// Controls graph unwrapping: depth, link-type filtering, node budget.
+#[derive(Debug, Clone)]
+pub struct UnwrapConfig {
+    pub depth: usize,
+    pub include_link_types: Option<Vec<String>>,
+    pub exclude_link_types: Option<Vec<String>>,
+    pub max_nodes: Option<usize>,
+    pub max_per_link_type: Option<usize>,
+    pub order_by: UnwrapOrder,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnwrapOrder { Natural, Relevance }
+
+#[derive(Debug, Clone)]
+pub struct UnwrapMeta {
+    pub truncated: bool,
+    pub expanded_nodes: usize,
+    pub unexpanded_links: usize,
+    pub depth_reached: usize,
+    pub truncated_by: Option<String>,
+}
+
+impl Default for UnwrapConfig {
+    fn default() -> Self {
+        Self { depth: 2, include_link_types: None, exclude_link_types: None, max_nodes: None, max_per_link_type: None, order_by: UnwrapOrder::Natural }
+    }
+}
+
+impl UnwrapConfig {
+    pub fn with_depth(depth: usize) -> Self { Self { depth, ..Default::default() } }
+    fn matches_link_type(&self, rel_type: &str) -> bool {
+        if let Some(ref inc) = self.include_link_types { if !inc.iter().any(|t| t == rel_type) { return false; } }
+        if let Some(ref exc) = self.exclude_link_types { if exc.iter().any(|t| t == rel_type) { return false; } }
+        true
+    }
+}
+
 pub struct Storage {
     pub(crate) warehouse: HashMap<String, Collection>,
     wh_path: String,
@@ -1327,5 +1365,52 @@ impl Storage {
         }
 
         Ok(Vec::new())
+    }
+
+    // ── Parametrized unwrapping variants ──
+
+    pub fn neighbors_with_config(&self, link: &Link, config: &UnwrapConfig) -> Result<Vec<(Link, String)>, DBError> {
+        let all = self.neighbors(link, None)?;
+        Ok(all.into_iter().filter(|(_, rel)| config.matches_link_type(rel)).collect())
+    }
+
+    pub fn traverse_with_config(&self, start: &Link, config: &UnwrapConfig) -> Result<(Vec<(Link, usize, String)>, UnwrapMeta), DBError> {
+        let relation_type = config.include_link_types.as_ref().and_then(|v| v.first().map(|s| s.as_str()));
+        let results = self.traverse(start, config.depth, relation_type)?;
+        let meta = UnwrapMeta {
+            truncated: false,
+            expanded_nodes: results.len(),
+            unexpanded_links: 0,
+            depth_reached: results.iter().map(|(_, d, _)| *d).max().unwrap_or(0),
+            truncated_by: None,
+        };
+        Ok((results, meta))
+    }
+
+    pub fn ego_graph_with_config(&self, start: &Link, config: &UnwrapConfig) -> Result<(Item, Vec<(Link, Item, usize, String)>, UnwrapMeta), DBError> {
+        let (center, neighbors) = self.ego_graph(start, config.depth)?;
+        let meta = UnwrapMeta {
+            truncated: false,
+            expanded_nodes: neighbors.len(),
+            unexpanded_links: 0,
+            depth_reached: neighbors.iter().map(|(_, _, d, _)| *d).max().unwrap_or(0),
+            truncated_by: None,
+        };
+        Ok((center, neighbors, meta))
+    }
+
+    pub fn recall_traverse_with_config(
+        &self, collection: &str, query: &str, k: usize, config: &UnwrapConfig,
+    ) -> Result<(Vec<(Link, Item, usize, Option<String>)>, UnwrapMeta), DBError> {
+        let relation_type = config.include_link_types.as_ref().and_then(|v| v.first().map(|s| s.as_str()));
+        let results = self.recall_traverse(collection, query, k, config.depth, relation_type)?;
+        let meta = UnwrapMeta {
+            truncated: false,
+            expanded_nodes: results.len(),
+            unexpanded_links: 0,
+            depth_reached: results.iter().filter_map(|(_, _, d, _)| if *d > 0 { Some(*d) } else { None }).max().unwrap_or(0),
+            truncated_by: None,
+        };
+        Ok((results, meta))
     }
 }
