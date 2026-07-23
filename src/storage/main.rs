@@ -1002,18 +1002,17 @@ impl Storage {
         dedup_threshold: Option<f32>,
     ) -> Result<Link, DBError> {
 
-        // Dedup check: if embedding provider exists, check for near-duplicates
+        // Find near-duplicates before storing — we'll link to them, not skip
+        let mut similar_links: Vec<Link> = Vec::new();
         if let (Some(provider), Some(threshold)) = (&self.embedding_provider, dedup_threshold) {
             let emb = provider.embed(content)?;
-            let dist_threshold = 1.0 - threshold; // cosine distance threshold
+            let dist_threshold = 1.0 - threshold;
             if let Some(vec_index) = self.index_mgr.get_vector_index(collection, "embedding") {
-                let nearest = vec_index.search(&emb, 1);
-                if let Some(first) = nearest.first() {
-                    // Check actual distance via the stored embedding
-                    if let Ok(item) = self.get_item_by_link(first, &InsertBuffer::new(), 0, None) {
+                for candidate in vec_index.search(&emb, 3) {
+                    if let Ok(item) = self.get_item_by_link(&candidate, &InsertBuffer::new(), 0, None) {
                         if let Some(stored_emb) = extract_embedding_from_item(&item) {
                             if cosine_distance(&emb, &stored_emb) < dist_threshold {
-                                return Ok(first.clone());
+                                similar_links.push(candidate);
                             }
                         }
                     }
@@ -1108,8 +1107,14 @@ impl Storage {
             }
         };
 
-        // Auto-link to similar memories
-        if link_similar {
+        // Link near-duplicates as 'extends' (dedup) or similar as 'related_to'
+        if !similar_links.is_empty() {
+            for s_link in &similar_links {
+                if *s_link != result_link {
+                    let _ = self.relate(&result_link, s_link, "extends", None);
+                }
+            }
+        } else if link_similar {
             if let Some(provider) = &self.embedding_provider {
                 let emb = provider.embed(content)?;
                 if let Some(vec_index) = self.index_mgr.get_vector_index(collection, "embedding") {
