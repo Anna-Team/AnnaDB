@@ -1585,3 +1585,60 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
         Ok((results, meta))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unwrap_config_defaults() {
+        let c = UnwrapConfig::default();
+        assert_eq!(c.depth, 2);
+        assert!(c.include_link_types.is_none());
+        assert!(c.exclude_link_types.is_none());
+        assert!(c.max_nodes.is_none());
+    }
+
+    #[test]
+    fn unwrap_config_with_depth() {
+        let c = UnwrapConfig::with_depth(5);
+        assert_eq!(c.depth, 5);
+    }
+
+    #[test]
+    fn unwrap_config_matches_include() {
+        let c = UnwrapConfig {
+            include_link_types: Some(vec!["knows".to_string(), "imports".to_string()]),
+            ..Default::default()
+        };
+        assert!(c.matches_link_type("knows"));
+        assert!(c.matches_link_type("imports"));
+        assert!(!c.matches_link_type("related_to"));
+    }
+
+    #[test]
+    fn unwrap_config_matches_exclude() {
+        let c = UnwrapConfig {
+            exclude_link_types: Some(vec!["audit_log".to_string()]),
+            ..Default::default()
+        };
+        assert!(c.matches_link_type("knows"));
+        assert!(!c.matches_link_type("audit_log"));
+    }
+
+    #[test]
+    fn unwrap_config_include_and_exclude() {
+        let c = UnwrapConfig {
+            include_link_types: Some(vec!["knows".to_string()]),
+            exclude_link_types: Some(vec!["knows".to_string()]),
+            ..Default::default()
+        };
+        assert!(!c.matches_link_type("knows")); // exclude wins over include
+    }
+
+    #[test]
+    fn unwrap_order_values() {
+        assert_eq!(UnwrapOrder::Natural as u8, 0);
+        assert_eq!(UnwrapOrder::Relevance as u8, 1);
+    }
+}

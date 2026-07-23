@@ -397,3 +397,56 @@ fn traverse_path<'a, I: Iterator<Item = &'a str>>(current: &Item, segment: &str,
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn index_key_ordering_nulls_first() {
+        assert!(IndexKey::Null < IndexKey::Bool(false));
+        assert!(IndexKey::Null < IndexKey::Num(0));
+        assert!(IndexKey::Null < IndexKey::Str("".to_string()));
+    }
+
+    #[test]
+    fn index_key_ordering_bools_before_numbers() {
+        assert!(IndexKey::Bool(false) < IndexKey::Num(0));
+    }
+
+    #[test]
+    fn index_key_ordering_numbers_before_strings() {
+        assert!(IndexKey::Num(0) < IndexKey::Str("a".to_string()));
+    }
+
+    #[test]
+    fn index_key_from_primitive_string() {
+        let p = Primitive::new("s".to_string(), "hello".to_string()).unwrap();
+        assert_eq!(IndexKey::from_primitive(&p), Some(IndexKey::Str("hello".to_string())));
+    }
+
+    #[test]
+    fn index_key_from_embedding_is_none() {
+        let p = Primitive::new("e".to_string(), "3|0.1,0.2,0.3".to_string()).unwrap();
+        assert_eq!(IndexKey::from_primitive(&p), None);
+    }
+
+    #[test]
+    fn btree_index_insert_and_lookup() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key = IndexKey::Str("hello".to_string());
+        let link = Link::create("test".to_string());
+        idx.insert(key.clone(), link.clone());
+        assert_eq!(idx.lookup_eq(&key), vec![link]);
+    }
+
+    #[test]
+    fn btree_index_remove_clears() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key = IndexKey::Str("hello".to_string());
+        let link = Link::create("test".to_string());
+        idx.insert(key.clone(), link.clone());
+        idx.remove(&key, &link);
+        assert!(idx.lookup_eq(&key).is_empty());
+    }
+}

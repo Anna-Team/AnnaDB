@@ -172,3 +172,51 @@ mod tests {
         assert!(Primitive::new("null".to_string(), "".to_string()).is_ok());
     }
 }
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+
+    #[test]
+    fn string_primitive_roundtrip() {
+        let p = Primitive::new("s".to_string(), "hello world".to_string()).unwrap();
+        assert_eq!(p.serialize(), "s|hello world|");
+        assert_eq!(p.get_prefix(), "s");
+    }
+
+    #[test]
+    fn number_primitive_roundtrip() {
+        let p = Primitive::new("n".to_string(), "42.5".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "n");
+    }
+
+    #[test]
+    fn bool_primitive_true() {
+        let p = Primitive::new("b".to_string(), "true".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "b");
+    }
+
+    #[test]
+    fn bool_primitive_false() {
+        let p = Primitive::new("b".to_string(), "false".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "b");
+    }
+
+    #[test]
+    fn null_primitive() {
+        let p = Primitive::new("null".to_string(), "".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "null");
+    }
+
+    #[test]
+    fn deleted_primitive() {
+        let p = Primitive::new("deleted".to_string(), "".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "deleted");
+    }
+
+    #[test]
+    fn link_primitive_parsing() {
+        let p = Primitive::new("l".to_string(), "550e8400-e29b-41d4-a716-446655440000".to_string());
+        assert!(p.is_err()); // link prefix not in Primitive::new whitelist
+    }
+}

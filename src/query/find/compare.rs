@@ -11,7 +11,7 @@ pub enum CompareResult {
     CanNotCompare,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Res {
     True,
     False,
@@ -188,5 +188,22 @@ pub fn compare(
             |r| r != CompareResult::Less && r != CompareResult::Equal, Res::False, Res::True,
         ),
         _ => compare_logical(op, id, storage, insert_buf),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compare_result_variants() {
+        assert_ne!(CompareResult::Equal, CompareResult::Greater);
+        assert_ne!(CompareResult::Less, CompareResult::CanNotCompare);
+    }
+
+    #[test]
+    fn res_variants() {
+        assert_ne!(Res::True, Res::False);
+        assert_ne!(Res::None, Res::True);
     }
 }
