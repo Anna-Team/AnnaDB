@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Item, Link, Primitive};
 use std::collections::HashMap;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct InsertBuffer {
     pub(crate) items: HashMap<Link, Item>,
     pub(crate) changed: bool,

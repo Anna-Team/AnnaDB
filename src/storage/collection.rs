@@ -99,7 +99,7 @@ impl Collection {
             .open(file_path.as_str())?)
     }
 
-    pub(crate) fn get_value(&self, id: &Link) -> Result<Item, DBError> {
+    pub fn get_value(&self, id: &Link) -> Result<Item, DBError> {
         Ok(self
             .values
             .get(id)

@@ -28,6 +28,7 @@ pub use crate::data_types::primitives::Primitive;
 pub use crate::data_types::vector::VectorItem;
 pub use crate::errors::DBError as DbError;
 pub use crate::storage::main::Storage;
+pub use crate::storage::main::{UnwrapConfig, UnwrapMeta, UnwrapOrder};
 pub use crate::storage::transaction::Transaction;
 pub use crate::tyson::de::Desereilize;
 pub use crate::tyson::map::TySONMap;
