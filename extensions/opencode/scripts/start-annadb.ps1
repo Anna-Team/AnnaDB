@@ -1,5 +1,5 @@
 # AnnaDB launcher for opencode (Windows PowerShell)
-# Starts AnnaDB as a background process and cleans up on exit.
+# Starts AnnaDB as a background process, launches opencode, and cleans up on exit.
 
 $ErrorActionPreference = "Stop"
 
@@ -27,17 +27,34 @@ Write-Host "Starting AnnaDB on port $AnnaDBPort..."
 $env:EMBEDDING_PROVIDER = if ($env:ANNADB_EMBEDDING_PROVIDER) { $env:ANNADB_EMBEDDING_PROVIDER } else { "" }
 $env:EMBEDDING_MODEL = if ($env:ANNADB_EMBEDDING_MODEL) { $env:ANNADB_EMBEDDING_MODEL } else { "" }
 
-$process = Start-Process -FilePath $AnnaDBBin `
+$annaProcess = Start-Process -FilePath $AnnaDBBin `
     -ArgumentList "--port", $AnnaDBPort, "--wh-path", $AnnaDBData `
     -PassThru -WindowStyle Hidden
 
-# Register cleanup
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
-    if ($process -and !$process.HasExited) {
-        $process.Kill()
+Start-Sleep -Seconds 1
+Write-Host "AnnaDB running (PID $($annaProcess.Id))"
+
+# Verify health before launching opencode
+try {
+    $null = Invoke-WebRequest -Uri "http://localhost:$AnnaDBPort/health" -TimeoutSec 5
+    Write-Host "AnnaDB health check passed"
+} catch {
+    Write-Host "WARNING: AnnaDB health check failed: $_"
+}
+
+# Launch opencode (passes through any extra arguments)
+$opencodeArgs = $args -join " "
+Write-Host "Launching opencode..."
+$opencodeExit = 0
+try {
+    & opencode @args
+    $opencodeExit = $LASTEXITCODE
+} finally {
+    # Cleanup: kill AnnaDB when opencode exits
+    if ($annaProcess -and !$annaProcess.HasExited) {
+        $annaProcess.Kill()
         Write-Host "AnnaDB stopped"
     }
-} | Out-Null
+}
 
-Start-Sleep -Seconds 1
-Write-Host "AnnaDB running (PID $($process.Id))"
+exit $opencodeExit

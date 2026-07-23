@@ -424,6 +424,10 @@ impl Storage {
     }
 
     pub fn run(&mut self, data: &str) -> String {
+        // Handle memory API commands (not part of TySON grammar)
+        if let Some(result) = self.run_memory_command(data) {
+            return result;
+        }
         // Handle non-transaction commands
         if data.starts_with("list_collections") {
             return match self.run_list_collections(data) {
@@ -439,6 +443,100 @@ impl Storage {
                 ErrorTransactionResponse::from(e).serialize()
             }
         };
+    }
+
+    fn run_memory_command(&mut self, data: &str) -> Option<String> {
+        let (cmd, rest) = data.split_once(' ')?;
+        let pairs = parse_kv_pairs(rest);
+        let result: Result<String, DBError> = match cmd {
+            "remember" => {
+                let collection = pairs.get("collection")?;
+                let content = pairs.get("content")?;
+                let key = pairs.get("key").map(|k| {
+                    let parts: Vec<&str> = k.splitn(2, '|').collect();
+                    (parts[0].to_string(), parts.get(1).unwrap_or(&"").to_string())
+                });
+                let key_ref = key.as_ref().map(|(a, b)| (a.as_str(), b.as_str()));
+                self.remember(collection, content, key_ref, false, None)
+                    .map(|link| format!("l|{}|{}|", link.collection_name, link.id))
+            }
+            "recall" => {
+                let collection = pairs.get("collection")?;
+                let query = pairs.get("query").map_or("", |v| v);
+                let k: usize = pairs.get("n").and_then(|n| n.parse().ok()).unwrap_or(5);
+                self.recall(collection, query, k)
+                    .map(|results| {
+                        let items: Vec<String> = results.iter()
+                            .map(|(l, _)| format!("l|{}|{}|", l.collection_name, l.id))
+                            .collect();
+                        format!("v[{}]", items.join(","))
+                    })
+            }
+            "relate" => {
+                let from_str = pairs.get("from")?;
+                let to_str = pairs.get("to")?;
+                let rel_type = pairs.get("type")?;
+                let from = parse_link(from_str).ok()?;
+                let to = parse_link(to_str).ok()?;
+                self.relate(&from, &to, rel_type, None)
+                    .map(|edge| format!("l|{}|{}|", edge.collection_name, edge.id))
+            }
+            "neighbors" => {
+                let link_str = pairs.get("link")?;
+                let link = parse_link(link_str).ok()?;
+                let rtype = pairs.get("type");
+                self.neighbors(&link, rtype.map(|s| s.as_str()))
+                    .map(|n| {
+                        let items: Vec<String> = n.iter()
+                            .map(|(l, t)| format!("l|{}|{}|:s|{}|", l.collection_name, l.id, t))
+                            .collect();
+                        format!("v[{}]", items.join(","))
+                    })
+            }
+            "traverse" => {
+                let link_str = pairs.get("start")?;
+                let link = parse_link(link_str).ok()?;
+                let depth: usize = pairs.get("depth").and_then(|d| d.parse().ok()).unwrap_or(3);
+                self.traverse(&link, depth, None)
+                    .map(|t| {
+                        let items: Vec<String> = t.iter()
+                            .map(|(l, d, r)| format!("s|l|{}|{}|:n|{}|:s|{}||", l.collection_name, l.id, d, r))
+                            .collect();
+                        format!("v[{}]", items.join(","))
+                    })
+            }
+            "path" => {
+                let from_str = pairs.get("from")?;
+                let to_str = pairs.get("to")?;
+                let depth: usize = pairs.get("depth").and_then(|d| d.parse().ok()).unwrap_or(5);
+                let from = parse_link(from_str).ok()?;
+                let to = parse_link(to_str).ok()?;
+                self.path(&from, &to, depth, None)
+                    .map(|p| {
+                        let items: Vec<String> = p.iter()
+                            .map(|(l, t)| format!("l|{}|{}|:s|{}|", l.collection_name, l.id, t))
+                            .collect();
+                        format!("v[{}]", items.join(","))
+                    })
+            }
+            "ego_graph" => {
+                let link_str = pairs.get("link")?;
+                let link = parse_link(link_str).ok()?;
+                let depth: usize = pairs.get("depth").and_then(|d| d.parse().ok()).unwrap_or(2);
+                self.ego_graph(&link, depth)
+                    .map(|(center, _)| format!("center:{:?}", center))
+            }
+            "forget" => {
+                let link_str = pairs.get("link")?;
+                let link = parse_link(link_str).ok()?;
+                self.forget(&link).map(|_| "deleted".to_string())
+            }
+            _ => return None,
+        };
+        match result {
+            Ok(body) => Some(format!("result:ok[{}]", body)),
+            Err(e) => Some(ErrorTransactionResponse::from(e).serialize()),
+        }
     }
 
     fn run_list_collections(&self, data: &str) -> Result<OkTransactionResponse, DBError> {
@@ -1883,4 +1981,28 @@ mod tests {
         let coll = s2.get_collection("a").unwrap();
         assert!(coll.values.len() >= 2);
     }
+}
+
+fn parse_kv_pairs(input: &str) -> std::collections::HashMap<String, String> {
+    let mut map = std::collections::HashMap::new();
+    let parts: Vec<&str> = input.split(" s|").collect();
+    for part in parts {
+        let part = part.trim().trim_start_matches("s|");
+        if let Some((key, value)) = part.split_once('|') {
+            let value = value.trim_end_matches('|');
+            map.insert(key.to_string(), value.to_string());
+        }
+    }
+    map
+}
+
+fn parse_link(s: &str) -> Result<Link, DBError> {
+    let s = s.trim().trim_start_matches("l|").trim_end_matches('|');
+    let parts: Vec<&str> = s.splitn(2, '|').collect();
+    if parts.len() != 2 {
+        return Err(DBError::Deserialization(format!("invalid link: {}", s)));
+    }
+    let id = uuid::Uuid::parse_str(parts[1])
+        .map_err(|e| DBError::Deserialization(format!("invalid uuid: {}", e)))?;
+    Ok(Link { collection_name: parts[0].to_string(), id, links_to: vec![] })
 }
