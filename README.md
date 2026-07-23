@@ -1,101 +1,189 @@
-[![shields badge](https://shields.io/badge/-docs-blue)](https://annadb.dev/)
-[![docker](https://img.shields.io/docker/v/romanright/annadb)](https://hub.docker.com/repository/docker/romanright/annadb)
+# AnnaDB — Embedded AI Agent Memory Engine
 
-![Logo](https://raw.githubusercontent.com/roman-right/AnnaDB/main/docs/build/assets/img/logo_colored.svg?token=GHSAT0AAAAAABXADZHTHTTD4UZR3G6P2J5GYXRFT7Q)
+[![tests](https://img.shields.io/badge/tests-406%20passing-brightgreen)]()
+[![coverage](https://img.shields.io/badge/coverage-84%25-brightgreen)]()
+[![license](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
 
-Next-generation developer-first NoSQL database.
+AnnaDB is an embedded, local-first memory engine for AI agents. Document-oriented,
+link-based graph model with vector search, zero-cycle graph traversal, and
+HTTP-native protocol. Purpose-built for agents that need semantic recall,
+structured relationships, and durable memory.
 
-AnnaDB is an in-memory data store with disk persistence. It can work as the main data storage and the cache layer as well. Rust lang under the hood makes it memory-safe and fast.
+## Quick start
 
-**Features**
+```bash
+# Download and start the server
+./anna_db --port 10001 --wh-path ./warehouse
 
-- Flexible object structure - simple primitives and complicated nested containers could be stored in AnnaDB
-- Relations - you can link any object to another, and AnnaDB will resolve this relation on finds, updates, and other operations.
-- Transactions - out of the box
-
-## Collections
-
-AnnaDB stores objects in collections. Collections are analogous to tables in SQL databases. 
-
-Every object and sub-object (item of a vector or map) that was stored in AnnaDB has a link (id). This link consists of the collection name and unique uuid4 value. One object can contain links to objects from any collections - AnnaDB will fetch and process them on all the operations automatically without additional commands (joins or lookups)
-
-## TySON
-
-The AnnaDB query language uses the `TySON` format. The main difference from other data formats is that each item has a value and prefix. The prefix can mark the data or query type (as it is used in AnnaDB) or any other useful for the parser information. This adds more flexibility to the data structure design - it is allowed to use as many custom data types as the developer needs.
-
-You can read more about the `TySON` format [here](https://github.com/roman-right/tyson)
-
-## Data Types
-
-There are primitive and container data types in AnnaDB.
-
-Primitive data types are a set of basic types whose values can not be decoupled. In TySON, primitives are represented as `prefix|value|` or `prefix` only. Prefix in AnnaDB shows the data type. For example, the string `test` will be represented as `s|test|`, where `s` - is a prefix that marks data as a string, and `test` is the actual value.
-
-Container data types keep primitive and container objects using specific rules. There are only two container types in AnnaDB for now. Maps and vectors.
-
-- Vectors are ordered sets of elements of any type. Example: `v[n|1|,n|2|,n|3|,]`
-- Maps are associative arrays. Example: `m{ s|bar|: s|baz|,}`
-
-More information about AnnaDB data types can be found in the [documentation](https://annadb.dev/documentation/data_types/)
-
-## Query
-
-Query in AnnaDB is a pipeline of steps that should be applied in the order it was declared. The steps are wrapped into a vector with the prefix `q` - query.
-
-<pre><code><span class="prefix_primitive">collection</span>|<span class="value_primitive">test</span>|:<span class="prefix_vector">q</span>[
-   <span class="prefix_vector">find</span>[
-   ],
-   <span class="prefix_vector">sort</span>[
-      <span class="prefix_modifier">asc</span>(<span class="prefix_primitive">value</span>|<span class="value_primitive">num</span>|),
-   ],
-   <span class="prefix_modifier">limit</span>(<span class="prefix_number">n</span>|<span class="value_number">5</span>|),
-];
-</code></pre>
-
-If the pipeline has only one step, the `q` vector is not needed.
-
-<pre><code><span class="prefix_primitive">collection</span>|<span class="value_primitive">test</span>|:<span class="prefix_vector">find</span>[
-   <span class="prefix_map">gt</span>{
-      <span class="prefix_primitive">value</span>|<span class="value_primitive">num</span>|:<span class="prefix_number">n</span>|<span class="value_number">4</span>|,
-   },
-];
-</code></pre>
-
-## Server
-
-To run AnnaDB locally please type the next command in the terminal:
-
-```shell
-docker run --init -p 10001:10001 -t romanright/annadb:0.1.0
+# Or use as an embedded Rust library
+let mut db = AnnaDB::open("warehouse", None)?;
+db.remember("facts", "Paris is the capital of France", None, false, None)?;
+let results = db.recall("facts", "paris capital", 5)?;
 ```
 
-If you want to persist your data use this volume:
-
-```shell
-docker run --init -p 10001:10001 -t -v "$(pwd)/data:/app/warehouse" romanright/annadb:0.1.0
-```
-
-## Client
-
-AnnaDB shell client is an interactive terminal application that connects to the DB instance, validates and handles queries. It fits well to play with query language or work with the data manually.
-
-![AnnaDB shell](https://raw.githubusercontent.com/roman-right/AnnaDB/0c9f00f53f21184fe166c5c70d417f0ed4bcf01b/docs/build/assets/img/shell.png)
-
-It can be installed via `pip`
-
-```shell
+```bash
+# Python embedded (pip install)
 pip install annadb
 ```
 
-Run
+```python
+from annadb import AnnaDB
+db = AnnaDB.open("warehouse")
+link = db.remember("facts", "Paris is the capital of France")
+docs = db.recall("facts", "paris", k=5)
+```
 
-```shell
-annadb --uri annadb://localhost:10001
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Vector search** | HNSW index, cosine/euclidean/dot similarity, optional OpenAI embeddings |
+| **Graph operations** | Typed edges, neighbors, BFS traversal, shortest path, ego graph |
+| **Zero config** | Keyword recall works immediately; vector search via env var |
+| **Embedded mode** | SQLite-like `open()` API for Rust + PyO3 Python bindings |
+| **HTTP server** | POST /tx with TySON, GET /health, zero native dependencies |
+| **Persistence** | WAL + periodic snapshots, crash recovery |
+| **BSL licensed** | Free for individuals, academics, non-profits, companies < $5M |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    AnnaDB                            │
+│                                                      │
+│  HTTP Server (std::net)     Embedded (Rust/Python)   │
+│  POST /tx ← TySON          Storage::open()           │
+│  GET /health                                         │
+│                                                      │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐  │
+│  │ Document │  │  Vector  │  │      Graph        │  │
+│  │  Store   │  │  Index   │  │  typed edges, BFS │  │
+│  │ TySON    │  │  HNSW    │  │  path, traverse   │  │
+│  └──────────┘  └──────────┘  └───────────────────┘  │
+│                                                      │
+│  WAL ─► snapshot.bin ─► warehouse/                   │
+└─────────────────────────────────────────────────────┘
+```
+
+## Usage
+
+### Embedded (Rust)
+
+```rust
+use annadb::AnnaDB;
+
+let mut db = AnnaDB::open("warehouse", None)?;
+
+// Store a document
+let link = db.remember("facts", "Paris is in France", Some(("name", "paris")), false, None)?;
+
+// Keyword search
+let results = db.recall("facts", "paris", 5)?;
+
+// Graph operations
+let alice = db.remember("people", "Alice", None, false, None)?;
+let bob = db.remember("people", "Bob", None, false, None)?;
+db.relate(&alice, &bob, "knows", None)?;
+let neighbors = db.neighbors(&alice, None)?;
+```
+
+### HTTP server
+
+```bash
+# Start server
+./anna_db --port 10001 --wh-path ./warehouse
+
+# Store a memory
+curl -X POST :10001/tx -d 'remember s|collection|facts| s|content|Paris is in France|'
+
+# Recall
+curl -X POST :10001/tx -d 'recall s|collection|facts| s|query|paris| n|5|'
+
+# List collections
+curl -X POST :10001/tx -d 'list_collections s|prefix|project:|'
+```
+
+### With vector search
+
+```bash
+# OpenAI embeddings
+EMBEDDING_PROVIDER=openai OPENAI_API_KEY=sk-... ./anna_db
+
+# Local model (build from source with --features embedding-local)
+EMBEDDING_PROVIDER=local ./anna_db
+```
+
+## opencode Integration
+
+AnnaDB serves as persistent memory for opencode coding sessions. The agent
+remembers decisions, files, bugs, and conventions across sessions.
+
+```bash
+# Setup
+cp extensions/opencode/skills/annadb.md ~/.opencode/skills/
+
+# Launch
+./extensions/opencode/scripts/start-annadb.sh && opencode
+```
+
+The skill teaches the agent to use these tools:
+
+| Tool | TySON | Purpose |
+|------|-------|---------|
+| `memory_remember` | `remember s|collection|...| s|content|...|` | Store facts, decisions |
+| `memory_recall` | `recall s|collection|...| s|query|...|` | Retrieve relevant context |
+| `memory_relate` | `relate s|from|...| s|to|...|` | Connect memories |
+| `memory_forget` | `forget s|link|...|` | Delete memories |
+| `memory_inspect` | `list_collections s|prefix|...|` | View stored data |
+
+See `extensions/opencode/DESIGN.md` for the full architecture.
+
+## Data model
+
+### Primitives
+```
+s|hello|      string    n|42.5|       number
+b|true|       bool      null|          null
+l|coll|uuid|  link      e|384|0.1,...| embedding
+```
+
+### Collections
+
+```
+project:myapp:files        ← file summaries
+project:myapp:decisions    ← architecture decisions
+project:myapp:bugs         ← bugs and fixes
+project:myapp:session_{id} ← session summaries (disposable)
+user:preferences           ← global preferences
+user:conventions           ← global coding conventions
+```
+
+## License
+
+Business Source License 1.1 → Apache 2.0 after 2030-07-22.
+Free for: individuals, academics, non-profits, companies < $5M revenue.
+Commercial license required for larger organizations in production use.
+See [LICENSE](LICENSE) and [LICENSE_AD](LICENSE_AD).
+
+## Development
+
+```bash
+# Build
+cargo build
+
+# Run tests (406 tests on Linux, 293 unit + 102 integration)
+cargo test
+
+# Coverage (84% on Linux)
+cargo llvm-cov --summary-only
+
+# Docker test
+docker run --rm -v .:/app -w /app rust:latest cargo test
 ```
 
 ## Links
 
 - [Documentation](https://annadb.dev)
-- [Road Map](https://annadb.dev/roadmap)
-- [Docker Hub](https://hub.docker.com/repository/docker/romanright/annadb)
-- [Discord Server](https://discord.gg/s5TUAHkqv7)
+- [GitHub Issues](https://github.com/Anna-Team/AnnaDB/issues)
+- [OpenCode extension design](extensions/opencode/DESIGN.md)
+- [Test coverage tracker](TEST_COVERAGE_TRACKER.md)

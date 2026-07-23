@@ -130,3 +130,66 @@ impl SortQuery {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::primitives::number::NumberPrimitive;
+    use crate::data_types::primitives::path::PathToValue;
+    use crate::data_types::primitives::root::RootPrimitive;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn asc_operator_creation_with_path() {
+        let p = PathToValue::new("".to_string(), "name".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::PathToValue(p));
+        let asc = AscOperator::new("".to_string(), item).unwrap();
+        assert_eq!(asc.get_prefix(), "asc");
+    }
+
+    #[test]
+    fn asc_operator_creation_with_root() {
+        let root = RootPrimitive::new("".to_string(), "".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::RootPrimitive(root));
+        let asc = AscOperator::new("".to_string(), item).unwrap();
+        assert_eq!(asc.get_prefix(), "asc");
+    }
+
+    #[test]
+    fn asc_operator_rejects_non_path() {
+        let num = NumberPrimitive::new("".to_string(), "42".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        assert!(AscOperator::new("".to_string(), item).is_err());
+    }
+
+    #[test]
+    fn desc_operator_creation() {
+        let p = PathToValue::new("".to_string(), "name".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::PathToValue(p));
+        let desc = DescOperator::new("".to_string(), item).unwrap();
+        assert_eq!(desc.get_prefix(), "desc");
+    }
+
+    #[test]
+    fn sort_query_new() {
+        let sq = SortQuery::new("".to_string()).unwrap();
+        assert!(sq.items.is_empty());
+        assert_eq!(sq.get_prefix(), "sort");
+    }
+
+    #[test]
+    fn sort_query_push_asc() {
+        let mut sq = SortQuery::new("".to_string()).unwrap();
+        let p = PathToValue::new("".to_string(), "name".to_string()).unwrap();
+        let asc = AscOperator::new("".to_string(), Item::Primitive(Primitive::PathToValue(p))).unwrap();
+        sq.push(Item::Modifier(ModifierItem::AscOperator(asc))).unwrap();
+        assert_eq!(sq.items.len(), 1);
+    }
+
+    #[test]
+    fn sort_query_push_invalid() {
+        let mut sq = SortQuery::new("".to_string()).unwrap();
+        let invalid = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        assert!(sq.push(invalid).is_err());
+    }
+}

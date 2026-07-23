@@ -54,3 +54,35 @@ impl From<RootPrimitive> for Path {
         Path::Root(p)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn path_to_value_creation() {
+        let p = PathToValue::new("".to_string(), "foo.bar".to_string()).unwrap();
+        assert_eq!(p.get_string_value(), "foo.bar");
+        assert_eq!(p.get_prefix(), "value");
+    }
+
+    #[test]
+    fn path_from_path_to_value() {
+        let ptv = PathToValue::new("".to_string(), "a.b".to_string()).unwrap();
+        let path = Path::from(ptv);
+        match path {
+            Path::PathToValue(p) => assert_eq!(p.get_string_value(), "a.b"),
+            _ => panic!("expected PathToValue"),
+        }
+    }
+
+    #[test]
+    fn path_from_root() {
+        let root = RootPrimitive::new("".to_string(), "".to_string()).unwrap();
+        let path = Path::from(root);
+        match path {
+            Path::Root(_) => {},
+            _ => panic!("expected Root"),
+        }
+    }
+}

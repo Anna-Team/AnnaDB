@@ -59,3 +59,25 @@ impl From<ModifierItem> for Item {
         Item::Modifier(data)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::query::find::operators::not::NotOperator;
+    use crate::tyson::modifier::TySONModifier;
+
+    #[test]
+    fn item_to_tyson_modifier() {
+        let val = Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap());
+        let not_op = NotOperator::new("".to_string(), val).unwrap();
+        let item = Item::Modifier(ModifierItem::NotOperator(not_op));
+        let s = item.to_tyson();
+        assert!(s.contains("not"));
+    }
+
+    #[test]
+    fn item_to_link_error() {
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        assert!(item.to_link().is_err());
+    }
+}

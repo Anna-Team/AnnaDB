@@ -48,3 +48,41 @@ impl BoolPrimitive {
         self.value
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bool_primitive_create_true() {
+        assert!(BoolPrimitive::create_true().val());
+    }
+
+    #[test]
+    fn bool_primitive_create_false() {
+        assert!(!BoolPrimitive::create_false().val());
+    }
+
+    #[test]
+    fn bool_primitive_from_str_true() {
+        let b = BoolPrimitive::new("".to_string(), "true".to_string()).unwrap();
+        assert!(b.val());
+    }
+
+    #[test]
+    fn bool_primitive_from_str_false() {
+        let b = BoolPrimitive::new("".to_string(), "false".to_string()).unwrap();
+        assert!(!b.val());
+    }
+
+    #[test]
+    fn bool_primitive_invalid_value() {
+        assert!(BoolPrimitive::new("".to_string(), "invalid".to_string()).is_err());
+    }
+
+    #[test]
+    fn bool_primitive_get_prefix() {
+        let b = BoolPrimitive::create_true();
+        assert_eq!(b.get_prefix(), "b");
+    }
+}

@@ -28,3 +28,19 @@ impl TySONPrimitive for RootPrimitive {
         "".to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn root_primitive_prefix() {
+        assert_eq!(RootPrimitive.get_prefix(), "root");
+    }
+
+    #[test]
+    fn root_primitive_new() {
+        let r = RootPrimitive::new("".to_string(), "".to_string()).unwrap();
+        assert_eq!(r.get_string_value(), "");
+    }
+}

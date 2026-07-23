@@ -59,10 +59,25 @@ impl UpdateQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Primitive, Item};
 
     #[test]
     fn update_query_new() {
         let uq = UpdateQuery::new("".to_string()).unwrap();
         assert_eq!(uq.get_prefix(), "update");
+    }
+
+    #[test]
+    fn update_query_push() {
+        let mut uq = UpdateQuery::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
+        assert!(uq.push(item).is_ok());
+        assert_eq!(uq.items.len(), 1);
+    }
+
+    #[test]
+    fn update_query_next_available() {
+        let uq = UpdateQuery::new("".to_string()).unwrap();
+        assert!(uq.next_available().is_empty());
     }
 }

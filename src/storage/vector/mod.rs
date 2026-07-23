@@ -80,3 +80,64 @@ impl VectorIndex {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::storage::vector::hnsw::HnswMetric;
+
+    #[test]
+    fn vector_index_new() {
+        let idx = VectorIndex::new("emb".to_string(), 3, 16, 200, HnswMetric::Cosine);
+        assert_eq!(idx.field_path, "emb");
+        assert_eq!(idx.dims, 3);
+        assert_eq!(idx.len(), 0);
+    }
+
+    #[test]
+    fn vector_index_insert_and_search() {
+        let mut idx = VectorIndex::new("emb".to_string(), 3, 32, 200, HnswMetric::Cosine);
+        let link = Link::create("test".to_string());
+        let emb = vec![1.0f32, 0.0, 0.0];
+        idx.insert(&emb, link.clone());
+        let results = idx.search(&emb, 5);
+        assert!(!results.is_empty());
+    }
+
+    #[test]
+    fn vector_index_remove() {
+        let mut idx = VectorIndex::new("emb".to_string(), 3, 32, 200, HnswMetric::Cosine);
+        let link = Link::create("test".to_string());
+        let emb = vec![1.0f32, 0.0, 0.0];
+        idx.insert(&emb, link.clone());
+        idx.remove(&link);
+        let results = idx.search(&emb, 5);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn vector_index_all_links() {
+        let mut idx = VectorIndex::new("emb".to_string(), 3, 32, 200, HnswMetric::Cosine);
+        let link1 = Link::create("test".to_string());
+        let link2 = Link::create("test".to_string());
+        idx.insert(&[1.0, 0.0, 0.0], link1.clone());
+        idx.insert(&[0.0, 1.0, 0.0], link2.clone());
+        assert_eq!(idx.all_links().len(), 2);
+    }
+
+    #[test]
+    fn vector_index_to_from_bytes_roundtrip() {
+        let mut idx = VectorIndex::new("emb".to_string(), 3, 32, 200, HnswMetric::Cosine);
+        let link = Link::create("test".to_string());
+        idx.insert(&[1.0, 0.0, 0.0], link);
+        let bytes = idx.to_bytes().unwrap();
+        let restored = VectorIndex::from_bytes("emb".to_string(), 3, &bytes).unwrap();
+        assert_eq!(restored.dims, 3);
+    }
+
+    #[test]
+    fn vector_index_lookup_by_op() {
+        let idx = VectorIndex::new("emb".to_string(), 3, 32, 200, HnswMetric::Cosine);
+        assert!(idx.lookup_by_op(&crate::storage::index::CompareOp::Eq, &crate::storage::index::IndexKey::Null).is_empty());
+    }
+}

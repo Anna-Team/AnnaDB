@@ -49,4 +49,23 @@ mod tests {
         let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
         assert_eq!(dq.get_prefix(), "delete");
     }
+
+    #[test]
+    fn delete_query_to_item() {
+        let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
+        let item = dq.to_item();
+        assert!(matches!(item, Item::Primitive(Primitive::DeleteQuery(_))));
+    }
+
+    #[test]
+    fn delete_query_next_available() {
+        let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
+        assert!(dq.next_available().is_empty());
+    }
+
+    #[test]
+    fn delete_query_get_string_value() {
+        let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
+        assert_eq!(dq.get_string_value(), "");
+    }
 }

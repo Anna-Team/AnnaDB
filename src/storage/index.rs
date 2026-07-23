@@ -449,4 +449,161 @@ mod tests {
         idx.remove(&key, &link);
         assert!(idx.lookup_eq(&key).is_empty());
     }
+
+    #[test]
+    fn btree_index_lookup_gt() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key1 = IndexKey::Num(10);
+        let key2 = IndexKey::Num(20);
+        let key3 = IndexKey::Num(30);
+        let l1 = Link::create("t".to_string());
+        let l2 = Link::create("t".to_string());
+        let l3 = Link::create("t".to_string());
+        idx.insert(key1.clone(), l1.clone());
+        idx.insert(key2.clone(), l2.clone());
+        idx.insert(key3.clone(), l3.clone());
+        let results = idx.lookup_gt(&IndexKey::Num(10));
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn btree_index_lookup_gte() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key1 = IndexKey::Num(10);
+        let l1 = Link::create("t".to_string());
+        idx.insert(key1.clone(), l1.clone());
+        let results = idx.lookup_gte(&IndexKey::Num(10));
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn btree_index_lookup_lt() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key1 = IndexKey::Num(10);
+        let key2 = IndexKey::Num(20);
+        let l1 = Link::create("t".to_string());
+        let l2 = Link::create("t".to_string());
+        idx.insert(key1.clone(), l1.clone());
+        idx.insert(key2.clone(), l2.clone());
+        let results = idx.lookup_lt(&IndexKey::Num(20));
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn btree_index_lookup_lte() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key1 = IndexKey::Num(10);
+        let l1 = Link::create("t".to_string());
+        idx.insert(key1.clone(), l1.clone());
+        let results = idx.lookup_lte(&IndexKey::Num(10));
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn btree_index_lookup_neq() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key1 = IndexKey::Num(10);
+        let key2 = IndexKey::Num(20);
+        let l1 = Link::create("t".to_string());
+        let l2 = Link::create("t".to_string());
+        idx.insert(key1.clone(), l1.clone());
+        idx.insert(key2.clone(), l2.clone());
+        let results = idx.lookup_by_op(CompareOp::Neq, &IndexKey::Num(10));
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn btree_index_all_links() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        let key1 = IndexKey::Str("a".to_string());
+        let l1 = Link::create("t".to_string());
+        let l2 = Link::create("t".to_string());
+        idx.insert(key1.clone(), l1.clone());
+        idx.insert(key1, l2.clone());
+        assert_eq!(idx.all_links().len(), 2);
+    }
+
+    #[test]
+    fn btree_index_len() {
+        let mut idx = BTreeIndex::new("test".to_string());
+        assert_eq!(idx.len(), 0);
+        idx.insert(IndexKey::Str("a".to_string()), Link::create("t".to_string()));
+        assert_eq!(idx.len(), 1);
+    }
+
+    #[test]
+    fn index_key_from_primitive_number() {
+        let p = Primitive::new("n".to_string(), "42".to_string()).unwrap();
+        assert!(matches!(IndexKey::from_primitive(&p), Some(IndexKey::Num(_))));
+    }
+
+    #[test]
+    fn index_key_from_primitive_bool() {
+        let p = Primitive::new("b".to_string(), "true".to_string()).unwrap();
+        assert_eq!(IndexKey::from_primitive(&p), Some(IndexKey::Bool(true)));
+    }
+
+    #[test]
+    fn index_key_from_primitive_null() {
+        let p = Primitive::new("null".to_string(), "".to_string()).unwrap();
+        assert_eq!(IndexKey::from_primitive(&p), Some(IndexKey::Null));
+    }
+
+    #[test]
+    fn index_manager_create_and_drop() {
+        let mut mgr = IndexManager::new();
+        mgr.create_index("coll", "name");
+        assert!(mgr.get_index("coll", "name").is_some());
+        assert!(mgr.drop_index("coll", "name"));
+        assert!(mgr.get_index("coll", "name").is_none());
+    }
+
+    #[test]
+    fn index_manager_drop_nonexistent() {
+        let mut mgr = IndexManager::new();
+        assert!(!mgr.drop_index("nope", "nope"));
+    }
+
+    #[test]
+    fn index_manager_get_indexed_fields() {
+        let mut mgr = IndexManager::new();
+        mgr.create_index("coll", "name");
+        mgr.create_index("coll", "age");
+        let fields = mgr.get_indexed_fields("coll");
+        assert_eq!(fields.len(), 2);
+    }
+
+    #[test]
+    fn index_manager_drop_collection_indexes() {
+        let mut mgr = IndexManager::new();
+        mgr.create_index("coll", "name");
+        mgr.drop_collection_indexes("coll");
+        assert!(mgr.get_indexed_fields("coll").is_empty());
+    }
+
+    #[test]
+    fn index_key_ordering_strings() {
+        assert!(IndexKey::Str("a".to_string()) < IndexKey::Str("b".to_string()));
+    }
+
+    #[test]
+    fn extract_field_value_root() {
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        let key = extract_field_value(&item, "_root");
+        assert_eq!(key, Some(IndexKey::Str("hello".to_string())));
+    }
+
+    #[test]
+    fn extract_field_value_nested() {
+        use crate::MapItem;
+        use crate::TySONMap;
+        let mut m = crate::data_types::map::storage::StorageMap::new("".to_string()).unwrap();
+        m.insert(
+            Primitive::new("s".to_string(), "name".to_string()).unwrap(),
+            Item::Primitive(Primitive::new("s".to_string(), "Alice".to_string()).unwrap()),
+        ).unwrap();
+        let item = m.to_item();
+        let key = extract_field_value(&item, "name");
+        assert_eq!(key, Some(IndexKey::Str("Alice".to_string())));
+    }
 }

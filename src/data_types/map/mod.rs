@@ -169,4 +169,39 @@ mod tests {
         let m = MapItem::new("nonexistent".to_string());
         assert!(m.is_err());
     }
+
+    #[test]
+    fn map_item_new_gt_operator() {
+        let m = MapItem::new("gt".to_string()).unwrap();
+        assert!(matches!(m, MapItem::GtOperator(_)));
+    }
+
+    #[test]
+    fn map_item_new_lt_operator() {
+        let m = MapItem::new("lt".to_string()).unwrap();
+        assert!(matches!(m, MapItem::LtOperator(_)));
+    }
+
+    #[test]
+    fn map_item_new_set_operator() {
+        let m = MapItem::new("set".to_string()).unwrap();
+        assert!(matches!(m, MapItem::SetOperator(_)));
+    }
+
+    #[test]
+    fn map_item_new_project() {
+        let m = MapItem::new("project".to_string()).unwrap();
+        assert!(matches!(m, MapItem::ProjectQuery(_)));
+    }
+
+    #[test]
+    fn map_item_insert_and_get_items() {
+        let mut m = MapItem::new("m".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "k".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("n".to_string(), "1".to_string()).unwrap());
+        m.insert(k.clone(), v.clone()).unwrap();
+        let items = m.get_items();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], (k, v));
+    }
 }

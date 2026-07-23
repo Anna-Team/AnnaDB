@@ -75,4 +75,36 @@ mod tests {
         let gq = GetQuery::new("".to_string()).unwrap();
         assert_eq!(gq.get_prefix(), "get");
     }
+
+    #[test]
+    fn get_query_push_link() {
+        let mut gq = GetQuery::new("".to_string()).unwrap();
+        let link = Link::create("test".to_string());
+        let item = Item::Primitive(Primitive::Link(link));
+        assert!(gq.push(item).is_ok());
+        assert_eq!(gq.items.len(), 1);
+    }
+
+    #[test]
+    fn get_query_push_rejects_non_link() {
+        let mut gq = GetQuery::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        assert!(gq.push(item).is_err());
+    }
+
+    #[test]
+    fn get_query_get_ids() {
+        let mut gq = GetQuery::new("".to_string()).unwrap();
+        let link = Link::create("test".to_string());
+        gq.push(Item::Primitive(Primitive::Link(link.clone()))).unwrap();
+        let ids = gq.get_ids().unwrap();
+        assert_eq!(ids.len(), 1);
+        assert_eq!(ids[0], &link);
+    }
+
+    #[test]
+    fn get_query_next_available() {
+        let gq = GetQuery::new("".to_string()).unwrap();
+        assert!(!gq.next_available().is_empty());
+    }
 }

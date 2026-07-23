@@ -41,3 +41,32 @@ impl TySONMap for IncOperator {
         Item::Map(MapItem::IncOperator(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inc_operator_new() {
+        let op = IncOperator::new("".to_string()).unwrap();
+        assert_eq!(op.get_prefix(), "inc");
+    }
+
+    #[test]
+    fn inc_operator_insert_and_get_items() {
+        let mut op = IncOperator::new("".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "age".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("n".to_string(), "5".to_string()).unwrap());
+        op.insert(k.clone(), v.clone()).unwrap();
+        let items = op.get_items();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], (k, v));
+    }
+
+    #[test]
+    fn inc_operator_to_item() {
+        let op = IncOperator::new("".to_string()).unwrap();
+        let item = op.to_item();
+        assert!(matches!(item, Item::Map(MapItem::IncOperator(_))));
+    }
+}

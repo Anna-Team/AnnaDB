@@ -51,3 +51,41 @@ impl OffsetQuery {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::primitives::number::NumberPrimitive;
+    use crate::tyson::modifier::TySONModifier;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn offset_query_new_with_number() {
+        let num = NumberPrimitive::new("".to_string(), "5".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let q = OffsetQuery::new("".to_string(), item).unwrap();
+        assert_eq!(q.get_prefix(), "offset");
+    }
+
+    #[test]
+    fn offset_query_rejects_non_number() {
+        let item = Item::Primitive(Primitive::new("s".to_string(), "bad".to_string()).unwrap());
+        assert!(OffsetQuery::new("".to_string(), item).is_err());
+    }
+
+    #[test]
+    fn offset_query_get_value() {
+        let num = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let q = OffsetQuery::new("".to_string(), item).unwrap();
+        assert!(matches!(q.get_value(), Item::Primitive(Primitive::NumberPrimitive(_))));
+    }
+
+    #[test]
+    fn offset_query_next_available() {
+        let num = NumberPrimitive::new("".to_string(), "1".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let q = OffsetQuery::new("".to_string(), item).unwrap();
+        assert!(q.next_available().len() > 0);
+    }
+}

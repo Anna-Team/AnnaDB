@@ -82,6 +82,13 @@ impl From<DeleteQuery> for QuerySet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::query::delete::query::DeleteQuery;
+    use crate::query::get::query::GetQuery;
+    use crate::query::update::query::UpdateQuery;
+    use crate::tyson::primitive::TySONPrimitive;
+    use crate::tyson::vector::TySONVector;
+    use crate::Primitive;
+    use crate::Item;
 
     #[test]
     fn query_set_from_insert() {
@@ -94,6 +101,41 @@ mod tests {
     fn query_set_from_find() {
         let fq = FindQuery::new("".to_string()).unwrap();
         let qs = QuerySet::from(fq);
+        assert_eq!(qs.items.len(), 1);
+    }
+
+    #[test]
+    fn query_set_from_get() {
+        let gq = GetQuery::new("".to_string()).unwrap();
+        let qs = QuerySet::from(gq);
+        assert_eq!(qs.items.len(), 1);
+    }
+
+    #[test]
+    fn query_set_from_update() {
+        let uq = UpdateQuery::new("".to_string()).unwrap();
+        let qs = QuerySet::from(uq);
+        assert_eq!(qs.items.len(), 1);
+    }
+
+    #[test]
+    fn query_set_from_delete() {
+        let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
+        let qs = QuerySet::from(dq);
+        assert_eq!(qs.items.len(), 1);
+    }
+
+    #[test]
+    fn query_set_new() {
+        let qs = QuerySet::new("".to_string()).unwrap();
+        assert_eq!(qs.get_prefix(), "q");
+    }
+
+    #[test]
+    fn query_set_push() {
+        let mut qs = QuerySet::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
+        assert!(qs.push(item).is_ok());
         assert_eq!(qs.items.len(), 1);
     }
 }

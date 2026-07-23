@@ -47,9 +47,6 @@ fn parse_request(stream: &mut TcpStream) -> Option<Request> {
         let mut buf = vec![0u8; content_length];
         reader.read_exact(&mut buf).ok()?;
         body = String::from_utf8_lossy(&buf).to_string();
-    } else {
-        // Fallback: read until EOF
-        reader.read_to_string(&mut body).ok()?;
     }
 
     Some(Request { path, body })

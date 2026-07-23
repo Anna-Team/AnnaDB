@@ -135,4 +135,12 @@ mod tests {
         let link = Link::create("test_coll".to_string());
         assert!(c.get_value(&link).is_err());
     }
+
+    #[test]
+    fn collection_push_non_link_returns_err() {
+        let mut c = Collection::create_empty("test".to_string());
+        let non_link_key = Primitive::new("s".to_string(), "not a link".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("s".to_string(), "value".to_string()).unwrap());
+        assert!(c.push((non_link_key, item)).is_err());
+    }
 }

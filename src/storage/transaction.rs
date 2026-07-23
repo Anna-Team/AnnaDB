@@ -68,3 +68,90 @@ impl Desereilize for Transaction {
         Ok(true)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::query::insert::query::InsertQuery;
+    use crate::query::delete::query::DeleteQuery;
+    use crate::storage::common::collection_name::CollectionName;
+    use crate::tyson::vector::TySONVector;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn transaction_new() {
+        let txn = Transaction::new("".to_string());
+        assert!(txn.steps.is_empty());
+        assert_eq!(txn.get_name(), "NONE");
+    }
+
+    #[test]
+    fn transaction_push_collection() {
+        let mut txn = Transaction::new("".to_string());
+        let cn = CollectionName::new("".to_string(), "test".to_string()).unwrap();
+        let iq = InsertQuery::new("".to_string()).unwrap();
+        let item = iq.to_item();
+        assert!(txn.push((Primitive::CollectionName(cn), item)).unwrap());
+        assert_eq!(txn.steps.len(), 1);
+    }
+
+    #[test]
+    fn transaction_push_rejects_non_collection() {
+        let mut txn = Transaction::new("".to_string());
+        let item = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
+        assert!(txn.push((Primitive::new("s".to_string(), "bad".to_string()).unwrap(), item)).is_err());
+    }
+
+    #[test]
+    fn transaction_step_insert_query() {
+        let cn = "docs".to_string();
+        let iq = InsertQuery::new("".to_string()).unwrap();
+        let step = TransactionStep::new(cn, iq.to_item()).unwrap();
+        assert_eq!(step.collection_name, "docs");
+    }
+
+    #[test]
+    fn transaction_step_get_query() {
+        use crate::query::get::query::GetQuery;
+        let gq = GetQuery::new("".to_string()).unwrap();
+        let step = TransactionStep::new("docs".to_string(), gq.to_item()).unwrap();
+        assert_eq!(step.collection_name, "docs");
+    }
+
+    #[test]
+    fn transaction_step_find_query() {
+        use crate::query::find::query::FindQuery;
+        let fq = FindQuery::new("".to_string()).unwrap();
+        let step = TransactionStep::new("docs".to_string(), fq.to_item()).unwrap();
+        assert_eq!(step.collection_name, "docs");
+    }
+
+    #[test]
+    fn transaction_step_update_query() {
+        use crate::query::update::query::UpdateQuery;
+        let uq = UpdateQuery::new("".to_string()).unwrap();
+        let step = TransactionStep::new("docs".to_string(), uq.to_item()).unwrap();
+        assert_eq!(step.collection_name, "docs");
+    }
+
+    #[test]
+    fn transaction_step_delete_query() {
+        let dq = DeleteQuery::new("".to_string(), "".to_string()).unwrap();
+        let step = TransactionStep::new("docs".to_string(), dq.to_item()).unwrap();
+        assert_eq!(step.collection_name, "docs");
+    }
+
+    #[test]
+    fn transaction_step_queries_vector() {
+        use crate::query::queryset::QuerySet;
+        let qs = QuerySet::new("".to_string()).unwrap();
+        let step = TransactionStep::new("docs".to_string(), qs.to_item()).unwrap();
+        assert_eq!(step.collection_name, "docs");
+    }
+
+    #[test]
+    fn transaction_step_rejects_invalid() {
+        let item = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
+        assert!(TransactionStep::new("docs".to_string(), item).is_err());
+    }
+}

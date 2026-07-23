@@ -57,3 +57,43 @@ impl From<usize> for NumberPrimitive {
         Self { value: n as f64 }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn number_primitive_get_value() {
+        let n = NumberPrimitive::new("".to_string(), "42.5".to_string()).unwrap();
+        assert_eq!(n.get_value(), 42.5);
+    }
+
+    #[test]
+    fn number_primitive_add() {
+        let a = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
+        let b = NumberPrimitive::new("".to_string(), "5".to_string()).unwrap();
+        let c = a.add(&b);
+        assert_eq!(c.get_value(), 15.0);
+    }
+
+    #[test]
+    fn number_primitive_equality() {
+        let a = NumberPrimitive::new("".to_string(), "42".to_string()).unwrap();
+        let b = NumberPrimitive::new("".to_string(), "42".to_string()).unwrap();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn number_primitive_ordering() {
+        let a = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
+        let b = NumberPrimitive::new("".to_string(), "20".to_string()).unwrap();
+        assert!(a < b);
+    }
+
+    #[test]
+    fn number_primitive_from_usize() {
+        let n = NumberPrimitive::from(42usize);
+        assert_eq!(n.get_value(), 42.0);
+    }
+}

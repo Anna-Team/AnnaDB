@@ -57,3 +57,42 @@ impl From<usize> for UTSPrimitive {
         Self { value: n as i64 }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uts_primitive_creation() {
+        let u = UTSPrimitive::new("".to_string(), "1234567890".to_string()).unwrap();
+        assert_eq!(u.get_value(), 1234567890);
+        assert_eq!(u.get_prefix(), "uts");
+    }
+
+    #[test]
+    fn uts_primitive_add() {
+        let a = UTSPrimitive::new("".to_string(), "100".to_string()).unwrap();
+        let b = UTSPrimitive::new("".to_string(), "50".to_string()).unwrap();
+        let c = a.add(&b);
+        assert_eq!(c.get_value(), 150);
+    }
+
+    #[test]
+    fn uts_primitive_equality() {
+        let a = UTSPrimitive::new("".to_string(), "42".to_string()).unwrap();
+        let b = UTSPrimitive::new("".to_string(), "42".to_string()).unwrap();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn uts_primitive_from_usize() {
+        let u = UTSPrimitive::from(42usize);
+        assert_eq!(u.get_value(), 42);
+    }
+
+    #[test]
+    fn uts_primitive_get_string_value() {
+        let u = UTSPrimitive::new("".to_string(), "1234567890".to_string()).unwrap();
+        assert_eq!(u.get_string_value(), "1234567890");
+    }
+}

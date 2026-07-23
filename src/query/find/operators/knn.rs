@@ -116,3 +116,50 @@ impl TySONMap for KnnOperator {
         Item::Map(MapItem::KnnOperator(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn knn_operator_new() {
+        let op = KnnOperator::new("".to_string()).unwrap();
+        assert_eq!(op.get_prefix(), "knn");
+        assert_eq!(op.get_k(), 10);
+    }
+
+    #[test]
+    fn knn_operator_insert_field() {
+        let mut op = KnnOperator::new("".to_string()).unwrap();
+        let k = Primitive::PathToValue(crate::PathToValue::new("".to_string(), "embedding".to_string()).unwrap());
+        let v = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
+        op.insert(k, v).unwrap();
+        assert_eq!(op.get_field(), "embedding");
+    }
+
+    #[test]
+    fn knn_operator_insert_k() {
+        let mut op = KnnOperator::new("".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "k".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("n".to_string(), "5".to_string()).unwrap());
+        op.insert(k, v).unwrap();
+        assert_eq!(op.get_k(), 5);
+    }
+
+    #[test]
+    fn knn_operator_insert_using() {
+        let mut op = KnnOperator::new("".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "using".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("s".to_string(), "euclidean".to_string()).unwrap());
+        op.insert(k, v).unwrap();
+        assert_eq!(op.get_metric(), "euclidean");
+    }
+
+    #[test]
+    fn knn_operator_to_item() {
+        let op = KnnOperator::new("".to_string()).unwrap();
+        let item = op.to_item();
+        assert!(matches!(item, Item::Map(MapItem::KnnOperator(_))));
+    }
+}

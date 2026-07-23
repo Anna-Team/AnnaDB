@@ -67,4 +67,19 @@ mod tests {
         let ops = fq.next_available();
         assert!(!ops.is_empty());
     }
+
+    #[test]
+    fn find_query_push_and_get_items() {
+        let mut fq = FindQuery::new("".to_string()).unwrap();
+        let item = Item::Primitive(crate::Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        fq.push(item).unwrap();
+        assert_eq!(fq.get_items().len(), 1);
+    }
+
+    #[test]
+    fn find_query_to_item() {
+        let fq = FindQuery::new("".to_string()).unwrap();
+        let item = fq.to_item();
+        assert!(matches!(item, Item::Vector(VectorItem::FindQuery(_))));
+    }
 }

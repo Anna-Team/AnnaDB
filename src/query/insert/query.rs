@@ -59,10 +59,25 @@ impl InsertQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Primitive, Item};
 
     #[test]
     fn insert_query_prefix() {
         let iq = InsertQuery::new("".to_string()).unwrap();
         assert_eq!(iq.get_prefix(), "insert");
+    }
+
+    #[test]
+    fn insert_query_push() {
+        let mut iq = InsertQuery::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        assert!(iq.push(item).is_ok());
+        assert_eq!(iq.items.len(), 1);
+    }
+
+    #[test]
+    fn insert_query_next_available() {
+        let iq = InsertQuery::new("".to_string()).unwrap();
+        assert!(iq.next_available().is_empty());
     }
 }

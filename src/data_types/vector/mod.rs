@@ -147,6 +147,7 @@ impl TySONVector for VectorItem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Primitive;
 
     #[test]
     fn vector_item_new_storage_vector() {
@@ -164,5 +165,68 @@ mod tests {
     fn vector_item_new_unknown_returns_err() {
         let v = VectorItem::new("nonexistent".to_string());
         assert!(v.is_err());
+    }
+
+    #[test]
+    fn vector_item_new_find_query() {
+        let v = VectorItem::new("find".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::FindQuery(_)));
+    }
+
+    #[test]
+    fn vector_item_new_get_query() {
+        let v = VectorItem::new("get".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::GetQuery(_)));
+    }
+
+    #[test]
+    fn vector_item_new_sort_query() {
+        let v = VectorItem::new("sort".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::SortQuery(_)));
+    }
+
+    #[test]
+    fn vector_item_new_update_query() {
+        let v = VectorItem::new("update".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::UpdateQuery(_)));
+    }
+
+    #[test]
+    fn vector_item_new_query_set() {
+        let v = VectorItem::new("q".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::QueriesVector(_)));
+    }
+
+    #[test]
+    fn vector_item_new_and_operator() {
+        let v = VectorItem::new("and".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::AndOperator(_)));
+    }
+
+    #[test]
+    fn vector_item_new_or_operator() {
+        let v = VectorItem::new("or".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::OrOperator(_)));
+    }
+
+    #[test]
+    fn vector_item_new_response_ids() {
+        let v = VectorItem::new("ids".to_string()).unwrap();
+        assert!(matches!(v, VectorItem::ResponseIds(_)));
+    }
+
+    #[test]
+    fn vector_item_push_and_get_items() {
+        let mut v = VectorItem::new("v".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("n".to_string(), "1".to_string()).unwrap());
+        v.push(item.clone()).unwrap();
+        assert_eq!(v.get_items().len(), 1);
+    }
+
+    #[test]
+    fn vector_item_to_item() {
+        let v = VectorItem::new("v".to_string()).unwrap();
+        let item = v.to_item();
+        assert!(matches!(item, Item::Vector(_)));
     }
 }

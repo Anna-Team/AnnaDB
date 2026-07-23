@@ -161,6 +161,33 @@ impl Wal {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wal_current_tx_id_is_zero_initially() {
+        let wal = Wal::new(".").unwrap();
+        assert_eq!(wal.current_tx_id(), 0);
+    }
+
+    #[test]
+    fn wal_update_tx_counter_advances() {
+        let mut wal = Wal::new(".").unwrap();
+        wal.update_tx_counter(5);
+        assert_eq!(wal.next_tx_id, 6);
+        assert_eq!(wal.current_tx_id(), 5);
+    }
+
+    #[test]
+    fn wal_update_tx_counter_does_not_decrease() {
+        let mut wal = Wal::new(".").unwrap();
+        wal.update_tx_counter(5);
+        wal.update_tx_counter(2);
+        assert_eq!(wal.next_tx_id, 6);
+    }
+}
+
 fn crc32(data: &[u8]) -> u32 {
     // Simple CRC32 (IEEE) implementation
     let mut crc: u32 = 0xFFFFFFFF;

@@ -29,6 +29,34 @@ impl Link {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn link_unlink_removes_reference() {
+        let mut link = Link::create("test".to_string());
+        let other = Link::create("other".to_string());
+        link.links_to.push(other.clone());
+        assert_eq!(link.links_to.len(), 1);
+        link.unlink(&other);
+        assert!(link.links_to.is_empty());
+    }
+
+    #[test]
+    fn link_get_string_value() {
+        let link = Link::new("test".to_string(), "550e8400-e29b-41d4-a716-446655440000".to_string()).unwrap();
+        assert_eq!(link.get_string_value(), "550e8400-e29b-41d4-a716-446655440000");
+    }
+
+    #[test]
+    fn link_get_prefix() {
+        use crate::tyson::item::BaseTySONItemInterface;
+        let link = Link::create("test".to_string());
+        assert_eq!(link.get_prefix(), "test");
+    }
+}
+
 impl BaseTySONItemInterface for Link {
     fn get_prefix(&self) -> String {
         self.collection_name.to_string()

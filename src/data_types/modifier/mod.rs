@@ -68,10 +68,49 @@ impl ModifierItem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tyson::modifier::TySONModifier;
+    use crate::tyson::primitive::TySONPrimitive;
 
     #[test]
     fn modifier_unknown_prefix() {
         let val = crate::Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
         assert!(ModifierItem::new("unknown".to_string(), val).is_err());
+    }
+
+    #[test]
+    fn modifier_limit_query() {
+        use crate::query::limit::query::LimitQuery;
+        use crate::data_types::primitives::number::NumberPrimitive;
+        let num = NumberPrimitive::new("".to_string(), "5".to_string()).unwrap();
+        let val = crate::Item::Primitive(crate::Primitive::NumberPrimitive(num));
+        let m = ModifierItem::new("limit".to_string(), val).unwrap();
+        assert_eq!(m.get_prefix(), "limit");
+    }
+
+    #[test]
+    fn modifier_offset_query() {
+        use crate::data_types::primitives::number::NumberPrimitive;
+        let num = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
+        let val = crate::Item::Primitive(crate::Primitive::NumberPrimitive(num));
+        let m = ModifierItem::new("offset".to_string(), val).unwrap();
+        assert_eq!(m.get_prefix(), "offset");
+    }
+
+    #[test]
+    fn modifier_get_serialized_value() {
+        use crate::data_types::primitives::number::NumberPrimitive;
+        let num = NumberPrimitive::new("".to_string(), "3".to_string()).unwrap();
+        let val = crate::Item::Primitive(crate::Primitive::NumberPrimitive(num));
+        let m = ModifierItem::new("limit".to_string(), val).unwrap();
+        assert!(m.get_serialized_value().contains("3"));
+    }
+
+    #[test]
+    fn modifier_get_value() {
+        use crate::data_types::primitives::number::NumberPrimitive;
+        let num = NumberPrimitive::new("".to_string(), "7".to_string()).unwrap();
+        let val = crate::Item::Primitive(crate::Primitive::NumberPrimitive(num));
+        let m = ModifierItem::new("limit".to_string(), val).unwrap();
+        assert!(matches!(m.get_value(), crate::Item::Primitive(crate::Primitive::NumberPrimitive(_))));
     }
 }

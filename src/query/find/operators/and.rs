@@ -59,3 +59,46 @@ impl TySONVector for AndOperator {
         Item::Vector(VectorItem::AndOperator(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::query::find::operators::eq::EqOperator;
+    use crate::MapItem;
+    use crate::TySONMap;
+
+    #[test]
+    fn and_operator_new() {
+        let op = AndOperator::new("".to_string()).unwrap();
+        assert_eq!(op.get_prefix(), "and");
+    }
+
+    #[test]
+    fn and_operator_push_eq() {
+        let mut op = AndOperator::new("".to_string()).unwrap();
+        let eq = EqOperator::new("".to_string()).unwrap();
+        let item = eq.to_item();
+        assert!(op.push(item).is_ok());
+    }
+
+    #[test]
+    fn and_operator_push_bool() {
+        let mut op = AndOperator::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap());
+        assert!(op.push(item).is_ok());
+    }
+
+    #[test]
+    fn and_operator_rejects_invalid() {
+        let mut op = AndOperator::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("s".to_string(), "bad".to_string()).unwrap());
+        assert!(op.push(item).is_err());
+    }
+
+    #[test]
+    fn and_operator_to_item() {
+        let op = AndOperator::new("".to_string()).unwrap();
+        let item = op.to_item();
+        assert!(matches!(item, Item::Vector(VectorItem::AndOperator(_))));
+    }
+}

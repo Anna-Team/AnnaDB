@@ -67,16 +67,23 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
+    use std::sync::Mutex;
+    use std::sync::OnceLock;
+
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
 
     #[test]
     fn config_defaults() {
-        // Remove env vars that might be set
-        env::remove_var("PORT");
-        env::remove_var("WH_PATH");
-        env::remove_var("EMBEDDING_PROVIDER");
-        env::remove_var("EMBEDDING_MODEL");
-        
+        let _lock = env_lock();
+        std::env::remove_var("PORT");
+        std::env::remove_var("WH_PATH");
+        std::env::remove_var("EMBEDDING_PROVIDER");
+        std::env::remove_var("EMBEDDING_MODEL");
+
         let c = Config::new();
         assert_eq!(c.port, "10001");
         assert_eq!(c.wh_path, "warehouse");
@@ -85,9 +92,10 @@ mod tests {
 
     #[test]
     fn config_custom_port() {
-        env::set_var("PORT", "9999");
+        let _lock = env_lock();
+        std::env::set_var("PORT", "9999");
         let c = Config::new();
         assert_eq!(c.port, "9999");
-        env::remove_var("PORT");
+        std::env::remove_var("PORT");
     }
 }

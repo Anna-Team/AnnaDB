@@ -59,3 +59,45 @@ impl TySONVector for OrOperator {
         Item::Vector(VectorItem::OrOperator(self))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::query::find::operators::eq::EqOperator;
+    use crate::TySONMap;
+
+    #[test]
+    fn or_operator_new() {
+        let op = OrOperator::new("".to_string()).unwrap();
+        assert_eq!(op.get_prefix(), "or");
+    }
+
+    #[test]
+    fn or_operator_push_eq() {
+        let mut op = OrOperator::new("".to_string()).unwrap();
+        let eq = EqOperator::new("".to_string()).unwrap();
+        let item = eq.to_item();
+        assert!(op.push(item).is_ok());
+    }
+
+    #[test]
+    fn or_operator_push_bool() {
+        let mut op = OrOperator::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap());
+        assert!(op.push(item).is_ok());
+    }
+
+    #[test]
+    fn or_operator_rejects_invalid() {
+        let mut op = OrOperator::new("".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::new("s".to_string(), "bad".to_string()).unwrap());
+        assert!(op.push(item).is_err());
+    }
+
+    #[test]
+    fn or_operator_to_item() {
+        let op = OrOperator::new("".to_string()).unwrap();
+        let item = op.to_item();
+        assert!(matches!(item, Item::Vector(VectorItem::OrOperator(_))));
+    }
+}

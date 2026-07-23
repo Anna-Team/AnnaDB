@@ -51,3 +51,42 @@ impl LimitQuery {
         ]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data_types::primitives::number::NumberPrimitive;
+    use crate::tyson::modifier::TySONModifier;
+    use crate::tyson::primitive::TySONPrimitive;
+
+    #[test]
+    fn limit_query_new_with_number() {
+        let num = NumberPrimitive::new("".to_string(), "5".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let q = LimitQuery::new("".to_string(), item).unwrap();
+        assert_eq!(q.get_prefix(), "limit");
+        assert!(q.next_available().len() > 0);
+    }
+
+    #[test]
+    fn limit_query_rejects_non_number() {
+        let item = Item::Primitive(Primitive::new("s".to_string(), "bad".to_string()).unwrap());
+        assert!(LimitQuery::new("".to_string(), item).is_err());
+    }
+
+    #[test]
+    fn limit_query_get_value() {
+        let num = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let q = LimitQuery::new("".to_string(), item).unwrap();
+        assert!(matches!(q.get_value(), Item::Primitive(Primitive::NumberPrimitive(_))));
+    }
+
+    #[test]
+    fn limit_query_serialized_value() {
+        let num = NumberPrimitive::new("".to_string(), "3".to_string()).unwrap();
+        let item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let q = LimitQuery::new("".to_string(), item).unwrap();
+        assert!(q.get_serialized_value().contains("3"));
+    }
+}

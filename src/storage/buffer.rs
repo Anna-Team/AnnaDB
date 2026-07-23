@@ -69,6 +69,17 @@ mod tests {
     }
 
     #[test]
+    fn insert_buffer_add_collection_to_drop() {
+        let mut buf = InsertBuffer::new();
+        let link = Link::create("test".to_string());
+        let item = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        buf.insert(link, item);
+        buf.add_collection_to_drop("test".to_string());
+        assert!(buf.dropped_collections.contains(&"test".to_string()));
+        assert!(buf.items.is_empty());
+    }
+
+    #[test]
     fn filter_buffer_new_is_empty() {
         let buf = FilterBuffer::new();
         assert!(buf.ids.is_empty());

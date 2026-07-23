@@ -28,3 +28,19 @@ impl TySONPrimitive for NullPrimitive {
         "".to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn null_primitive_prefix() {
+        assert_eq!(NullPrimitive.get_prefix(), "null");
+    }
+
+    #[test]
+    fn null_primitive_new() {
+        let n = NullPrimitive::new("".to_string(), "".to_string()).unwrap();
+        assert_eq!(n.get_string_value(), "");
+    }
+}

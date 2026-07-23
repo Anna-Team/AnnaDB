@@ -21,3 +21,39 @@ pub fn offset(query: &OffsetQuery, buf: &mut FilterBuffer) -> Result<QueryRespon
     let meta = Meta::FindMeta(FindMeta::new(buf.ids.len()));
     Ok(QueryResponse::new(data, meta, QueryStatus::NotFetched))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::query::offset::query::OffsetQuery;
+    use crate::tyson::modifier::TySONModifier;
+    use crate::data_types::primitives::number::NumberPrimitive;
+    use crate::tyson::primitive::TySONPrimitive;
+    use crate::Link;
+
+    #[test]
+    fn offset_processor_skips() {
+        let num = NumberPrimitive::new("".to_string(), "1".to_string()).unwrap();
+        let num_item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let query = OffsetQuery::new("".to_string(), num_item).unwrap();
+        let mut buf = FilterBuffer::new();
+        buf.ids = vec![
+            Link::create("test".to_string()),
+            Link::create("test".to_string()),
+            Link::create("test".to_string()),
+        ];
+        let _resp = offset(&query, &mut buf).unwrap();
+        assert_eq!(buf.ids.len(), 2);
+    }
+
+    #[test]
+    fn offset_processor_empties_when_beyond() {
+        let num = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
+        let num_item = Item::Primitive(Primitive::NumberPrimitive(num));
+        let query = OffsetQuery::new("".to_string(), num_item).unwrap();
+        let mut buf = FilterBuffer::new();
+        buf.ids = vec![Link::create("test".to_string())];
+        let _resp = offset(&query, &mut buf).unwrap();
+        assert!(buf.ids.is_empty());
+    }
+}

@@ -28,3 +28,19 @@ impl TySONPrimitive for KeepPrimitive {
         "".to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn keep_primitive_prefix() {
+        assert_eq!(KeepPrimitive.get_prefix(), "keep");
+    }
+
+    #[test]
+    fn keep_primitive_new() {
+        let k = KeepPrimitive::new("".to_string(), "".to_string()).unwrap();
+        assert_eq!(k.get_string_value(), "");
+    }
+}

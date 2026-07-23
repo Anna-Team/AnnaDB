@@ -38,3 +38,15 @@ impl From<&str> for StringPrimitive {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn string_primitive_from_str() {
+        let s = StringPrimitive::from("hello");
+        assert_eq!(s.get_string_value(), "hello");
+        assert_eq!(s.get_prefix(), "s");
+    }
+}

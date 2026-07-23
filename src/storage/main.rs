@@ -1076,7 +1076,7 @@ impl Storage {
                             let items = map_item.get_items();
                             items.iter().any(|(k, v)| {
                                 matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == key_field)
-                                    && matches!(v, Item::Primitive(Primitive::StringPrimitive(ref s)) if s.get_string_value() == key_value)
+                                    && self.resolve_internal_string(v) == Some(key_value.to_string())
                             })
                         }
                         _ => false,
@@ -1228,7 +1228,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
                 let from_link = items.iter().find_map(|(k, v)| {
                     if let Primitive::StringPrimitive(s) = k {
                         if s.get_string_value() == "from" {
-                            return v.to_link().ok();
+                            return self.resolve_link_value(v).ok();
                         }
                     }
                     None
@@ -1236,7 +1236,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
                 let to_link = items.iter().find_map(|(k, v)| {
                     if let Primitive::StringPrimitive(s) = k {
                         if s.get_string_value() == "to" {
-                            return v.to_link().ok();
+                            return self.resolve_link_value(v).ok();
                         }
                     }
                     None
@@ -1244,6 +1244,17 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
                 let edge_type = items.iter().find_map(|(k, v)| {
                     if let Primitive::StringPrimitive(s) = k {
                         if s.get_string_value() == "type" {
+                            // Resolve through internal links to get the actual string value
+                            if let Ok(internal_link) = v.to_link() {
+                                if let Some(coll) = self.warehouse.get(INTERNAL_COLLECTION_NAME) {
+                                    if let Some(resolved_item) = coll.values.get(&internal_link) {
+                                        if let Item::Primitive(Primitive::StringPrimitive(ref val)) = resolved_item {
+                                            return Some(val.get_string_value());
+                                        }
+                                    }
+                                }
+                            }
+                            // Fallback: direct match
                             if let Item::Primitive(Primitive::StringPrimitive(ref val)) = v {
                                 return Some(val.get_string_value());
                             }
@@ -1269,6 +1280,38 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
             }
         }
         Ok(results)
+    }
+
+    /// Resolve a link value that may be stored as an internal link.
+    /// Edge map values are stored as internal links pointing to the original links.
+    fn resolve_link_value(&self, item: &Item) -> Result<Link, DBError> {
+        let link = item.to_link()?;
+        if link.collection_name == INTERNAL_COLLECTION_NAME {
+            if let Some(coll) = self.warehouse.get(INTERNAL_COLLECTION_NAME) {
+                if let Some(resolved) = coll.values.get(&link) {
+                    return resolved.to_link();
+                }
+            }
+        }
+        Ok(link)
+    }
+
+    /// Resolve a value that might be stored as an internal link to a string.
+    /// Used for key-based upsert lookups where map values are indirected through _internal.
+    fn resolve_internal_string(&self, item: &Item) -> Option<String> {
+        if let Item::Primitive(Primitive::StringPrimitive(ref s)) = item {
+            return Some(s.get_string_value());
+        }
+        if let Ok(link) = item.to_link() {
+            if let Some(coll) = self.warehouse.get(INTERNAL_COLLECTION_NAME) {
+                if let Some(resolved) = coll.values.get(&link) {
+                    if let Item::Primitive(Primitive::StringPrimitive(ref s)) = resolved {
+                        return Some(s.get_string_value());
+                    }
+                }
+            }
+        }
+        None
     }
 
     /// Traverse the graph from a starting link up to `max_depth` hops,
@@ -1589,6 +1632,23 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::fs;
+
+    struct TestTempDir { path: String }
+    impl TestTempDir {
+        fn new(name: &str) -> Self {
+            let dir = env::temp_dir().join(format!("annadb_ut_{}_{}", name, std::process::id()));
+            let path = dir.to_str().unwrap().to_string();
+            let _ = fs::remove_dir_all(&path);
+            fs::create_dir_all(&path).expect("create test dir");
+            TestTempDir { path }
+        }
+        fn open(&self) -> Storage { Storage::new(&self.path, None).expect("open storage") }
+    }
+    impl Drop for TestTempDir { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.path); } }
+
+    // ── UnwrapConfig tests ──
 
     #[test]
     fn unwrap_config_defaults() {
@@ -1633,12 +1693,207 @@ mod tests {
             exclude_link_types: Some(vec!["knows".to_string()]),
             ..Default::default()
         };
-        assert!(!c.matches_link_type("knows")); // exclude wins over include
+        assert!(!c.matches_link_type("knows"));
     }
 
     #[test]
     fn unwrap_order_values() {
         assert_eq!(UnwrapOrder::Natural as u8, 0);
         assert_eq!(UnwrapOrder::Relevance as u8, 1);
+    }
+
+    // ── Storage operations ──
+
+    #[test]
+    fn storage_insert_and_forget() {
+        let dir = TestTempDir::new("ut1");
+        let mut s = dir.open();
+        let link = s.remember("docs", "hello", None, false, None).unwrap();
+        assert!(s.forget(&link).is_ok());
+    }
+
+    #[test]
+    fn storage_run_various_queries() {
+        let dir = TestTempDir::new("ut2");
+        let mut s = dir.open();
+        assert!(s.run("collection|test|:insert[n|1|]").contains("ok"));
+        assert!(s.run("collection|test|:q[find[eq{root:n|1|}]]").contains("ok"));
+        assert!(s.run("collection|test|:q[find[],limit(n|1|)]").contains("ok"));
+        assert!(s.run("collection|test|:q[find[],sort[asc(root)]]").contains("find_meta"));
+        assert!(s.run("collection|test|:q[find[eq{root:n|1|}],delete]").contains("ok"));
+    }
+
+    #[test]
+    fn storage_write_read_snapshot() {
+        let dir = TestTempDir::new("ut3");
+        let mut s = dir.open();
+        s.remember("coll", "data", None, false, None).unwrap();
+        assert!(s.write_snapshot().is_ok());
+    }
+
+    #[test]
+    fn storage_create_vector_index() {
+        let dir = TestTempDir::new("ut4");
+        let mut s = dir.open();
+        s.create_vector_index("coll", "emb", 3, 16, 200, HnswMetric::Cosine);
+        s.create_index("coll", "name");
+        assert!(s.drop_index("coll", "name"));
+        assert!(!s.drop_index("coll", "name"));
+    }
+
+    #[test]
+    fn storage_neighbors_traverse_path() {
+        let dir = TestTempDir::new("ut5");
+        let mut s = dir.open();
+        let a = s.remember("n", "A", None, false, None).unwrap();
+        let b = s.remember("n", "B", None, false, None).unwrap();
+        s.relate(&a, &b, "to", None).unwrap();
+        assert_eq!(s.neighbors(&a, None).unwrap().len(), 1);
+        assert_eq!(s.traverse(&a, 2, None).unwrap().len(), 1);
+        assert_eq!(s.path(&a, &b, 5, None).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn storage_run_invalid() {
+        let dir = TestTempDir::new("ut6");
+        let mut s = dir.open();
+        assert!(s.run("garbage").contains("error"));
+    }
+
+    #[test]
+    fn storage_list_collections() {
+        let dir = TestTempDir::new("ut7");
+        let mut s = dir.open();
+        s.remember("proj:a:1", "x", None, false, None).unwrap();
+        s.remember("proj:a:2", "y", None, false, None).unwrap();
+        let cols = s.list_collections("proj:a:");
+        assert!(cols.len() >= 2);
+    }
+
+    #[test]
+    fn storage_recall() {
+        let dir = TestTempDir::new("ut8");
+        let mut s = dir.open();
+        s.remember("facts", "Paris is in France", None, false, None).unwrap();
+        let results = s.recall("facts", "paris", 5).unwrap();
+        assert!(!results.is_empty());
+    }
+
+    #[test]
+    fn unwrap_meta_fields() {
+        let meta = UnwrapMeta {
+            truncated: true,
+            expanded_nodes: 42,
+            unexpanded_links: 5,
+            depth_reached: 3,
+            truncated_by: Some("max_nodes".to_string()),
+        };
+        assert!(meta.truncated);
+        assert_eq!(meta.expanded_nodes, 42);
+        assert_eq!(meta.unexpanded_links, 5);
+        assert_eq!(meta.depth_reached, 3);
+        assert_eq!(meta.truncated_by, Some("max_nodes".to_string()));
+    }
+
+    #[test]
+    fn found_item_variants() {
+        let link = Link::create("test".to_string());
+        let sub = FoundSubItem {
+            container_id: link.clone(),
+            container_value: Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap()),
+            key: "k".to_string(),
+            value: Some(Item::Primitive(Primitive::new("s".to_string(), "v".to_string()).unwrap())),
+        };
+        let fi = FoundItem::FoundSubItem(sub);
+        assert!(fi.get_value().is_some());
+
+        let root = FoundRootItem {
+            id: link.clone(),
+            value: Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap()),
+        };
+        let fi2 = FoundItem::FoundRootItem(root);
+        assert!(fi2.get_value().is_some());
+    }
+
+    #[test]
+    fn found_sub_item_get_primitive() {
+        let link = Link::create("test".to_string());
+        let sub = FoundSubItem {
+            container_id: link,
+            container_value: Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap()),
+            key: "k".to_string(),
+            value: Some(Item::Primitive(Primitive::new("s".to_string(), "v".to_string()).unwrap())),
+        };
+        assert!(sub.get_primitive_or_none().is_some());
+    }
+
+    #[test]
+    fn found_sub_item_get_primitive_none() {
+        let link = Link::create("test".to_string());
+        let sub = FoundSubItem {
+            container_id: link,
+            container_value: Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap()),
+            key: "k".to_string(),
+            value: None,
+        };
+        assert!(sub.get_primitive_or_none().is_none());
+    }
+
+    #[test]
+    fn storage_reopen_recovers_data_via_wal() {
+        let dir = TestTempDir::new("re1");
+        let link = {
+            let mut s = dir.open();
+            let l = s.remember("docs", "hello", None, false, None).unwrap();
+            l
+        };
+        // Reopen — WAL replay recovers the data
+        let s2 = dir.open();
+        let item = s2.get_value_by_link(&link);
+        assert!(item.is_ok());
+    }
+
+    #[test]
+    fn storage_snapshot_persists_collections() {
+        let dir = TestTempDir::new("re2");
+        {
+            let mut s = dir.open();
+            s.run("collection|a|:insert[s|1|]");
+            s.run("collection|b|:insert[s|2|]");
+            s.write_snapshot().unwrap();
+        }
+        // Reopen with snapshot
+        let s2 = dir.open();
+        assert!(s2.get_collection("a").is_some());
+        assert!(s2.get_collection("b").is_some());
+    }
+
+    #[test]
+    fn storage_multiple_remembers_then_reopen() {
+        let dir = TestTempDir::new("re3");
+        {
+            let mut s = dir.open();
+            for i in 0..5 {
+                s.remember("docs", &format!("doc{}", i), None, false, None).unwrap();
+            }
+        }
+        let s2 = dir.open();
+        let results = s2.recall("docs", "doc", 10).unwrap();
+        assert_eq!(results.len(), 5);
+    }
+
+    #[test]
+    fn storage_snapshot_recovery_with_wal() {
+        let dir = TestTempDir::new("re4");
+        {
+            let mut s = dir.open();
+            s.run("collection|a|:insert[s|first|]");
+            s.write_snapshot().unwrap();
+            s.run("collection|a|:insert[s|second|]"); // goes to WAL
+        }
+        // After reopen, snapshot has first, WAL adds second
+        let s2 = dir.open();
+        let coll = s2.get_collection("a").unwrap();
+        assert!(coll.values.len() >= 2);
     }
 }

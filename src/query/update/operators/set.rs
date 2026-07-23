@@ -51,4 +51,22 @@ mod tests {
         let s = SetOperator::new("".to_string()).unwrap();
         assert_eq!(s.get_prefix(), "set");
     }
+
+    #[test]
+    fn set_operator_insert_and_get_items() {
+        let mut s = SetOperator::new("".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "name".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        s.insert(k.clone(), v.clone()).unwrap();
+        let items = s.get_items();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], (k, v));
+    }
+
+    #[test]
+    fn set_operator_to_item() {
+        let s = SetOperator::new("".to_string()).unwrap();
+        let item = s.to_item();
+        assert!(matches!(item, Item::Map(MapItem::SetOperator(_))));
+    }
 }

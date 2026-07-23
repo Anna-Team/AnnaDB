@@ -47,3 +47,48 @@ impl ProjectQuery {
         vec![]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn project_query_new() {
+        let pq = ProjectQuery::new("".to_string()).unwrap();
+        assert!(pq.values.is_empty());
+        assert_eq!(pq.get_prefix(), "project");
+    }
+
+    #[test]
+    fn project_query_insert() {
+        let mut pq = ProjectQuery::new("".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "name".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("s".to_string(), "value".to_string()).unwrap());
+        pq.insert(k, v).unwrap();
+        assert_eq!(pq.values.len(), 1);
+    }
+
+    #[test]
+    fn project_query_get_items() {
+        let mut pq = ProjectQuery::new("".to_string()).unwrap();
+        let k = Primitive::new("s".to_string(), "key".to_string()).unwrap();
+        let v = Item::Primitive(Primitive::new("n".to_string(), "1".to_string()).unwrap());
+        pq.insert(k.clone(), v.clone()).unwrap();
+        let items = pq.get_items();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], (k, v));
+    }
+
+    #[test]
+    fn project_query_to_item() {
+        let pq = ProjectQuery::new("".to_string()).unwrap();
+        let item = pq.to_item();
+        assert!(matches!(item, Item::Map(MapItem::ProjectQuery(_))));
+    }
+
+    #[test]
+    fn project_query_next_available() {
+        let pq = ProjectQuery::new("".to_string()).unwrap();
+        assert!(pq.next_available().is_empty());
+    }
+}

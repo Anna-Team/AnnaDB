@@ -28,3 +28,19 @@ impl TySONPrimitive for DeletedPrimitive {
         "".to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deleted_primitive_prefix() {
+        assert_eq!(DeletedPrimitive.get_prefix(), "deleted");
+    }
+
+    #[test]
+    fn deleted_primitive_new() {
+        let d = DeletedPrimitive::new("".to_string(), "".to_string()).unwrap();
+        assert_eq!(d.get_string_value(), "");
+    }
+}

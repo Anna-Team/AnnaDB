@@ -75,7 +75,10 @@ impl Primitive {
 
             KEEP => Ok(Self::KeepPrimitive(KeepPrimitive::new(prefix, value)?)),
 
-            _ => Err(DBError::Deserialization(format!("unknown primitive prefix: {}", prefix))),
+            _ => {
+                // Unknown prefix — treat as a link (collection name prefix)
+                Ok(Self::Link(Link::new(prefix, value)?))
+            }
         }
     }
 
@@ -147,15 +150,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unknown_prefix_with_valid_uuid_returns_error() {
+    fn unknown_prefix_with_valid_uuid_becomes_link() {
         let result = Primitive::new(
             "nosuchprefix".to_string(),
             "550e8400-e29b-41d4-a716-446655440000".to_string(),
         );
         assert!(
-            result.is_err(),
-            "Unknown prefix should return Err, not silently become a Link"
+            result.is_ok(),
+            "Unknown prefix with valid UUID should become a Link"
         );
+        assert!(matches!(result.unwrap(), Primitive::Link(_)));
     }
 
     #[test]
@@ -217,6 +221,35 @@ mod extra_tests {
     #[test]
     fn link_primitive_parsing() {
         let p = Primitive::new("l".to_string(), "550e8400-e29b-41d4-a716-446655440000".to_string());
-        assert!(p.is_err()); // link prefix not in Primitive::new whitelist
+        assert!(p.is_ok());
+        assert!(matches!(p.unwrap(), Primitive::Link(_)));
+    }
+
+    #[test]
+    fn uts_primitive_roundtrip() {
+        let p = Primitive::new("uts".to_string(), "42".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "uts");
+        assert_eq!(p.serialize(), "uts|42|");
+    }
+
+    #[test]
+    fn embedding_primitive_roundtrip() {
+        let p = Primitive::new("e".to_string(), "3|1.0,2.0,3.0".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "e");
+        assert!(p.serialize().starts_with("e|"));
+    }
+
+    #[test]
+    fn root_primitive_roundtrip() {
+        let p = Primitive::new("root".to_string(), "".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "root");
+        assert_eq!(p.serialize(), "root");
+    }
+
+    #[test]
+    fn keep_primitive_roundtrip() {
+        let p = Primitive::new("keep".to_string(), "".to_string()).unwrap();
+        assert_eq!(p.get_prefix(), "keep");
+        assert_eq!(p.serialize(), "keep");
     }
 }

@@ -194,6 +194,24 @@ pub fn compare(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::fs;
+    use crate::tyson::primitive::TySONPrimitive;
+    use crate::tyson::modifier::TySONModifier;
+    use crate::query::find::operators::not::NotOperator;
+
+    struct TestTmp { path: String }
+    impl TestTmp {
+        fn new(name: &str) -> Self {
+            let dir = env::temp_dir().join(format!("annadb_cmp_{}_{}", name, std::process::id()));
+            let path = dir.to_str().unwrap().to_string();
+            let _ = fs::remove_dir_all(&path);
+            fs::create_dir_all(&path).expect("create dir");
+            TestTmp { path }
+        }
+        fn open(&self) -> Storage { Storage::new(&self.path, None).unwrap() }
+    }
+    impl Drop for TestTmp { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.path); } }
 
     #[test]
     fn compare_result_variants() {
@@ -205,5 +223,77 @@ mod tests {
     fn res_variants() {
         assert_ne!(Res::True, Res::False);
         assert_ne!(Res::None, Res::True);
+    }
+
+    #[test]
+    fn compare_uncancelled_items() {
+        let dir = TestTmp::new("ucmp1");
+        let s = dir.open();
+        let link = Link::create("test".to_string());
+        let buf = InsertBuffer::new();
+        let left = Primitive::new("s".to_string(), "hello".to_string()).unwrap();
+        let right = Primitive::new("n".to_string(), "42".to_string()).unwrap();
+        let res = compare_primitives(&left, &right, &link, &s, &buf).unwrap();
+        assert_eq!(res, CompareResult::CanNotCompare);
+    }
+
+    #[test]
+    fn compare_prepare_item_string() {
+        let dir = TestTmp::new("ucmp2");
+        let s = dir.open();
+        let link = Link::create("test".to_string());
+        let buf = InsertBuffer::new();
+        let prim = Primitive::new("s".to_string(), "hello".to_string()).unwrap();
+        let res = prepare_item(&prim, &link, &s, &buf).unwrap();
+        assert_eq!(res, Some(prim));
+    }
+
+    #[test]
+    fn compare_prepare_item_root() {
+        let dir = TestTmp::new("ucmp3");
+        let mut s = dir.open();
+        s.run("collection|test|:insert[n|42|]");
+        let buf = InsertBuffer::new();
+        let root = Primitive::new("root".to_string(), "".to_string()).unwrap();
+        let link = Link::create("test".to_string());
+        let res = prepare_item(&root, &link, &s, &buf);
+        assert!(res.is_err()); // link doesn't exist -> ItemNotFound
+    }
+
+    #[test]
+    fn compare_prepare_item_root_resolves() {
+        let dir = TestTmp::new("ucmp4");
+        let mut s = dir.open();
+        let link = s.remember("test", "42", None, false, None).unwrap();
+        let buf = InsertBuffer::new();
+        let root = Primitive::new("root".to_string(), "".to_string()).unwrap();
+        let res = prepare_item(&root, &link, &s, &buf).unwrap();
+        assert!(res.is_none());
+    }
+
+    #[test]
+    fn compare_logical_and_or_not() {
+        let dir = TestTmp::new("ucmp5");
+        let s = dir.open();
+        let link = Link::create("test".to_string());
+        let buf = InsertBuffer::new();
+
+        use crate::query::find::operators::and::AndOperator;
+        use crate::query::find::operators::or::OrOperator;
+
+        let mut and_op = AndOperator::new("".to_string()).unwrap();
+        and_op.push(Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap())).unwrap();
+        let res = compare(&and_op.to_item(), &link, &s, &buf).unwrap();
+        assert_eq!(res, Res::True);
+
+        let mut or_op = OrOperator::new("".to_string()).unwrap();
+        or_op.push(Item::Primitive(Primitive::new("b".to_string(), "false".to_string()).unwrap())).unwrap();
+        let res = compare(&or_op.to_item(), &link, &s, &buf).unwrap();
+        assert_eq!(res, Res::False);
+
+        let not_op = NotOperator::new("".to_string(), Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap())).unwrap();
+        let ni = Item::Modifier(ModifierItem::NotOperator(not_op));
+        let res = compare(&ni, &link, &s, &buf).unwrap();
+        assert_eq!(res, Res::False);
     }
 }

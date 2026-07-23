@@ -67,4 +67,26 @@ mod tests {
         let ids = ResponseIds::from(links);
         assert!(ids.get_items().is_empty());
     }
+
+    #[test]
+    fn response_ids_push_non_link_returns_err() {
+        let mut ids = ResponseIds::new("".to_string()).unwrap();
+        let non_link = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        assert!(ids.push(non_link).is_err());
+    }
+
+    #[test]
+    fn response_ids_push_link_succeeds() {
+        let mut ids = ResponseIds::new("".to_string()).unwrap();
+        let link = Item::Primitive(Primitive::new("c".to_string(), "550e8400-e29b-41d4-a716-446655440000".to_string()).unwrap());
+        assert!(ids.push(link).is_ok());
+        assert_eq!(ids.get_items().len(), 1);
+    }
+
+    #[test]
+    fn response_ids_to_item() {
+        let ids = ResponseIds::new("".to_string()).unwrap();
+        let item = ids.to_item();
+        assert!(matches!(item, Item::Vector(VectorItem::ResponseIds(_))));
+    }
 }

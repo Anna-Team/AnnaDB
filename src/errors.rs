@@ -96,3 +96,21 @@ impl From<OsString> for DBError {
         Self::OsStringConversion
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unexpected_parsing_error() {
+        let err = DBError::unexpected_parsing();
+        assert!(err.msg().contains("unexpected"));
+    }
+
+    #[test]
+    fn from_os_string() {
+        let os: OsString = "test".into();
+        let err: DBError = os.into();
+        assert!(matches!(err, DBError::OsStringConversion));
+    }
+}
