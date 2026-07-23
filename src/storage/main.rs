@@ -1433,20 +1433,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
             }
         }
 
-        // Fallback: use existing `find` infrastructure with eq operator
-        use crate::query::find::compare::compare;
-        use crate::query::find::compare::Res;
-        use crate::query::find::query::FindQuery;
-        use crate::MapItem;
-
-        let eq_op = Item::Map(MapItem::EqOperator(
-            crate::query::find::operators::eq::EqOperator::new("".to_string())?,
-        ));
-        // Build a find query: eq{s|content|:s|query|}
-        let mut find_query = FindQuery::new("".to_string())?;
-        find_query.push(eq_op)?;
-
-        let mut filter_buf = FilterBuffer::new();
+        // Fallback: scan collection for keyword matches
         let insert_buf = InsertBuffer::new();
         let mut results = Vec::new();
 
