@@ -424,6 +424,14 @@ impl Storage {
     }
 
     pub fn run(&mut self, data: &str) -> String {
+        // Handle non-transaction commands
+        if data.starts_with("list_collections") {
+            return match self.run_list_collections(data) {
+                Ok(response) => response.serialize(),
+                Err(e) => ErrorTransactionResponse::from(e).serialize(),
+            };
+        }
+
         return match self.run_transaction(data.to_string()) {
             Ok(response) => response.serialize(),
             Err(e) => {
@@ -431,6 +439,20 @@ impl Storage {
                 ErrorTransactionResponse::from(e).serialize()
             }
         };
+    }
+
+    fn run_list_collections(&self, data: &str) -> Result<OkTransactionResponse, DBError> {
+        let prefix = data
+            .strip_prefix("list_collections s|prefix|")
+            .and_then(|s| s.strip_suffix('|'))
+            .unwrap_or("");
+        let collections = self.list_collections(prefix);
+        let mut response = OkTransactionResponse::new();
+        let items: Vec<String> = collections.into_iter().map(|c| format!("s|{}|", c)).collect();
+        let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+        let meta = Meta::FindMeta(crate::response::meta::FindMeta::new(items.len()));
+        response.add_response(QueryResponse::new(data, meta, QueryStatus::Ready));
+        Ok(response)
     }
 
     fn dispatch_query(
@@ -1003,6 +1025,14 @@ impl Storage {
 
     pub fn get_collection(&self, collection_name: &str) -> Option<&Collection> {
         self.warehouse.get(collection_name)
+    }
+
+    pub fn list_collections(&self, prefix: &str) -> Vec<String> {
+        self.warehouse
+            .keys()
+            .filter(|k| k.starts_with(prefix))
+            .cloned()
+            .collect()
     }
 
     // ── Memory API ──
