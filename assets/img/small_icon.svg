@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="38.67646mm"
+   height="38.194508mm"
+   viewBox="0 0 38.676461 38.194506"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="small_icon.svg"
+   inkscape:export-filename="/home/ro/Projects/OpenSource/AnnaDB/docs/build/assets/img/logo_big.png"
+   inkscape:export-xdpi="179.01372"
+   inkscape:export-ydpi="179.01372"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="2.7654376"
+     inkscape:cx="90.944017"
+     inkscape:cy="80.276627"
+     inkscape:window-width="1920"
+     inkscape:window-height="1155"
+     inkscape:window-x="0"
+     inkscape:window-y="45"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="text30381"
+     fit-margin-top="0.4"
+     fit-margin-left="0"
+     fit-margin-right="0.4"
+     fit-margin-bottom="0.4" />
+  <defs
+     id="defs2">
+    <rect
+       x="65.990105"
+       y="88.038612"
+       width="629.55109"
+       height="420.54724"
+       id="rect30383" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-14.59837,-30.332425)">
+    <g
+       aria-label="AnnaDB"
+       transform="scale(0.26458333)"
+       id="text30381"
+       style="font-size:40px;line-height:1.25;white-space:pre;shape-inside:url(#rect30383)">
+      <path
+         d="M 151.92514,223.23757 H 104.92505 L 95.0917,251.48762 H 73.174993 L 119.00841,130.15405 h 18.91671 l 45.91676,121.33357 h -22.00005 z m -41.08341,-17.00004 h 35.16674 L 128.4251,155.9041 Z"
+         style="font-weight:500;font-size:170.667px;line-height:1.25;font-family:Roboto;-inkscape-font-specification:'Roboto, Medium';white-space:pre;shape-inside:url(#rect30383);fill:#fb8500;fill-opacity:1"
+         id="path170268-6" />
+      <path
+         d="M 133.92509,209.23757 H 86.925003 l -9.83335,28.25005 H 55.174943 L 101.00836,116.15405 h 18.91671 l 45.91676,121.33357 H 143.84178 Z M 92.841683,192.23753 H 128.00842 L 110.42505,141.9041 Z"
+         style="font-weight:500;font-size:170.667px;font-family:Roboto;-inkscape-font-specification:'Roboto, Medium';fill:#ffffff;fill-opacity:1"
+         id="path176665" />
+    </g>
+  </g>
+</svg>
