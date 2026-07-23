@@ -1,12 +1,9 @@
-FROM rust:1.83-slim
+FROM rust:latest
 
-RUN apt-get update && apt-get install -y binutils && rm -rf /var/lib/apt/lists/*
 RUN rustup component add llvm-tools-preview
-RUN cargo install cargo-llvm-cov
 
 WORKDIR /app
 COPY . .
 
-RUN cargo llvm-cov --workspace --html --output-dir coverage
-
-CMD ["cat", "coverage/index.html"]
+RUN cargo test --lib -- --test-threads=4
+RUN cargo test --test integration -- --test-threads=4
