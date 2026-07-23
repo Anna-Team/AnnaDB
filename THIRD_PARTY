@@ -1,0 +1,18 @@
+This product bundles or downloads third-party software.
+
+---
+
+ONNX Runtime
+License: MIT
+Copyright (c) Microsoft Corporation
+https://github.com/microsoft/onnxruntime
+
+---
+
+all-MiniLM-L6-v2
+License: Apache 2.0
+Copyright (c) sentence-transformers
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+This model is downloaded on first use when EMBEDDING_PROVIDER=local is configured.
+The model and its license are cached at ~/.annadb/models/ alongside the downloaded files.

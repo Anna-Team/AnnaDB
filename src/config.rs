@@ -50,6 +50,10 @@ impl Config {
                         crate::embedding::openai::OpenAiProvider::new(api_key, model.clone()),
                     )))
                 }
+                #[cfg(feature = "embedding-local")]
+                "local" => Ok(Some(Box::new(
+                    crate::embedding::local::LocalEmbeddingProvider::new()?,
+                ))),
                 _ => Err(DBError::UnsupportedOperation(format!(
                     "unknown embedding provider: {}",
                     provider
