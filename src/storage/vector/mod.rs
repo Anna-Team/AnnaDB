@@ -1,4 +1,3 @@
-
 use crate::data_types::primitives::link::Link;
 use crate::storage::vector::hnsw::{HnswIndex, HnswMetric};
 
@@ -15,7 +14,13 @@ pub struct VectorIndex {
 }
 
 impl VectorIndex {
-    pub fn new(field_path: String, dims: u16, m: usize, ef_construction: usize, metric: HnswMetric) -> Self {
+    pub fn new(
+        field_path: String,
+        dims: u16,
+        m: usize,
+        ef_construction: usize,
+        metric: HnswMetric,
+    ) -> Self {
         Self {
             field_path,
             dims,
@@ -48,7 +53,11 @@ impl VectorIndex {
         ids.into_iter().map(|id| self.links[id].clone()).collect()
     }
 
-    pub fn lookup_by_op(&self, _op: &super::index::CompareOp, _key: &super::index::IndexKey) -> Vec<Link> {
+    pub fn lookup_by_op(
+        &self,
+        _op: &super::index::CompareOp,
+        _key: &super::index::IndexKey,
+    ) -> Vec<Link> {
         vec![]
     }
 
@@ -67,9 +76,12 @@ impl VectorIndex {
     }
 
     pub fn from_bytes(field_path: String, dims: u16, data: &[u8]) -> Result<Self, crate::DBError> {
-        let (hnsw, links, metric): (HnswIndex, Vec<Link>, HnswMetric) =
-            bincode::deserialize(data).map_err(|e| {
-                crate::DBError::UnsupportedOperation(format!("vector index deserialize error: {}", e))
+        let (hnsw, links, metric): (HnswIndex, Vec<Link>, HnswMetric) = bincode::deserialize(data)
+            .map_err(|e| {
+                crate::DBError::UnsupportedOperation(format!(
+                    "vector index deserialize error: {}",
+                    e
+                ))
             })?;
         Ok(Self {
             field_path,
@@ -138,6 +150,11 @@ mod tests {
     #[test]
     fn vector_index_lookup_by_op() {
         let idx = VectorIndex::new("emb".to_string(), 3, 32, 200, HnswMetric::Cosine);
-        assert!(idx.lookup_by_op(&crate::storage::index::CompareOp::Eq, &crate::storage::index::IndexKey::Null).is_empty());
+        assert!(idx
+            .lookup_by_op(
+                &crate::storage::index::CompareOp::Eq,
+                &crate::storage::index::IndexKey::Null
+            )
+            .is_empty());
     }
 }

@@ -1,3 +1,14 @@
+#![allow(
+    non_snake_case,
+    clippy::type_complexity,
+    clippy::too_many_arguments,
+    clippy::len_without_is_empty,
+    clippy::collapsible_match,
+    clippy::len_zero,
+    clippy::items_after_test_module,
+    clippy::let_and_return,
+    clippy::non_canonical_partial_ord_impl
+)]
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
@@ -43,7 +54,10 @@ pub use crate::tyson::vector::TySONVector;
 /// let mut db = AnnaDB::open("~/.annadb/memory")?;
 /// db.remember("facts", "hello", None)?;
 /// ```
-pub fn open(path: &str, embedding_provider: Option<Box<dyn embedding::EmbeddingProvider>>) -> Result<Storage, DBError> {
+pub fn open(
+    path: &str,
+    embedding_provider: Option<Box<dyn embedding::EmbeddingProvider>>,
+) -> Result<Storage, DBError> {
     if path == ":memory:" {
         let dir = std::env::temp_dir().join(format!("annadb_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir)?;

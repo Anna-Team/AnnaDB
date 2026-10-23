@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::RESPONSE_OBJECTS;
 use crate::{DBError, Item, Link, MapItem, Primitive, TySONMap};
@@ -29,7 +29,11 @@ impl TySONMap for ResponseObjects {
             Primitive::Link(o) => {
                 self.values.push((o, v));
             }
-            _ => return Err(DBError::TypeMismatch("only Link primitives can be ids".to_string())),
+            _ => {
+                return Err(DBError::TypeMismatch(
+                    "only Link primitives can be ids".to_string(),
+                ))
+            }
         }
         Ok(true)
     }

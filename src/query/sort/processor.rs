@@ -22,7 +22,11 @@ struct SortProcessor<'a> {
 }
 
 impl<'a> SortProcessor<'a> {
-    fn new(storage: &'a Storage, query: &SortQuery, insert_buf: &'a InsertBuffer) -> Result<Self, DBError> {
+    fn new(
+        storage: &'a Storage,
+        query: &SortQuery,
+        insert_buf: &'a InsertBuffer,
+    ) -> Result<Self, DBError> {
         let (paths, directions) = SortProcessor::build_paths_and_directions(query)?;
         Ok(Self {
             storage,
@@ -40,7 +44,9 @@ impl<'a> SortProcessor<'a> {
         }
     }
 
-    fn build_paths_and_directions(query: &SortQuery) -> Result<(Vec<Path>, Vec<Direction>), DBError> {
+    fn build_paths_and_directions(
+        query: &SortQuery,
+    ) -> Result<(Vec<Path>, Vec<Direction>), DBError> {
         let mut directions: Vec<Direction> = vec![];
         let mut paths: Vec<Path> = vec![];
         for item in &query.items {
@@ -57,9 +63,11 @@ impl<'a> SortProcessor<'a> {
                         paths.push(path);
                     }
                 }
-                _ => return Err(DBError::UnexpectedType(
-                    "sort query can only contain asc and desc operators".to_string(),
-                )),
+                _ => {
+                    return Err(DBError::UnexpectedType(
+                        "sort query can only contain asc and desc operators".to_string(),
+                    ))
+                }
             }
         }
         Ok((paths, directions))
@@ -84,11 +92,8 @@ impl<'a> SortProcessor<'a> {
                         _ => result_vec.push(None),
                     },
                     None => {
-                        match self.storage.get_value_by_link(&link) {
-                            Ok(o) => match o {
-                                Item::Primitive(pr) => result_vec.push(Some(pr)),
-                                _ => result_vec.push(None),
-                            },
+                        match self.storage.get_value_by_link(link) {
+                            Ok(Item::Primitive(pr)) => result_vec.push(Some(pr)),
                             _ => result_vec.push(None),
                         };
                     }
@@ -99,15 +104,13 @@ impl<'a> SortProcessor<'a> {
     }
 
     fn cmp_vectors(&self, a: Vec<Option<Primitive>>, b: Vec<Option<Primitive>>) -> Ordering {
-        let mut index = 0 as usize;
-        for left in a {
+        for (index, left) in a.into_iter().enumerate() {
             let right = b[index].clone();
             let direction = &self.directions[index];
-            index += 1;
-            if left == None && right != None {
+            if left.is_none() && right.is_some() {
                 return Ordering::Greater;
             }
-            if left != None && right == None {
+            if left.is_some() && right.is_none() {
                 return Ordering::Less;
             }
             if left > right {
@@ -124,14 +127,14 @@ impl<'a> SortProcessor<'a> {
                 }
             }
         }
-        return Ordering::Equal;
+        Ordering::Equal
     }
 
     fn cmp(&self, link_a: &Link, link_b: &Link) -> Ordering {
         let vector_a = self.build_vector(link_a);
         let vector_b = self.build_vector(link_b);
-        let res = self.cmp_vectors(vector_a, vector_b);
-        res
+
+        self.cmp_vectors(vector_a, vector_b)
     }
 }
 

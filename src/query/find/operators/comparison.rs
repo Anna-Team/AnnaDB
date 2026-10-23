@@ -19,15 +19,20 @@ macro_rules! comparison_operator {
                 Ok(Self { values: vec![] })
             }
 
-            fn insert(&mut self, k: $crate::Primitive, v: $crate::Item) -> Result<bool, $crate::DBError> {
+            fn insert(
+                &mut self,
+                k: $crate::Primitive,
+                v: $crate::Item,
+            ) -> Result<bool, $crate::DBError> {
                 match v {
                     $crate::Item::Primitive(o) => {
                         self.values.push((k, o));
                         Ok(true)
                     }
-                    _ => Err($crate::DBError::TypeMismatch(
-                        format!("{} operator can contain only primitives", $err_label),
-                    )),
+                    _ => Err($crate::DBError::TypeMismatch(format!(
+                        "{} operator can contain only primitives",
+                        $err_label
+                    ))),
                 }
             }
 

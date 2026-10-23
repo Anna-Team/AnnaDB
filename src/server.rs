@@ -99,7 +99,10 @@ pub fn serve(storage: &mut Storage, port: u16) {
             "/tx" => {
                 let result = storage.run(&req.body);
                 let duration = start.elapsed();
-                debug!(duration_ms = duration.as_millis() as u64, "transaction processed");
+                debug!(
+                    duration_ms = duration.as_millis() as u64,
+                    "transaction processed"
+                );
                 respond(&mut stream, "200 OK", "text/plain", &result);
             }
             _ => {

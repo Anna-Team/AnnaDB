@@ -8,7 +8,9 @@ use tracing::{debug, info, warn};
 use crate::errors::DBError;
 use crate::storage::buffer::InsertBuffer;
 
+#[allow(dead_code)]
 const WAL_MAGIC: &[u8; 4] = b"AWAL";
+#[allow(dead_code)]
 const WAL_VERSION: u8 = 1;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,9 +42,8 @@ impl Wal {
             buffer: buffer.clone(),
         };
 
-        let data = bincode::serialize(&entry).map_err(|e| {
-            DBError::WalSerialization(format!("{}", e))
-        })?;
+        let data =
+            bincode::serialize(&entry).map_err(|e| DBError::WalSerialization(format!("{}", e)))?;
 
         let crc = crc32(&data);
         let len = data.len() as u32;
@@ -95,7 +96,10 @@ impl Wal {
             // Read checksum
             let mut crc_buf = [0u8; 4];
             if reader.read_exact(&mut crc_buf).is_err() {
-                warn!(pos = pos, "WAL truncated at checksum field, stopping replay");
+                warn!(
+                    pos = pos,
+                    "WAL truncated at checksum field, stopping replay"
+                );
                 break;
             }
             let expected_crc = u32::from_le_bytes(crc_buf);
@@ -104,7 +108,11 @@ impl Wal {
             // Read data
             let mut data = vec![0u8; len as usize];
             if reader.read_exact(&mut data).is_err() {
-                warn!(pos = pos, len = len, "WAL truncated at data, stopping replay");
+                warn!(
+                    pos = pos,
+                    len = len,
+                    "WAL truncated at data, stopping replay"
+                );
                 break;
             }
             pos += len as u64;

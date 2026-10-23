@@ -23,19 +23,21 @@ pub fn limit(query: &LimitQuery, buf: &mut FilterBuffer) -> Result<QueryResponse
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data_types::primitives::number::NumberPrimitive;
     use crate::query::limit::query::LimitQuery;
     use crate::tyson::modifier::TySONModifier;
-    use crate::data_types::primitives::number::NumberPrimitive;
     use crate::tyson::primitive::TySONPrimitive;
     use crate::Link;
 
     #[test]
     fn limit_construction_rejects_non_number() {
-        let limit_expr = Item::Primitive(
-            Primitive::new("s".to_string(), "not_a_number".to_string()).unwrap(),
-        );
+        let limit_expr =
+            Item::Primitive(Primitive::new("s".to_string(), "not_a_number".to_string()).unwrap());
         let query = LimitQuery::new("".to_string(), limit_expr);
-        assert!(query.is_err(), "Limit with string value should fail at construction");
+        assert!(
+            query.is_err(),
+            "Limit with string value should fail at construction"
+        );
     }
 
     #[test]
@@ -49,7 +51,7 @@ mod tests {
             Link::create("test".to_string()),
             Link::create("test".to_string()),
         ];
-        let resp = limit(&query, &mut buf).unwrap();
+        let _resp = limit(&query, &mut buf).unwrap();
         assert_eq!(buf.ids.len(), 2);
     }
 

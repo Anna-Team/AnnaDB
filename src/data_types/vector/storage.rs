@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::STORAGE_VECTOR;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -48,7 +48,9 @@ impl StorageVector {
             self.items[index] = item;
             Ok(true)
         } else {
-            Err(DBError::Validation("vector index does not exist".to_string()))
+            Err(DBError::Validation(
+                "vector index does not exist".to_string(),
+            ))
         }
     }
 }
@@ -60,7 +62,9 @@ mod tests {
     #[test]
     fn storage_vector_push_and_get() {
         let mut v = StorageVector::new("".to_string()).unwrap();
-        let item = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "a".to_string()).unwrap());
+        let item = crate::Item::Primitive(
+            crate::Primitive::new("s".to_string(), "a".to_string()).unwrap(),
+        );
         v.push(item.clone()).unwrap();
         assert_eq!(v.get_items().len(), 1);
     }
@@ -68,16 +72,25 @@ mod tests {
     #[test]
     fn storage_vector_replace() {
         let mut v = StorageVector::new("".to_string()).unwrap();
-        let item = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "a".to_string()).unwrap());
+        let item = crate::Item::Primitive(
+            crate::Primitive::new("s".to_string(), "a".to_string()).unwrap(),
+        );
         v.push(item).unwrap();
         let link = crate::Link::create("test".to_string());
-        assert!(v.replace_by_string("0".to_string(), crate::Item::Primitive(crate::Primitive::Link(link))).is_ok());
+        assert!(v
+            .replace_by_string(
+                "0".to_string(),
+                crate::Item::Primitive(crate::Primitive::Link(link))
+            )
+            .is_ok());
     }
 
     #[test]
     fn storage_vector_get_by_str() {
         let mut v = StorageVector::new("".to_string()).unwrap();
-        let item = crate::Item::Primitive(crate::Primitive::new("n".to_string(), "42".to_string()).unwrap());
+        let item = crate::Item::Primitive(
+            crate::Primitive::new("n".to_string(), "42".to_string()).unwrap(),
+        );
         v.push(item.clone()).unwrap();
         assert!(v.get_by_str("0").unwrap().is_some());
         assert!(v.get_by_str("1").unwrap().is_none());
@@ -87,7 +100,9 @@ mod tests {
     #[test]
     fn storage_vector_replace_out_of_bounds() {
         let mut v = StorageVector::new("".to_string()).unwrap();
-        let item = crate::Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let item = crate::Item::Primitive(
+            crate::Primitive::new("null".to_string(), "".to_string()).unwrap(),
+        );
         assert!(v.replace_by_string("99".to_string(), item).is_err());
     }
 }

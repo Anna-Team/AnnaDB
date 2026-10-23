@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::QUERY_SET;
 use crate::query::delete::query::DeleteQuery;
@@ -87,8 +87,8 @@ mod tests {
     use crate::query::update::query::UpdateQuery;
     use crate::tyson::primitive::TySONPrimitive;
     use crate::tyson::vector::TySONVector;
-    use crate::Primitive;
     use crate::Item;
+    use crate::Primitive;
 
     #[test]
     fn query_set_from_insert() {

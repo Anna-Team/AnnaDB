@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::INTERNAL_COLLECTION_NAME;
 use std::collections::HashMap;
@@ -94,17 +94,12 @@ impl Collection {
         let file_path = self.get_path(wh_path);
         Ok(fs::OpenOptions::new()
             .create(true)
-            .write(true)
             .append(true)
             .open(file_path.as_str())?)
     }
 
     pub fn get_value(&self, id: &Link) -> Result<Item, DBError> {
-        Ok(self
-            .values
-            .get(id)
-            .ok_or(DBError::ItemNotFound)?
-            .clone())
+        Ok(self.values.get(id).ok_or(DBError::ItemNotFound)?.clone())
     }
 }
 

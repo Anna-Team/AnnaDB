@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::AND_OPERATOR;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -46,7 +46,11 @@ impl TySONVector for AndOperator {
             Item::Map(MapItem::KnnOperator(_)) => {
                 self.items.push(item);
             }
-            _ => return Err(DBError::UnsupportedOperation("item for AND operator".to_string())),
+            _ => {
+                return Err(DBError::UnsupportedOperation(
+                    "item for AND operator".to_string(),
+                ))
+            }
         };
         Ok(true)
     }
@@ -64,7 +68,6 @@ impl TySONVector for AndOperator {
 mod tests {
     use super::*;
     use crate::query::find::operators::eq::EqOperator;
-    use crate::MapItem;
     use crate::TySONMap;
 
     #[test]

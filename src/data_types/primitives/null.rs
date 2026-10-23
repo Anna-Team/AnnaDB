@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::NULL;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -12,7 +12,7 @@ pub struct NullPrimitive;
 
 impl BaseTySONItemInterface for NullPrimitive {
     fn get_prefix(&self) -> String {
-        return NULL.to_string();
+        NULL.to_string()
     }
 }
 

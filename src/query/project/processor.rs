@@ -87,7 +87,11 @@ pub fn resolve(
                             )?,
                         )?;
                     }
-                    _ => return Err(DBError::TypeMismatch("projection keys must be strings".to_string())),
+                    _ => {
+                        return Err(DBError::TypeMismatch(
+                            "projection keys must be strings".to_string(),
+                        ))
+                    }
                 }
             }
             Ok(new_map.to_item())

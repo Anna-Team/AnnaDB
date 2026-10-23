@@ -42,7 +42,9 @@ mod tests {
         use crate::data_types::map::storage::StorageMap;
         let mut m = StorageMap::new("".to_string()).unwrap();
         let key = crate::Primitive::new("s".to_string(), "key".to_string()).unwrap();
-        let val = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "val".to_string()).unwrap());
+        let val = crate::Item::Primitive(
+            crate::Primitive::new("s".to_string(), "val".to_string()).unwrap(),
+        );
         m.insert(key, val).unwrap();
         let s = TySONMap::serialize(&m);
         assert!(s.contains("key"));

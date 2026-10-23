@@ -47,17 +47,15 @@ impl AnnaDB {
         Ok(results
             .into_iter()
             .map(|(link, item)| {
-                (format!("l|{}|{}|", link.collection_name, link.id), format!("{:?}", item))
+                (
+                    format!("l|{}|{}|", link.collection_name, link.id),
+                    format!("{:?}", item),
+                )
             })
             .collect())
     }
 
-    fn relate(
-        &mut self,
-        from_link: &str,
-        to_link: &str,
-        relation_type: &str,
-    ) -> PyResult<String> {
+    fn relate(&mut self, from_link: &str, to_link: &str, relation_type: &str) -> PyResult<String> {
         let from = parse_link(from_link)?;
         let to = parse_link(to_link)?;
         let edge = self
@@ -151,13 +149,22 @@ impl AnnaDB {
         Ok(results
             .into_iter()
             .map(|(link, item, depth, rel)| {
-                (format!("l|{}|{}|", link.collection_name, link.id), format!("{:?}", item), depth, rel)
+                (
+                    format!("l|{}|{}|", link.collection_name, link.id),
+                    format!("{:?}", item),
+                    depth,
+                    rel,
+                )
             })
             .collect())
     }
 
     /// Get a node and its N-hop neighborhood.
-    fn ego_graph(&self, link_str: &str, depth: usize) -> PyResult<(String, Vec<(String, String, usize, String)>)> {
+    fn ego_graph(
+        &self,
+        link_str: &str,
+        depth: usize,
+    ) -> PyResult<(String, Vec<(String, String, usize, String)>)> {
         let link = parse_link(link_str)?;
         let (center, neighbors) = self
             .storage
@@ -167,7 +174,12 @@ impl AnnaDB {
         let neighbors: Vec<_> = neighbors
             .into_iter()
             .map(|(l, item, d, r)| {
-                (format!("l|{}|{}|", l.collection_name, l.id), format!("{:?}", item), d, r)
+                (
+                    format!("l|{}|{}|", l.collection_name, l.id),
+                    format!("{:?}", item),
+                    d,
+                    r,
+                )
             })
             .collect();
         Ok((center_str, neighbors))
@@ -175,17 +187,43 @@ impl AnnaDB {
 
     #[pyo3(signature = (link_str, depth=2, include_types=None, exclude_types=None, max_nodes=None))]
     fn ego_graph_with_config(
-        &self, link_str: &str, depth: usize,
-        include_types: Option<Vec<String>>, exclude_types: Option<Vec<String>>,
+        &self,
+        link_str: &str,
+        depth: usize,
+        include_types: Option<Vec<String>>,
+        exclude_types: Option<Vec<String>>,
         max_nodes: Option<usize>,
     ) -> PyResult<(String, Vec<(String, String, usize, String)>, bool, usize)> {
         let link = parse_link(link_str)?;
-        let config = UnwrapConfig { depth, include_link_types: include_types, exclude_link_types: exclude_types, max_nodes, max_per_link_type: None, order_by: UnwrapOrder::Natural };
-        let (center, neighbors, meta) = self.storage.ego_graph_with_config(&link, &config)
+        let config = UnwrapConfig {
+            depth,
+            include_link_types: include_types,
+            exclude_link_types: exclude_types,
+            max_nodes,
+            max_per_link_type: None,
+            order_by: UnwrapOrder::Natural,
+        };
+        let (center, neighbors, meta) = self
+            .storage
+            .ego_graph_with_config(&link, &config)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        let ns: Vec<_> = neighbors.into_iter().map(|(l, item, d, r)|
-            (format!("l|{}|{}|", l.collection_name, l.id), format!("{:?}", item), d, r)).collect();
-        Ok((format!("{:?}", center), ns, meta.truncated, meta.expanded_nodes))
+        let ns: Vec<_> = neighbors
+            .into_iter()
+            .map(|(l, item, d, r)| {
+                (
+                    format!("l|{}|{}|", l.collection_name, l.id),
+                    format!("{:?}", item),
+                    d,
+                    r,
+                )
+            })
+            .collect();
+        Ok((
+            format!("{:?}", center),
+            ns,
+            meta.truncated,
+            meta.expanded_nodes,
+        ))
     }
 }
 
@@ -193,9 +231,10 @@ fn parse_link(s: &str) -> PyResult<annadb::Link> {
     let s = s.trim().trim_start_matches("l|").trim_end_matches('|');
     let parts: Vec<&str> = s.splitn(2, '|').collect();
     if parts.len() != 2 {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            format!("invalid link: {}", s),
-        ));
+        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+            "invalid link: {}",
+            s
+        )));
     }
     let id = uuid::Uuid::parse_str(parts[1])
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;

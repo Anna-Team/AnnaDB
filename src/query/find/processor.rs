@@ -10,18 +10,16 @@ use crate::storage::vector::hnsw::HnswMetric;
 use crate::tyson::vector::TySONVector;
 use crate::{DBError, Item, Link, MapItem, Primitive, Storage, VectorItem};
 
-fn try_knn_lookup(
-    storage: &Storage,
-    collection_name: &str,
-    op: &Item,
-) -> Option<Vec<Link>> {
+fn try_knn_lookup(storage: &Storage, collection_name: &str, op: &Item) -> Option<Vec<Link>> {
     match op {
         Item::Map(MapItem::KnnOperator(knn)) => {
             let field_path = knn.get_field();
             if field_path.is_empty() {
                 return None;
             }
-            let vec_index = storage.index_mgr.get_vector_index(collection_name, field_path)?;
+            let vec_index = storage
+                .index_mgr
+                .get_vector_index(collection_name, field_path)?;
             let embedding = knn.get_query_embedding();
             let metric = match knn.get_metric() {
                 "euclidean" => HnswMetric::Euclidean,
@@ -99,8 +97,7 @@ fn get_ids_list(
         if !insert_buf.dropped_collections.contains(&collection_name) {
             let mut res = Vec::from_iter(collection.values.keys().cloned());
             for link in insert_buf.items.keys() {
-                if link.collection_name == collection.name
-                    && !collection.values.contains_key(link)
+                if link.collection_name == collection.name && !collection.values.contains_key(link)
                 {
                     res.push(link.clone());
                 }
@@ -119,40 +116,48 @@ fn get_ids_list(
 
 /// Try to use an index for a single-field comparison operator.
 /// Returns Some(matching_links) if an index was used, None if fallback scan needed.
-fn try_index_lookup(
-    storage: &Storage,
-    collection_name: &str,
-    op: &Item,
-) -> Option<Vec<Link>> {
+fn try_index_lookup(storage: &Storage, collection_name: &str, op: &Item) -> Option<Vec<Link>> {
     let (field_path, value, cmp_op) = match op {
         Item::Map(MapItem::EqOperator(o)) => {
             let vals = o.get_values();
-            if vals.len() != 1 { return None; }
+            if vals.len() != 1 {
+                return None;
+            }
             extract_path_and_value(vals[0].0, vals[0].1, CompareOp::Eq)
         }
         Item::Map(MapItem::GtOperator(o)) => {
             let vals = o.get_values();
-            if vals.len() != 1 { return None; }
+            if vals.len() != 1 {
+                return None;
+            }
             extract_path_and_value(vals[0].0, vals[0].1, CompareOp::Gt)
         }
         Item::Map(MapItem::GteOperator(o)) => {
             let vals = o.get_values();
-            if vals.len() != 1 { return None; }
+            if vals.len() != 1 {
+                return None;
+            }
             extract_path_and_value(vals[0].0, vals[0].1, CompareOp::Gte)
         }
         Item::Map(MapItem::LtOperator(o)) => {
             let vals = o.get_values();
-            if vals.len() != 1 { return None; }
+            if vals.len() != 1 {
+                return None;
+            }
             extract_path_and_value(vals[0].0, vals[0].1, CompareOp::Lt)
         }
         Item::Map(MapItem::LteOperator(o)) => {
             let vals = o.get_values();
-            if vals.len() != 1 { return None; }
+            if vals.len() != 1 {
+                return None;
+            }
             extract_path_and_value(vals[0].0, vals[0].1, CompareOp::Lte)
         }
         Item::Map(MapItem::NeqOperator(o)) => {
             let vals = o.get_values();
-            if vals.len() != 1 { return None; }
+            if vals.len() != 1 {
+                return None;
+            }
             extract_path_and_value(vals[0].0, vals[0].1, CompareOp::Neq)
         }
         _ => None,
@@ -192,7 +197,7 @@ pub fn find(
         found_ids = buf.ids.clone();
         started = true;
     }
-    if query.items.len() == 0 && !started {
+    if query.items.is_empty() && !started {
         found_ids = get_ids_list(storage, collection_name.clone(), insert_buf);
     }
     for op in &query.items {

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::{ASC_OPERATOR, DESC_OPERATOR, LIMIT_QUERY, NOT_OPERATOR, OFFSET_QUERY};
 use crate::query::find::operators::not::NotOperator;
@@ -73,13 +73,14 @@ mod tests {
 
     #[test]
     fn modifier_unknown_prefix() {
-        let val = crate::Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let val = crate::Item::Primitive(
+            crate::Primitive::new("null".to_string(), "".to_string()).unwrap(),
+        );
         assert!(ModifierItem::new("unknown".to_string(), val).is_err());
     }
 
     #[test]
     fn modifier_limit_query() {
-        use crate::query::limit::query::LimitQuery;
         use crate::data_types::primitives::number::NumberPrimitive;
         let num = NumberPrimitive::new("".to_string(), "5".to_string()).unwrap();
         let val = crate::Item::Primitive(crate::Primitive::NumberPrimitive(num));
@@ -111,6 +112,9 @@ mod tests {
         let num = NumberPrimitive::new("".to_string(), "7".to_string()).unwrap();
         let val = crate::Item::Primitive(crate::Primitive::NumberPrimitive(num));
         let m = ModifierItem::new("limit".to_string(), val).unwrap();
-        assert!(matches!(m.get_value(), crate::Item::Primitive(crate::Primitive::NumberPrimitive(_))));
+        assert!(matches!(
+            m.get_value(),
+            crate::Item::Primitive(crate::Primitive::NumberPrimitive(_))
+        ));
     }
 }

@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::COLLECTION_NAME;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -14,7 +14,7 @@ pub struct CollectionName {
 
 impl BaseTySONItemInterface for CollectionName {
     fn get_prefix(&self) -> String {
-        return COLLECTION_NAME.to_string();
+        COLLECTION_NAME.to_string()
     }
 }
 

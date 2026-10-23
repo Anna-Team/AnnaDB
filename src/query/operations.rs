@@ -17,8 +17,17 @@ mod tests {
 
     #[test]
     fn query_operation_variants() {
-        assert_ne!(QueryOperation::InsertOperation, QueryOperation::FindOperation);
-        assert_ne!(QueryOperation::GetOperation, QueryOperation::DeleteOperation);
-        assert_ne!(QueryOperation::UpdateOperation, QueryOperation::SortOperation);
+        assert_ne!(
+            QueryOperation::InsertOperation,
+            QueryOperation::FindOperation
+        );
+        assert_ne!(
+            QueryOperation::GetOperation,
+            QueryOperation::DeleteOperation
+        );
+        assert_ne!(
+            QueryOperation::UpdateOperation,
+            QueryOperation::SortOperation
+        );
     }
 }

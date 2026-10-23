@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::data_types::map::MapItem;
 use crate::data_types::modifier::ModifierItem;

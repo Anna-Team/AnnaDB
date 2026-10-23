@@ -52,9 +52,8 @@ impl SnapshotManager {
             last_tx_id,
         };
 
-        let encoded = bincode::serialize(&data).map_err(|e| {
-            DBError::SnapshotError(format!("serialize: {}", e))
-        })?;
+        let encoded = bincode::serialize(&data)
+            .map_err(|e| DBError::SnapshotError(format!("serialize: {}", e)))?;
 
         // Write atomically: tmp file, then rename
         let tmp_path = self.snapshot_tmp_path();
@@ -118,9 +117,8 @@ impl SnapshotManager {
         let mut data = vec![0u8; len as usize];
         file.read_exact(&mut data)?;
 
-        let snapshot: SnapshotData = bincode::deserialize(&data).map_err(|e| {
-            DBError::SnapshotError(format!("deserialize: {}", e))
-        })?;
+        let snapshot: SnapshotData = bincode::deserialize(&data)
+            .map_err(|e| DBError::SnapshotError(format!("deserialize: {}", e)))?;
 
         info!(
             collections = snapshot.collections.len(),

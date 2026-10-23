@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::str::FromStr;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::tyson::item::BaseTySONItemInterface;
@@ -45,8 +45,15 @@ mod tests {
 
     #[test]
     fn link_get_string_value() {
-        let link = Link::new("test".to_string(), "550e8400-e29b-41d4-a716-446655440000".to_string()).unwrap();
-        assert_eq!(link.get_string_value(), "550e8400-e29b-41d4-a716-446655440000");
+        let link = Link::new(
+            "test".to_string(),
+            "550e8400-e29b-41d4-a716-446655440000".to_string(),
+        )
+        .unwrap();
+        assert_eq!(
+            link.get_string_value(),
+            "550e8400-e29b-41d4-a716-446655440000"
+        );
     }
 
     #[test]

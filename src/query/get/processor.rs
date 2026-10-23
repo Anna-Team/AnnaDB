@@ -11,22 +11,16 @@ pub fn get(
     query: &GetQuery,
     buf: &mut FilterBuffer,
 ) -> Result<QueryResponse, DBError> {
-    let mut count = 0 as usize;
-    match storage.get_collection(collection_name) {
-        Some(collection) => {
-            let mut found_ids: Vec<Link> = vec![];
-            for id in query.get_ids()? {
-                match collection.values.get(id) {
-                    Some(_) => {
-                        found_ids.push(id.clone());
-                    }
-                    None => {}
-                }
+    let mut count = 0_usize;
+    if let Some(collection) = storage.get_collection(collection_name) {
+        let mut found_ids: Vec<Link> = vec![];
+        for id in query.get_ids()? {
+            if collection.values.contains_key(id) {
+                found_ids.push(id.clone());
             }
-            count = found_ids.len();
-            buf.update(found_ids);
         }
-        None => {}
+        count = found_ids.len();
+        buf.update(found_ids);
     };
     Ok(QueryResponse::new(
         Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?),

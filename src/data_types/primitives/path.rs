@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::PATH_TO_VALUE;
 use crate::data_types::primitives::root::RootPrimitive;
@@ -15,7 +15,7 @@ pub struct PathToValue {
 
 impl BaseTySONItemInterface for PathToValue {
     fn get_prefix(&self) -> String {
-        return PATH_TO_VALUE.to_string();
+        PATH_TO_VALUE.to_string()
     }
 }
 
@@ -81,7 +81,7 @@ mod tests {
         let root = RootPrimitive::new("".to_string(), "".to_string()).unwrap();
         let path = Path::from(root);
         match path {
-            Path::Root(_) => {},
+            Path::Root(_) => {}
             _ => panic!("expected Root"),
         }
     }

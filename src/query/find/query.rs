@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::FIND_QUERY;
 use crate::query::operations::QueryOperation;
@@ -71,7 +71,8 @@ mod tests {
     #[test]
     fn find_query_push_and_get_items() {
         let mut fq = FindQuery::new("".to_string()).unwrap();
-        let item = Item::Primitive(crate::Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        let item =
+            Item::Primitive(crate::Primitive::new("s".to_string(), "hello".to_string()).unwrap());
         fq.push(item).unwrap();
         assert_eq!(fq.get_items().len(), 1);
     }

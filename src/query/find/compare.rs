@@ -64,7 +64,7 @@ fn compare_primitives(
         (_, None) => Ok(CompareResult::CanNotCompare),
         (None, _) => Ok(CompareResult::CanNotCompare),
         (Some(l), Some(r)) => {
-            return if l.get_prefix() != r.get_prefix() {
+            if l.get_prefix() != r.get_prefix() {
                 Ok(CompareResult::CanNotCompare)
             } else if l == r {
                 Ok(CompareResult::Equal)
@@ -152,7 +152,9 @@ fn compare_logical(
                 _ => Ok(Res::None),
             }
         }
-        _ => Err(DBError::UnsupportedOperation("compare operator".to_string())),
+        _ => Err(DBError::UnsupportedOperation(
+            "compare operator".to_string(),
+        )),
     }
 }
 
@@ -164,28 +166,58 @@ pub fn compare(
 ) -> Result<Res, DBError> {
     match op {
         Item::Map(MapItem::EqOperator(o)) => compare_scalar(
-            o.get_values(), id, storage, insert_buf,
-            |r| r != CompareResult::Equal, Res::False, Res::True,
+            o.get_values(),
+            id,
+            storage,
+            insert_buf,
+            |r| r != CompareResult::Equal,
+            Res::False,
+            Res::True,
         ),
         Item::Map(MapItem::NeqOperator(o)) => compare_scalar(
-            o.get_values(), id, storage, insert_buf,
-            |r| r == CompareResult::Equal, Res::False, Res::True,
+            o.get_values(),
+            id,
+            storage,
+            insert_buf,
+            |r| r == CompareResult::Equal,
+            Res::False,
+            Res::True,
         ),
         Item::Map(MapItem::GtOperator(o)) => compare_scalar(
-            o.get_values(), id, storage, insert_buf,
-            |r| r != CompareResult::Greater, Res::False, Res::True,
+            o.get_values(),
+            id,
+            storage,
+            insert_buf,
+            |r| r != CompareResult::Greater,
+            Res::False,
+            Res::True,
         ),
         Item::Map(MapItem::GteOperator(o)) => compare_scalar(
-            o.get_values(), id, storage, insert_buf,
-            |r| r != CompareResult::Greater && r != CompareResult::Equal, Res::False, Res::True,
+            o.get_values(),
+            id,
+            storage,
+            insert_buf,
+            |r| r != CompareResult::Greater && r != CompareResult::Equal,
+            Res::False,
+            Res::True,
         ),
         Item::Map(MapItem::LtOperator(o)) => compare_scalar(
-            o.get_values(), id, storage, insert_buf,
-            |r| r != CompareResult::Less, Res::False, Res::True,
+            o.get_values(),
+            id,
+            storage,
+            insert_buf,
+            |r| r != CompareResult::Less,
+            Res::False,
+            Res::True,
         ),
         Item::Map(MapItem::LteOperator(o)) => compare_scalar(
-            o.get_values(), id, storage, insert_buf,
-            |r| r != CompareResult::Less && r != CompareResult::Equal, Res::False, Res::True,
+            o.get_values(),
+            id,
+            storage,
+            insert_buf,
+            |r| r != CompareResult::Less && r != CompareResult::Equal,
+            Res::False,
+            Res::True,
         ),
         _ => compare_logical(op, id, storage, insert_buf),
     }
@@ -194,13 +226,14 @@ pub fn compare(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::query::find::operators::not::NotOperator;
+    use crate::tyson::modifier::TySONModifier;
     use std::env;
     use std::fs;
-    use crate::tyson::primitive::TySONPrimitive;
-    use crate::tyson::modifier::TySONModifier;
-    use crate::query::find::operators::not::NotOperator;
 
-    struct TestTmp { path: String }
+    struct TestTmp {
+        path: String,
+    }
     impl TestTmp {
         fn new(name: &str) -> Self {
             let dir = env::temp_dir().join(format!("annadb_cmp_{}_{}", name, std::process::id()));
@@ -209,9 +242,15 @@ mod tests {
             fs::create_dir_all(&path).expect("create dir");
             TestTmp { path }
         }
-        fn open(&self) -> Storage { Storage::new(&self.path, None).unwrap() }
+        fn open(&self) -> Storage {
+            Storage::new(&self.path, None).unwrap()
+        }
     }
-    impl Drop for TestTmp { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.path); } }
+    impl Drop for TestTmp {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.path);
+        }
+    }
 
     #[test]
     fn compare_result_variants() {
@@ -282,16 +321,28 @@ mod tests {
         use crate::query::find::operators::or::OrOperator;
 
         let mut and_op = AndOperator::new("".to_string()).unwrap();
-        and_op.push(Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap())).unwrap();
+        and_op
+            .push(Item::Primitive(
+                Primitive::new("b".to_string(), "true".to_string()).unwrap(),
+            ))
+            .unwrap();
         let res = compare(&and_op.to_item(), &link, &s, &buf).unwrap();
         assert_eq!(res, Res::True);
 
         let mut or_op = OrOperator::new("".to_string()).unwrap();
-        or_op.push(Item::Primitive(Primitive::new("b".to_string(), "false".to_string()).unwrap())).unwrap();
+        or_op
+            .push(Item::Primitive(
+                Primitive::new("b".to_string(), "false".to_string()).unwrap(),
+            ))
+            .unwrap();
         let res = compare(&or_op.to_item(), &link, &s, &buf).unwrap();
         assert_eq!(res, Res::False);
 
-        let not_op = NotOperator::new("".to_string(), Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap())).unwrap();
+        let not_op = NotOperator::new(
+            "".to_string(),
+            Item::Primitive(Primitive::new("b".to_string(), "true".to_string()).unwrap()),
+        )
+        .unwrap();
         let ni = Item::Modifier(ModifierItem::NotOperator(not_op));
         let res = compare(&ni, &link, &s, &buf).unwrap();
         assert_eq!(res, Res::False);

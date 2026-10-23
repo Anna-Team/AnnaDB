@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::UTS;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -14,7 +14,7 @@ pub struct UTSPrimitive {
 
 impl BaseTySONItemInterface for UTSPrimitive {
     fn get_prefix(&self) -> String {
-        return UTS.to_string();
+        UTS.to_string()
     }
 }
 
@@ -34,7 +34,7 @@ impl TySONPrimitive for UTSPrimitive {
 
 impl PartialEq<Self> for UTSPrimitive {
     fn eq(&self, other: &Self) -> bool {
-        (self.value - other.value).abs() == 0 as i64
+        (self.value - other.value).abs() == 0_i64
     }
 }
 

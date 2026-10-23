@@ -85,12 +85,10 @@ mod imp {
         let resp = ureq::get(url)
             .call()
             .map_err(|e| DBError::UnsupportedOperation(format!("download: {}", e)))?;
-        let mut file = fs::File::create(path).map_err(|e| {
-            DBError::UnsupportedOperation(format!("create file: {}", e))
-        })?;
-        std::io::copy(&mut resp.into_reader(), &mut file).map_err(|e| {
-            DBError::UnsupportedOperation(format!("save: {}", e))
-        })?;
+        let mut file = fs::File::create(path)
+            .map_err(|e| DBError::UnsupportedOperation(format!("create file: {}", e)))?;
+        std::io::copy(&mut resp.into_reader(), &mut file)
+            .map_err(|e| DBError::UnsupportedOperation(format!("save: {}", e)))?;
         Ok(())
     }
 }

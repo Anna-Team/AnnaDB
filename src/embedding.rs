@@ -1,8 +1,8 @@
 use crate::DBError;
 
-pub mod openai;
 #[cfg(feature = "embedding-local")]
 pub mod local;
+pub mod openai;
 
 /// A third-party service that converts text into vector embeddings.
 pub trait EmbeddingProvider: Send + Sync {

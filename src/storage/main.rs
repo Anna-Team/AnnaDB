@@ -9,6 +9,7 @@ use crate::constants::{
 };
 use crate::data_types::modifier::ModifierItem;
 use crate::data_types::primitives::path::PathToValue;
+use crate::embedding::EmbeddingProvider;
 use crate::errors::DBError;
 use crate::query::find::processor::find;
 use crate::query::get::processor::get;
@@ -33,7 +34,6 @@ use crate::storage::index::IndexManager;
 use crate::storage::snapshot::SnapshotManager;
 use crate::storage::vector::hnsw::HnswMetric;
 use crate::storage::wal::Wal;
-use crate::embedding::EmbeddingProvider;
 use crate::tyson::item::BaseTySONItemInterface;
 use crate::{
     Desereilize, Item, Link, MapItem, Primitive, Transaction, TySONMap, TySONPrimitive,
@@ -90,7 +90,10 @@ pub struct UnwrapConfig {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnwrapOrder { Natural, Relevance }
+pub enum UnwrapOrder {
+    Natural,
+    Relevance,
+}
 
 #[derive(Debug, Clone)]
 pub struct UnwrapMeta {
@@ -103,15 +106,35 @@ pub struct UnwrapMeta {
 
 impl Default for UnwrapConfig {
     fn default() -> Self {
-        Self { depth: 2, include_link_types: None, exclude_link_types: None, max_nodes: None, max_per_link_type: None, order_by: UnwrapOrder::Natural }
+        Self {
+            depth: 2,
+            include_link_types: None,
+            exclude_link_types: None,
+            max_nodes: None,
+            max_per_link_type: None,
+            order_by: UnwrapOrder::Natural,
+        }
     }
 }
 
 impl UnwrapConfig {
-    pub fn with_depth(depth: usize) -> Self { Self { depth, ..Default::default() } }
+    pub fn with_depth(depth: usize) -> Self {
+        Self {
+            depth,
+            ..Default::default()
+        }
+    }
     fn matches_link_type(&self, rel_type: &str) -> bool {
-        if let Some(ref inc) = self.include_link_types { if !inc.iter().any(|t| t == rel_type) { return false; } }
-        if let Some(ref exc) = self.exclude_link_types { if exc.iter().any(|t| t == rel_type) { return false; } }
+        if let Some(ref inc) = self.include_link_types {
+            if !inc.iter().any(|t| t == rel_type) {
+                return false;
+            }
+        }
+        if let Some(ref exc) = self.exclude_link_types {
+            if exc.iter().any(|t| t == rel_type) {
+                return false;
+            }
+        }
         true
     }
 }
@@ -130,28 +153,43 @@ pub struct Storage {
 pub trait StorageRead {
     fn get_collection(&self, collection_name: &str) -> Option<&Collection>;
     fn get_item_by_link(
-        &self, id: &Link, insert_buf: &InsertBuffer, counter: i32,
+        &self,
+        id: &Link,
+        insert_buf: &InsertBuffer,
+        counter: i32,
         projection_rules: Option<&ProjectQuery>,
     ) -> Result<Item, DBError>;
     fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError>;
     fn get_value_by_path(
-        &self, path: PathToValue, id: Link, insert_buf: &InsertBuffer,
+        &self,
+        path: PathToValue,
+        id: Link,
+        insert_buf: &InsertBuffer,
     ) -> Result<Option<FoundSubItem>, DBError>;
     fn fetch(&self, item: &Item, insert_buf: &InsertBuffer, counter: i32) -> Result<Item, DBError>;
     fn fetch_found_ids(
-        &self, buf: &FilterBuffer, insert_buf: &InsertBuffer,
+        &self,
+        buf: &FilterBuffer,
+        insert_buf: &InsertBuffer,
         projection_rules: Option<&ProjectQuery>,
     ) -> Result<Item, DBError>;
     fn fetch_or_project(
-        &self, value: &Item, link: &Link, insert_buf: &InsertBuffer,
-        projection_rules: Option<&ProjectQuery>, counter: i32,
+        &self,
+        value: &Item,
+        link: &Link,
+        insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectQuery>,
+        counter: i32,
     ) -> Result<Item, DBError>;
 }
 
 /// Write operations that mutate the warehouse.
 pub trait StorageWrite {
     fn insert_item(
-        &self, collection_name: String, buf: &mut InsertBuffer, item: Item,
+        &self,
+        collection_name: String,
+        buf: &mut InsertBuffer,
+        item: Item,
     ) -> Result<Item, DBError>;
     fn run_transaction(&mut self, data: String) -> Result<OkTransactionResponse, DBError>;
     fn write_snapshot(&mut self) -> Result<(), DBError>;
@@ -162,8 +200,13 @@ pub trait IndexOps {
     fn create_index(&mut self, collection_name: &str, field_path: &str);
     fn drop_index(&mut self, collection_name: &str, field_path: &str) -> bool;
     fn create_vector_index(
-        &mut self, collection_name: &str, field_path: &str,
-        dims: u16, m: usize, ef_construction: usize, metric: HnswMetric,
+        &mut self,
+        collection_name: &str,
+        field_path: &str,
+        dims: u16,
+        m: usize,
+        ef_construction: usize,
+        metric: HnswMetric,
     );
 }
 
@@ -173,7 +216,10 @@ impl StorageRead for Storage {
     }
 
     fn get_item_by_link(
-        &self, id: &Link, insert_buf: &InsertBuffer, counter: i32,
+        &self,
+        id: &Link,
+        insert_buf: &InsertBuffer,
+        counter: i32,
         projection_rules: Option<&ProjectQuery>,
     ) -> Result<Item, DBError> {
         Storage::get_item_by_link(self, id, insert_buf, counter, projection_rules)
@@ -184,7 +230,10 @@ impl StorageRead for Storage {
     }
 
     fn get_value_by_path(
-        &self, path: PathToValue, id: Link, insert_buf: &InsertBuffer,
+        &self,
+        path: PathToValue,
+        id: Link,
+        insert_buf: &InsertBuffer,
     ) -> Result<Option<FoundSubItem>, DBError> {
         Storage::get_value_by_path(self, path, id, insert_buf)
     }
@@ -194,15 +243,21 @@ impl StorageRead for Storage {
     }
 
     fn fetch_found_ids(
-        &self, buf: &FilterBuffer, insert_buf: &InsertBuffer,
+        &self,
+        buf: &FilterBuffer,
+        insert_buf: &InsertBuffer,
         projection_rules: Option<&ProjectQuery>,
     ) -> Result<Item, DBError> {
         Storage::fetch_found_ids(self, buf, insert_buf, projection_rules)
     }
 
     fn fetch_or_project(
-        &self, value: &Item, link: &Link, insert_buf: &InsertBuffer,
-        projection_rules: Option<&ProjectQuery>, counter: i32,
+        &self,
+        value: &Item,
+        link: &Link,
+        insert_buf: &InsertBuffer,
+        projection_rules: Option<&ProjectQuery>,
+        counter: i32,
     ) -> Result<Item, DBError> {
         Storage::fetch_or_project(self, value, link, insert_buf, projection_rules, counter)
     }
@@ -210,7 +265,10 @@ impl StorageRead for Storage {
 
 impl StorageWrite for Storage {
     fn insert_item(
-        &self, collection_name: String, buf: &mut InsertBuffer, item: Item,
+        &self,
+        collection_name: String,
+        buf: &mut InsertBuffer,
+        item: Item,
     ) -> Result<Item, DBError> {
         Storage::insert_item(self, collection_name, buf, item)
     }
@@ -234,10 +292,23 @@ impl IndexOps for Storage {
     }
 
     fn create_vector_index(
-        &mut self, collection_name: &str, field_path: &str,
-        dims: u16, m: usize, ef_construction: usize, metric: HnswMetric,
+        &mut self,
+        collection_name: &str,
+        field_path: &str,
+        dims: u16,
+        m: usize,
+        ef_construction: usize,
+        metric: HnswMetric,
     ) {
-        Storage::create_vector_index(self, collection_name, field_path, dims, m, ef_construction, metric)
+        Storage::create_vector_index(
+            self,
+            collection_name,
+            field_path,
+            dims,
+            m,
+            ef_construction,
+            metric,
+        )
     }
 }
 
@@ -245,7 +316,8 @@ fn extract_embedding_from_item(item: &Item) -> Option<Vec<f32>> {
     match item {
         Item::Map(map_item) => {
             for (k, v) in &map_item.get_items() {
-                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "embedding") {
+                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "embedding")
+                {
                     if let Item::Primitive(Primitive::EmbeddingPrimitive(ref e)) = v {
                         return Some(e.values().to_vec());
                     }
@@ -262,7 +334,8 @@ fn extract_content_from_item(item: &Item) -> Option<String> {
     match item {
         Item::Map(map_item) => {
             for (k, v) in &map_item.get_items() {
-                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "content") {
+                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "content")
+                {
                     if let Item::Primitive(Primitive::StringPrimitive(ref s)) = v {
                         return Some(s.get_string_value());
                     }
@@ -276,17 +349,32 @@ fn extract_content_from_item(item: &Item) -> Option<String> {
 }
 
 fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
-    let (dot, na, nb) = a.iter().zip(b.iter())
-        .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| (d + x * y, na + x * x, nb + y * y));
+    let (dot, na, nb) = a
+        .iter()
+        .zip(b.iter())
+        .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| {
+            (d + x * y, na + x * x, nb + y * y)
+        });
     let denom = (na * nb).sqrt();
-    if denom == 0.0 { 0.0 } else { 1.0 - dot / denom }
+    if denom == 0.0 {
+        0.0
+    } else {
+        1.0 - dot / denom
+    }
 }
 
 impl Storage {
     fn load_warehouse(
         wh_path: &str,
         snapshot_mgr: &SnapshotManager,
-    ) -> Result<(HashMap<String, Collection>, u64, Option<HashMap<String, HashMap<String, (u16, Vec<u8>)>>>), DBError> {
+    ) -> Result<
+        (
+            HashMap<String, Collection>,
+            u64,
+            Option<HashMap<String, HashMap<String, (u16, Vec<u8>)>>>,
+        ),
+        DBError,
+    > {
         let mut warehouse: HashMap<String, Collection> = HashMap::new();
 
         if let Some(snapshot) = snapshot_mgr.load()? {
@@ -312,8 +400,7 @@ impl Storage {
                     continue;
                 }
                 let collection_name = file_name.replace(".tyson", "");
-                let collection =
-                    Collection::new(&collection_name, wh_path)?;
+                let collection = Collection::new(&collection_name, wh_path)?;
                 info!(collection = %collection_name, "loaded collection from .tyson");
                 warehouse.insert(collection_name.clone(), collection);
             }
@@ -436,13 +523,13 @@ impl Storage {
             };
         }
 
-        return match self.run_transaction(data.to_string()) {
+        match self.run_transaction(data.to_string()) {
             Ok(response) => response.serialize(),
             Err(e) => {
                 debug!(error = %e, "transaction failed");
                 ErrorTransactionResponse::from(e).serialize()
             }
-        };
+        }
     }
 
     fn run_memory_command(&mut self, data: &str) -> Option<String> {
@@ -454,7 +541,10 @@ impl Storage {
                 let content = pairs.get("content")?;
                 let key = pairs.get("key").map(|k| {
                     let parts: Vec<&str> = k.splitn(2, '|').collect();
-                    (parts[0].to_string(), parts.get(1).unwrap_or(&"").to_string())
+                    (
+                        parts[0].to_string(),
+                        parts.get(1).unwrap_or(&"").to_string(),
+                    )
                 });
                 let key_ref = key.as_ref().map(|(a, b)| (a.as_str(), b.as_str()));
                 self.remember(collection, content, key_ref, false, None)
@@ -464,13 +554,13 @@ impl Storage {
                 let collection = pairs.get("collection")?;
                 let query = pairs.get("query").map_or("", |v| v);
                 let k: usize = pairs.get("n").and_then(|n| n.parse().ok()).unwrap_or(5);
-                self.recall(collection, query, k)
-                    .map(|results| {
-                        let items: Vec<String> = results.iter()
-                            .map(|(l, _)| format!("l|{}|{}|", l.collection_name, l.id))
-                            .collect();
-                        format!("v[{}]", items.join(","))
-                    })
+                self.recall(collection, query, k).map(|results| {
+                    let items: Vec<String> = results
+                        .iter()
+                        .map(|(l, _)| format!("l|{}|{}|", l.collection_name, l.id))
+                        .collect();
+                    format!("v[{}]", items.join(","))
+                })
             }
             "relate" => {
                 let from_str = pairs.get("from")?;
@@ -485,25 +575,27 @@ impl Storage {
                 let link_str = pairs.get("link")?;
                 let link = parse_link(link_str).ok()?;
                 let rtype = pairs.get("type");
-                self.neighbors(&link, rtype.map(|s| s.as_str()))
-                    .map(|n| {
-                        let items: Vec<String> = n.iter()
-                            .map(|(l, t)| format!("l|{}|{}|:s|{}|", l.collection_name, l.id, t))
-                            .collect();
-                        format!("v[{}]", items.join(","))
-                    })
+                self.neighbors(&link, rtype.map(|s| s.as_str())).map(|n| {
+                    let items: Vec<String> = n
+                        .iter()
+                        .map(|(l, t)| format!("l|{}|{}|:s|{}|", l.collection_name, l.id, t))
+                        .collect();
+                    format!("v[{}]", items.join(","))
+                })
             }
             "traverse" => {
                 let link_str = pairs.get("start")?;
                 let link = parse_link(link_str).ok()?;
                 let depth: usize = pairs.get("depth").and_then(|d| d.parse().ok()).unwrap_or(3);
-                self.traverse(&link, depth, None)
-                    .map(|t| {
-                        let items: Vec<String> = t.iter()
-                            .map(|(l, d, r)| format!("s|l|{}|{}|:n|{}|:s|{}||", l.collection_name, l.id, d, r))
-                            .collect();
-                        format!("v[{}]", items.join(","))
-                    })
+                self.traverse(&link, depth, None).map(|t| {
+                    let items: Vec<String> = t
+                        .iter()
+                        .map(|(l, d, r)| {
+                            format!("s|l|{}|{}|:n|{}|:s|{}||", l.collection_name, l.id, d, r)
+                        })
+                        .collect();
+                    format!("v[{}]", items.join(","))
+                })
             }
             "path" => {
                 let from_str = pairs.get("from")?;
@@ -511,13 +603,13 @@ impl Storage {
                 let depth: usize = pairs.get("depth").and_then(|d| d.parse().ok()).unwrap_or(5);
                 let from = parse_link(from_str).ok()?;
                 let to = parse_link(to_str).ok()?;
-                self.path(&from, &to, depth, None)
-                    .map(|p| {
-                        let items: Vec<String> = p.iter()
-                            .map(|(l, t)| format!("l|{}|{}|:s|{}|", l.collection_name, l.id, t))
-                            .collect();
-                        format!("v[{}]", items.join(","))
-                    })
+                self.path(&from, &to, depth, None).map(|p| {
+                    let items: Vec<String> = p
+                        .iter()
+                        .map(|(l, t)| format!("l|{}|{}|:s|{}|", l.collection_name, l.id, t))
+                        .collect();
+                    format!("v[{}]", items.join(","))
+                })
             }
             "ego_graph" => {
                 let link_str = pairs.get("link")?;
@@ -546,7 +638,10 @@ impl Storage {
             .unwrap_or("");
         let collections = self.list_collections(prefix);
         let mut response = OkTransactionResponse::new();
-        let items: Vec<String> = collections.into_iter().map(|c| format!("s|{}|", c)).collect();
+        let items: Vec<String> = collections
+            .into_iter()
+            .map(|c| format!("s|{}|", c))
+            .collect();
         let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
         let meta = Meta::FindMeta(crate::response::meta::FindMeta::new(items.len()));
         response.add_response(QueryResponse::new(data, meta, QueryStatus::Ready));
@@ -577,7 +672,14 @@ impl Storage {
                 if next_available.contains(&QueryOperation::FindOperation) {
                     let next = o.next_available();
                     let is_first = iteration == 1;
-                    let resp = find(self, collection_name.to_string(), o, filter_buf, insert_buf, is_first)?;
+                    let resp = find(
+                        self,
+                        collection_name.to_string(),
+                        o,
+                        filter_buf,
+                        insert_buf,
+                        is_first,
+                    )?;
                     (Some(resp), next)
                 } else {
                     return Err(DBError::QueryUnavailable("find".to_string()));
@@ -615,17 +717,23 @@ impl Storage {
                     let next = o.next_available();
                     let resp = if iteration == 1 {
                         insert_buf.add_collection_to_drop(collection_name.to_string());
-                        let data = Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
+                        let data =
+                            Item::Primitive(Primitive::new(NULL.to_string(), "".to_string())?);
                         let meta = Meta::DeleteMeta(DeleteMeta::new(0));
                         QueryResponse::new(data, meta, QueryStatus::Ready)
                     } else {
                         let set_operator = Item::Map(MapItem::SetOperator(SetOperator {
                             values: vec![(
                                 Primitive::new(ROOT.to_string(), "".to_string())?,
-                                Item::Primitive(Primitive::new(DELETED.to_string(), "".to_string())?),
+                                Item::Primitive(Primitive::new(
+                                    DELETED.to_string(),
+                                    "".to_string(),
+                                )?),
                             )],
                         }));
-                        let query = UpdateQuery { items: vec![set_operator] };
+                        let query = UpdateQuery {
+                            items: vec![set_operator],
+                        };
                         update(self, &query, insert_buf, filter_buf)?
                     };
                     (Some(resp), next)
@@ -793,8 +901,7 @@ impl Storage {
                 let collection = match self.warehouse.entry(col_name.clone()) {
                     Entry::Occupied(o) => o.into_mut(),
                     Entry::Vacant(v) => {
-                        let inserting_collection =
-                            Collection::create_empty(col_name.clone());
+                        let inserting_collection = Collection::create_empty(col_name.clone());
                         v.insert(inserting_collection)
                     }
                 };
@@ -807,7 +914,8 @@ impl Storage {
                     }
                     _ => {
                         let old_item = collection.values.insert(link.clone(), item.clone());
-                        self.index_mgr.on_insert(&col_name, link, item, old_item.as_ref());
+                        self.index_mgr
+                            .on_insert(&col_name, link, item, old_item.as_ref());
                     }
                 }
             }
@@ -841,8 +949,14 @@ impl Storage {
         ef_construction: usize,
         metric: HnswMetric,
     ) {
-        self.index_mgr
-            .create_vector_index(collection_name, field_path, dims, m, ef_construction, metric);
+        self.index_mgr.create_vector_index(
+            collection_name,
+            field_path,
+            dims,
+            m,
+            ef_construction,
+            metric,
+        );
         if let Some(collection) = self.warehouse.get(collection_name) {
             let data = collection.values.clone();
             self.index_mgr.rebuild_collection(collection_name, &data);
@@ -850,7 +964,7 @@ impl Storage {
     }
 
     fn sync_buf_to_disk(&mut self, buf: &InsertBuffer) -> Result<(), DBError> {
-        if buf.dropped_collections.len() > 0 {
+        if !buf.dropped_collections.is_empty() {
             for collection_name in &buf.dropped_collections {
                 let path = format!("{}/{}.tyson", self.wh_path, collection_name);
                 if std::path::Path::new(&path).exists() {
@@ -866,7 +980,12 @@ impl Storage {
                     Entry::Vacant(_) => continue,
                 };
                 let mut file = collection.get_file(&self.wh_path)?;
-                write!(file, "{}:{};", TySONPrimitive::serialize(link), item.to_tyson())?;
+                write!(
+                    file,
+                    "{}:{};",
+                    TySONPrimitive::serialize(link),
+                    item.to_tyson()
+                )?;
             }
         }
         Ok(())
@@ -875,7 +994,7 @@ impl Storage {
     pub fn insert_item(
         &self,
         collection_name: String,
-        mut buf: &mut InsertBuffer,
+        buf: &mut InsertBuffer,
         item: Item,
     ) -> Result<Item, DBError> {
         let link = Link::create(collection_name);
@@ -886,7 +1005,7 @@ impl Storage {
                 | Primitive::NumberPrimitive(_)
                 | Primitive::UTSPrimitive(_)
                 | Primitive::BoolPrimitive(_)
-                | Primitive::NullPrimitive(_)
+                | Primitive::NullPrimitive(_),
             ) => {
                 buf.insert(link.clone(), item);
             }
@@ -895,7 +1014,7 @@ impl Storage {
                 for i in o.get_items() {
                     v.push(self.insert_item(
                         INTERNAL_COLLECTION_NAME.to_string(),
-                        &mut buf,
+                        buf,
                         i.clone(),
                     )?)?;
                 }
@@ -906,11 +1025,7 @@ impl Storage {
                 for (k, v) in o.get_items() {
                     m.insert(
                         k.clone(),
-                        self.insert_item(
-                            INTERNAL_COLLECTION_NAME.to_string(),
-                            &mut buf,
-                            v.clone(),
-                        )?,
+                        self.insert_item(INTERNAL_COLLECTION_NAME.to_string(), buf, v.clone())?,
                     )?;
                 }
                 buf.insert(link.clone(), Item::Map(m));
@@ -962,16 +1077,10 @@ impl Storage {
         counter: i32,
     ) -> Result<Item, DBError> {
         if let Some(rules) = projection_rules {
-            let result = resolve(
-                rules.clone().to_item(),
-                None,
-                link,
-                self,
-                insert_buf,
-            )?;
+            let result = resolve(rules.clone().to_item(), None, link, self, insert_buf)?;
             return Ok(result);
         }
-        Ok(self.fetch(value, insert_buf, counter)?)
+        self.fetch(value, insert_buf, counter)
     }
 
     pub fn fetch_found_ids(
@@ -1037,7 +1146,7 @@ impl Storage {
 
     pub fn get_value_by_link(&self, id: &Link) -> Result<Item, DBError> {
         match self.get_collection(&id.get_prefix()) {
-            Some(collection) => Ok(collection.get_value(&id)?),
+            Some(collection) => Ok(collection.get_value(id)?),
             None => Err(DBError::CollectionNotFound(id.get_prefix())),
         }
     }
@@ -1045,9 +1154,7 @@ impl Storage {
     fn fetch_value_by_link(&self, id: &Link) -> Result<(Link, Item), DBError> {
         let value = self.get_value_by_link(id)?;
         match value {
-            Item::Primitive(Primitive::Link(link)) => {
-                return self.fetch_value_by_link(&link);
-            }
+            Item::Primitive(Primitive::Link(link)) => self.fetch_value_by_link(&link),
             _ => Ok((id.clone(), value)),
         }
     }
@@ -1146,7 +1253,6 @@ impl Storage {
         link_similar: bool,
         dedup_threshold: Option<f32>,
     ) -> Result<Link, DBError> {
-
         // Find near-duplicates before storing — we'll link to them, not skip
         let mut similar_links: Vec<Link> = Vec::new();
         if let (Some(provider), Some(threshold)) = (&self.embedding_provider, dedup_threshold) {
@@ -1154,7 +1260,9 @@ impl Storage {
             let dist_threshold = 1.0 - threshold;
             if let Some(vec_index) = self.index_mgr.get_vector_index(collection, "embedding") {
                 for candidate in vec_index.search(&emb, 3) {
-                    if let Ok(item) = self.get_item_by_link(&candidate, &InsertBuffer::new(), 0, None) {
+                    if let Ok(item) =
+                        self.get_item_by_link(&candidate, &InsertBuffer::new(), 0, None)
+                    {
                         if let Some(stored_emb) = extract_embedding_from_item(&item) {
                             if cosine_distance(&emb, &stored_emb) < dist_threshold {
                                 similar_links.push(candidate);
@@ -1189,16 +1297,22 @@ impl Storage {
 
         storage_map.insert(
             Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(), "content".to_string(),
+                "".to_string(),
+                "content".to_string(),
             )?),
             Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(), content.to_string(),
+                "".to_string(),
+                content.to_string(),
             )?)),
         )?;
 
         if let Some(provider) = &self.embedding_provider {
             // Auto-create vector index if it doesn't exist yet
-            if self.index_mgr.get_vector_index(collection, "embedding").is_none() {
+            if self
+                .index_mgr
+                .get_vector_index(collection, "embedding")
+                .is_none()
+            {
                 self.index_mgr.create_vector_index(
                     collection,
                     "embedding",
@@ -1216,11 +1330,13 @@ impl Storage {
 
             let embedding = provider.embed(content)?;
             let emb = crate::data_types::primitives::embedding::EmbeddingPrimitive::new(
-                provider.dimensions(), embedding,
+                provider.dimensions(),
+                embedding,
             );
             storage_map.insert(
                 Primitive::StringPrimitive(crate::StringPrimitive::new(
-                    "".to_string(), "embedding".to_string(),
+                    "".to_string(),
+                    "embedding".to_string(),
                 )?),
                 Item::Primitive(Primitive::EmbeddingPrimitive(emb)),
             )?;
@@ -1229,10 +1345,12 @@ impl Storage {
         if let Some((kf, kv)) = key {
             storage_map.insert(
                 Primitive::StringPrimitive(crate::StringPrimitive::new(
-                    "".to_string(), kf.to_string(),
+                    "".to_string(),
+                    kf.to_string(),
                 )?),
                 Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
-                    "".to_string(), kv.to_string(),
+                    "".to_string(),
+                    kv.to_string(),
                 )?)),
             )?;
         }
@@ -1267,36 +1385,53 @@ impl Storage {
                     for s_link in similar {
                         if s_link != result_link {
                             // Only link if they're actually similar (cosine distance < 0.3)
-                            if let Ok(s_item) = self.get_item_by_link(&s_link, &InsertBuffer::new(), 0, None) {
+                            if let Ok(s_item) =
+                                self.get_item_by_link(&s_link, &InsertBuffer::new(), 0, None)
+                            {
                                 if let Some(s_emb) = extract_embedding_from_item(&s_item) {
                                     if cosine_distance(&emb, &s_emb) < 0.3 {
-                                        let _ = self.relate(&result_link, &s_link, "related_to", None);
-    }
-}
+                                        let _ =
+                                            self.relate(&result_link, &s_link, "related_to", None);
+                                    }
+                                }
 
-fn extract_embedding_from_item(item: &Item) -> Option<Vec<f32>> {
-    match item {
-        Item::Map(map_item) => {
-            for (k, v) in &map_item.get_items() {
-                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "embedding") {
-                    if let Item::Primitive(Primitive::EmbeddingPrimitive(ref e)) = v {
-                        return Some(e.values().to_vec());
-                    }
-                }
-            }
-            None
-        }
-        Item::Primitive(Primitive::EmbeddingPrimitive(e)) => Some(e.values().to_vec()),
-        _ => None,
-    }
-}
+                                fn extract_embedding_from_item(item: &Item) -> Option<Vec<f32>> {
+                                    match item {
+                                        Item::Map(map_item) => {
+                                            for (k, v) in &map_item.get_items() {
+                                                if matches!(k, Primitive::StringPrimitive(ref s) if s.get_string_value() == "embedding")
+                                                {
+                                                    if let Item::Primitive(
+                                                        Primitive::EmbeddingPrimitive(ref e),
+                                                    ) = v
+                                                    {
+                                                        return Some(e.values().to_vec());
+                                                    }
+                                                }
+                                            }
+                                            None
+                                        }
+                                        Item::Primitive(Primitive::EmbeddingPrimitive(e)) => {
+                                            Some(e.values().to_vec())
+                                        }
+                                        _ => None,
+                                    }
+                                }
 
-fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
-    let (dot, na, nb) = a.iter().zip(b.iter())
-        .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| (d + x * y, na + x * x, nb + y * y));
-    let denom = (na * nb).sqrt();
-    if denom == 0.0 { 0.0 } else { 1.0 - dot / denom }
-}
+                                fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
+                                    let (dot, na, nb) = a
+                                        .iter()
+                                        .zip(b.iter())
+                                        .fold((0.0, 0.0, 0.0), |(d, na, nb), (&x, &y)| {
+                                            (d + x * y, na + x * x, nb + y * y)
+                                        });
+                                    let denom = (na * nb).sqrt();
+                                    if denom == 0.0 {
+                                        0.0
+                                    } else {
+                                        1.0 - dot / denom
+                                    }
+                                }
                             }
                         }
                     }
@@ -1320,7 +1455,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
         };
 
         let mut results = Vec::new();
-        for (_, edge) in edges {
+        for edge in edges.values() {
             if let Item::Map(map_item) = edge {
                 let items = map_item.get_items();
                 let from_link = items.iter().find_map(|(k, v)| {
@@ -1346,7 +1481,10 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
                             if let Ok(internal_link) = v.to_link() {
                                 if let Some(coll) = self.warehouse.get(INTERNAL_COLLECTION_NAME) {
                                     if let Some(resolved_item) = coll.values.get(&internal_link) {
-                                        if let Item::Primitive(Primitive::StringPrimitive(ref val)) = resolved_item {
+                                        if let Item::Primitive(Primitive::StringPrimitive(
+                                            ref val,
+                                        )) = resolved_item
+                                        {
                                             return Some(val.get_string_value());
                                         }
                                     }
@@ -1361,9 +1499,9 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
                     None
                 });
 
-                let is_match = if &from_link == &Some(link.clone()) {
+                let is_match = if from_link == Some(link.clone()) {
                     to_link.clone()
-                } else if &to_link == &Some(link.clone()) {
+                } else if to_link == Some(link.clone()) {
                     from_link.clone()
                 } else {
                     None
@@ -1371,7 +1509,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
 
                 if let Some(neighbor) = is_match {
                     let rel_type = edge_type.unwrap_or_default();
-                    if relation_type.map_or(true, |rt| rt == rel_type) {
+                    if relation_type.is_none_or(|rt| rt == rel_type) {
                         results.push((neighbor, rel_type));
                     }
                 }
@@ -1568,22 +1706,26 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
 
         storage_map.insert(
             Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(), "from".to_string(),
+                "".to_string(),
+                "from".to_string(),
             )?),
             Item::Primitive(Primitive::Link(from.clone())),
         )?;
         storage_map.insert(
             Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(), "to".to_string(),
+                "".to_string(),
+                "to".to_string(),
             )?),
             Item::Primitive(Primitive::Link(to.clone())),
         )?;
         storage_map.insert(
             Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(), "type".to_string(),
+                "".to_string(),
+                "type".to_string(),
             )?),
             Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
-                "".to_string(), relation_type.to_string(),
+                "".to_string(),
+                relation_type.to_string(),
             )?)),
         )?;
 
@@ -1591,10 +1733,12 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
             for (k, v) in meta_pairs {
                 storage_map.insert(
                     Primitive::StringPrimitive(crate::StringPrimitive::new(
-                        "".to_string(), k.to_string(),
+                        "".to_string(),
+                        k.to_string(),
                     )?),
                     Item::Primitive(Primitive::StringPrimitive(crate::StringPrimitive::new(
-                        "".to_string(), v.to_string(),
+                        "".to_string(),
+                        v.to_string(),
                     )?)),
                 )?;
             }
@@ -1615,7 +1759,8 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
         let mut insert_buf = InsertBuffer::new();
         let deleted = Item::Primitive(Primitive::DeletedPrimitive(
             crate::data_types::primitives::deleted::DeletedPrimitive::new(
-                "".to_string(), "".to_string(),
+                "".to_string(),
+                "".to_string(),
             )?,
         ));
         insert_buf.insert(link.clone(), deleted);
@@ -1645,7 +1790,7 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
         visited.insert(from.clone());
 
         while let Some((current, path_so_far)) = queue.pop_front() {
-            if path_so_far.len() >= max_depth + 1 {
+            if path_so_far.len() > max_depth {
                 continue;
             }
 
@@ -1668,13 +1813,27 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
 
     // ── Parametrized unwrapping variants ──
 
-    pub fn neighbors_with_config(&self, link: &Link, config: &UnwrapConfig) -> Result<Vec<(Link, String)>, DBError> {
+    pub fn neighbors_with_config(
+        &self,
+        link: &Link,
+        config: &UnwrapConfig,
+    ) -> Result<Vec<(Link, String)>, DBError> {
         let all = self.neighbors(link, None)?;
-        Ok(all.into_iter().filter(|(_, rel)| config.matches_link_type(rel)).collect())
+        Ok(all
+            .into_iter()
+            .filter(|(_, rel)| config.matches_link_type(rel))
+            .collect())
     }
 
-    pub fn traverse_with_config(&self, start: &Link, config: &UnwrapConfig) -> Result<(Vec<(Link, usize, String)>, UnwrapMeta), DBError> {
-        let relation_type = config.include_link_types.as_ref().and_then(|v| v.first().map(|s| s.as_str()));
+    pub fn traverse_with_config(
+        &self,
+        start: &Link,
+        config: &UnwrapConfig,
+    ) -> Result<(Vec<(Link, usize, String)>, UnwrapMeta), DBError> {
+        let relation_type = config
+            .include_link_types
+            .as_ref()
+            .and_then(|v| v.first().map(|s| s.as_str()));
         let results = self.traverse(start, config.depth, relation_type)?;
         let meta = UnwrapMeta {
             truncated: false,
@@ -1686,7 +1845,11 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
         Ok((results, meta))
     }
 
-    pub fn ego_graph_with_config(&self, start: &Link, config: &UnwrapConfig) -> Result<(Item, Vec<(Link, Item, usize, String)>, UnwrapMeta), DBError> {
+    pub fn ego_graph_with_config(
+        &self,
+        start: &Link,
+        config: &UnwrapConfig,
+    ) -> Result<(Item, Vec<(Link, Item, usize, String)>, UnwrapMeta), DBError> {
         let (center, neighbors) = self.ego_graph(start, config.depth)?;
         let meta = UnwrapMeta {
             truncated: false,
@@ -1699,15 +1862,26 @@ fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
     }
 
     pub fn recall_traverse_with_config(
-        &self, collection: &str, query: &str, k: usize, config: &UnwrapConfig,
+        &self,
+        collection: &str,
+        query: &str,
+        k: usize,
+        config: &UnwrapConfig,
     ) -> Result<(Vec<(Link, Item, usize, Option<String>)>, UnwrapMeta), DBError> {
-        let relation_type = config.include_link_types.as_ref().and_then(|v| v.first().map(|s| s.as_str()));
+        let relation_type = config
+            .include_link_types
+            .as_ref()
+            .and_then(|v| v.first().map(|s| s.as_str()));
         let results = self.recall_traverse(collection, query, k, config.depth, relation_type)?;
         let meta = UnwrapMeta {
             truncated: false,
             expanded_nodes: results.len(),
             unexpanded_links: 0,
-            depth_reached: results.iter().filter_map(|(_, _, d, _)| if *d > 0 { Some(*d) } else { None }).max().unwrap_or(0),
+            depth_reached: results
+                .iter()
+                .filter_map(|(_, _, d, _)| if *d > 0 { Some(*d) } else { None })
+                .max()
+                .unwrap_or(0),
             truncated_by: None,
         };
         Ok((results, meta))
@@ -1720,7 +1894,9 @@ mod tests {
     use std::env;
     use std::fs;
 
-    struct TestTempDir { path: String }
+    struct TestTempDir {
+        path: String,
+    }
     impl TestTempDir {
         fn new(name: &str) -> Self {
             let dir = env::temp_dir().join(format!("annadb_ut_{}_{}", name, std::process::id()));
@@ -1729,9 +1905,15 @@ mod tests {
             fs::create_dir_all(&path).expect("create test dir");
             TestTempDir { path }
         }
-        fn open(&self) -> Storage { Storage::new(&self.path, None).expect("open storage") }
+        fn open(&self) -> Storage {
+            Storage::new(&self.path, None).expect("open storage")
+        }
     }
-    impl Drop for TestTempDir { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.path); } }
+    impl Drop for TestTempDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.path);
+        }
+    }
 
     // ── UnwrapConfig tests ──
 
@@ -1802,10 +1984,18 @@ mod tests {
         let dir = TestTempDir::new("ut2");
         let mut s = dir.open();
         assert!(s.run("collection|test|:insert[n|1|]").contains("ok"));
-        assert!(s.run("collection|test|:q[find[eq{root:n|1|}]]").contains("ok"));
-        assert!(s.run("collection|test|:q[find[],limit(n|1|)]").contains("ok"));
-        assert!(s.run("collection|test|:q[find[],sort[asc(root)]]").contains("find_meta"));
-        assert!(s.run("collection|test|:q[find[eq{root:n|1|}],delete]").contains("ok"));
+        assert!(s
+            .run("collection|test|:q[find[eq{root:n|1|}]]")
+            .contains("ok"));
+        assert!(s
+            .run("collection|test|:q[find[],limit(n|1|)]")
+            .contains("ok"));
+        assert!(s
+            .run("collection|test|:q[find[],sort[asc(root)]]")
+            .contains("find_meta"));
+        assert!(s
+            .run("collection|test|:q[find[eq{root:n|1|}],delete]")
+            .contains("ok"));
     }
 
     #[test]
@@ -1859,7 +2049,8 @@ mod tests {
     fn storage_recall() {
         let dir = TestTempDir::new("ut8");
         let mut s = dir.open();
-        s.remember("facts", "Paris is in France", None, false, None).unwrap();
+        s.remember("facts", "Paris is in France", None, false, None)
+            .unwrap();
         let results = s.recall("facts", "paris", 5).unwrap();
         assert!(!results.is_empty());
     }
@@ -1885,9 +2076,13 @@ mod tests {
         let link = Link::create("test".to_string());
         let sub = FoundSubItem {
             container_id: link.clone(),
-            container_value: Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap()),
+            container_value: Item::Primitive(
+                Primitive::new("null".to_string(), "".to_string()).unwrap(),
+            ),
             key: "k".to_string(),
-            value: Some(Item::Primitive(Primitive::new("s".to_string(), "v".to_string()).unwrap())),
+            value: Some(Item::Primitive(
+                Primitive::new("s".to_string(), "v".to_string()).unwrap(),
+            )),
         };
         let fi = FoundItem::FoundSubItem(sub);
         assert!(fi.get_value().is_some());
@@ -1905,9 +2100,13 @@ mod tests {
         let link = Link::create("test".to_string());
         let sub = FoundSubItem {
             container_id: link,
-            container_value: Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap()),
+            container_value: Item::Primitive(
+                Primitive::new("null".to_string(), "".to_string()).unwrap(),
+            ),
             key: "k".to_string(),
-            value: Some(Item::Primitive(Primitive::new("s".to_string(), "v".to_string()).unwrap())),
+            value: Some(Item::Primitive(
+                Primitive::new("s".to_string(), "v".to_string()).unwrap(),
+            )),
         };
         assert!(sub.get_primitive_or_none().is_some());
     }
@@ -1917,7 +2116,9 @@ mod tests {
         let link = Link::create("test".to_string());
         let sub = FoundSubItem {
             container_id: link,
-            container_value: Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap()),
+            container_value: Item::Primitive(
+                Primitive::new("null".to_string(), "".to_string()).unwrap(),
+            ),
             key: "k".to_string(),
             value: None,
         };
@@ -1959,7 +2160,8 @@ mod tests {
         {
             let mut s = dir.open();
             for i in 0..5 {
-                s.remember("docs", &format!("doc{}", i), None, false, None).unwrap();
+                s.remember("docs", &format!("doc{}", i), None, false, None)
+                    .unwrap();
             }
         }
         let s2 = dir.open();
@@ -2004,5 +2206,9 @@ fn parse_link(s: &str) -> Result<Link, DBError> {
     }
     let id = uuid::Uuid::parse_str(parts[1])
         .map_err(|e| DBError::Deserialization(format!("invalid uuid: {}", e)))?;
-    Ok(Link { collection_name: parts[0].to_string(), id, links_to: vec![] })
+    Ok(Link {
+        collection_name: parts[0].to_string(),
+        id,
+        links_to: vec![],
+    })
 }

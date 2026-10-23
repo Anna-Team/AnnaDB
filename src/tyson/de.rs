@@ -31,7 +31,7 @@ pub trait Desereilize {
                 }
             }
         }
-        Ok(Self::new_primitive(&self, prefix, data)?)
+        Self::new_primitive(self, prefix, data)
     }
 
     fn deserialize_modifier(&self, pair: Pair<Rule>) -> Result<ModifierItem, DBError> {
@@ -42,10 +42,7 @@ pub trait Desereilize {
             .as_str()
             .to_string();
         let pair = inner_rules.next().ok_or(DBError::unexpected_parsing())?;
-        Ok(Self::new_modifier(
-            prefix,
-            Self::route_deserialization(&self, pair)?,
-        )?)
+        Self::new_modifier(prefix, Self::route_deserialization(self, pair)?)
     }
 
     fn deserialize_vector(&self, pair: Pair<Rule>) -> Result<VectorItem, DBError> {
@@ -57,7 +54,7 @@ pub trait Desereilize {
             .to_string();
         let mut vector = Self::new_vector(prefix)?;
         for pair in inner_rules {
-            vector.push(Self::route_deserialization(&self, pair)?)?;
+            vector.push(Self::route_deserialization(self, pair)?)?;
         }
         Ok(vector)
     }
@@ -73,13 +70,13 @@ pub trait Desereilize {
         for pair in inner_rules {
             let mut inner_rules = pair.into_inner();
             let left = Self::deserialize_primitive(
-                &self,
+                self,
                 inner_rules.next().ok_or(DBError::unexpected_parsing())?,
             )?;
             map.insert(
                 left,
                 Self::route_deserialization(
-                    &self,
+                    self,
                     inner_rules.next().ok_or(DBError::unexpected_parsing())?,
                 )?,
             )?;
@@ -88,25 +85,27 @@ pub trait Desereilize {
     }
 
     fn route_deserialization(&self, pair: Pair<Rule>) -> Result<Item, DBError> {
-        return match pair.as_rule() {
+        match pair.as_rule() {
             Rule::map => {
-                let res = Self::deserialize_map(&self, pair)?;
+                let res = Self::deserialize_map(self, pair)?;
                 Ok(Item::Map(res))
             }
             Rule::vector => {
-                let res = Self::deserialize_vector(&self, pair)?;
+                let res = Self::deserialize_vector(self, pair)?;
                 Ok(Item::Vector(res))
             }
             Rule::modifier => {
-                let res = Self::deserialize_modifier(&self, pair)?;
+                let res = Self::deserialize_modifier(self, pair)?;
                 Ok(Item::from(res))
             }
             Rule::primitive => {
-                let res = Self::deserialize_primitive(&self, pair)?;
+                let res = Self::deserialize_primitive(self, pair)?;
                 Ok(Item::from(res))
             }
-            _ => Err(DBError::Deserialization("unknown rule in route_deserialization".to_string())),
-        };
+            _ => Err(DBError::Deserialization(
+                "unknown rule in route_deserialization".to_string(),
+            )),
+        }
     }
 
     fn deserialize(name: String, data: String) -> Result<Self, DBError>
@@ -142,7 +141,9 @@ pub trait Desereilize {
                 }
                 Ok(result)
             }
-            _ => Err(DBError::Deserialization("expected journal rule".to_string())),
+            _ => Err(DBError::Deserialization(
+                "expected journal rule".to_string(),
+            )),
         }
     }
 
@@ -151,19 +152,19 @@ pub trait Desereilize {
     fn push(&mut self, data: (Primitive, Item)) -> Result<bool, DBError>;
 
     fn new_modifier(prefix: String, data: Item) -> Result<ModifierItem, DBError> {
-        Ok(ModifierItem::new(prefix, data)?)
+        ModifierItem::new(prefix, data)
     }
 
     fn new_vector(prefix: String) -> Result<VectorItem, DBError> {
-        Ok(VectorItem::new(prefix.to_string())?)
+        VectorItem::new(prefix.to_string())
     }
 
     fn new_map(prefix: String) -> Result<MapItem, DBError> {
-        Ok(MapItem::new(prefix.to_string())?)
+        MapItem::new(prefix.to_string())
     }
 
     fn new_primitive(&self, prefix: String, data: String) -> Result<Primitive, DBError> {
-        Ok(Primitive::new(prefix, data)?)
+        Primitive::new(prefix, data)
     }
 }
 
@@ -295,7 +296,10 @@ mod tests {
 
     #[test]
     fn deserialize_q_transaction() {
-        let result = TySONParser::parse(Rule::journal, "collection|test|:q[insert[m{s|name|:s|Ann|}]]");
+        let result = TySONParser::parse(
+            Rule::journal,
+            "collection|test|:q[insert[m{s|name|:s|Ann|}]]",
+        );
         assert!(result.is_ok());
     }
 
@@ -317,7 +321,11 @@ mod tests {
             "".to_string(),
             "collection|test|: insert[s|hello|];".to_string(),
         );
-        assert!(txn.is_ok(), "Transaction::deserialize failed: {:?}", txn.err());
+        assert!(
+            txn.is_ok(),
+            "Transaction::deserialize failed: {:?}",
+            txn.err()
+        );
     }
 
     #[test]

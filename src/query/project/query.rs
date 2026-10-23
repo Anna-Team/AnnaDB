@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::PROJECT_QUERY;
 use crate::query::operations::QueryOperation;

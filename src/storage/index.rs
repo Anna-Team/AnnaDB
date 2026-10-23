@@ -65,7 +65,11 @@ impl PartialOrd for IndexKey {
 
 fn f64_to_sortable(f: f64) -> u64 {
     let bits = f.to_bits();
-    if bits & (1u64 << 63) != 0 { !bits } else { bits | (1u64 << 63) }
+    if bits & (1u64 << 63) != 0 {
+        !bits
+    } else {
+        bits | (1u64 << 63)
+    }
 }
 
 #[derive(Debug)]
@@ -76,7 +80,10 @@ pub struct BTreeIndex {
 
 impl BTreeIndex {
     pub fn new(field_path: String) -> Self {
-        Self { field_path, tree: BTreeMap::new() }
+        Self {
+            field_path,
+            tree: BTreeMap::new(),
+        }
     }
 
     pub fn insert(&mut self, key: IndexKey, link: Link) {
@@ -86,7 +93,9 @@ impl BTreeIndex {
     pub fn remove(&mut self, key: &IndexKey, link: &Link) {
         if let Some(set) = self.tree.get_mut(key) {
             set.remove(link);
-            if set.is_empty() { self.tree.remove(key); }
+            if set.is_empty() {
+                self.tree.remove(key);
+            }
         }
     }
 
@@ -114,7 +123,10 @@ impl BTreeIndex {
 
     pub fn lookup_gt(&self, key: &IndexKey) -> Vec<Link> {
         let mut result = Vec::new();
-        for (_, set) in self.tree.range((std::ops::Bound::Excluded(key.clone()), std::ops::Bound::Unbounded)) {
+        for (_, set) in self.tree.range((
+            std::ops::Bound::Excluded(key.clone()),
+            std::ops::Bound::Unbounded,
+        )) {
             result.extend(set.iter().cloned());
         }
         result
@@ -148,7 +160,9 @@ impl BTreeIndex {
         self.tree.values().flat_map(|s| s.iter().cloned()).collect()
     }
 
-    pub fn len(&self) -> usize { self.tree.len() }
+    pub fn len(&self) -> usize {
+        self.tree.len()
+    }
 }
 
 #[derive(Debug)]
@@ -157,27 +171,58 @@ pub struct IndexManager {
     pub vector_indexes: HashMap<String, HashMap<String, VectorIndex>>,
 }
 
+impl Default for IndexManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IndexManager {
     pub fn new() -> Self {
-        Self { indexes: HashMap::new(), vector_indexes: HashMap::new() }
+        Self {
+            indexes: HashMap::new(),
+            vector_indexes: HashMap::new(),
+        }
     }
 
     pub fn create_index(&mut self, collection_name: &str, field_path: &str) {
         let coll = self.indexes.entry(collection_name.to_string()).or_default();
         if !coll.contains_key(field_path) {
-            coll.insert(field_path.to_string(), BTreeIndex::new(field_path.to_string()));
-            info!(collection = collection_name, field = field_path, "index created");
+            coll.insert(
+                field_path.to_string(),
+                BTreeIndex::new(field_path.to_string()),
+            );
+            info!(
+                collection = collection_name,
+                field = field_path,
+                "index created"
+            );
         }
     }
 
     pub fn create_vector_index(
-        &mut self, collection_name: &str, field_path: &str,
-        dims: u16, m: usize, ef_construction: usize, metric: HnswMetric,
+        &mut self,
+        collection_name: &str,
+        field_path: &str,
+        dims: u16,
+        m: usize,
+        ef_construction: usize,
+        metric: HnswMetric,
     ) {
-        let coll = self.vector_indexes.entry(collection_name.to_string()).or_default();
+        let coll = self
+            .vector_indexes
+            .entry(collection_name.to_string())
+            .or_default();
         if !coll.contains_key(field_path) {
-            coll.insert(field_path.to_string(), VectorIndex::new(field_path.to_string(), dims, m, ef_construction, metric));
-            info!(collection = collection_name, field = field_path, "vector index created");
+            coll.insert(
+                field_path.to_string(),
+                VectorIndex::new(field_path.to_string(), dims, m, ef_construction, metric),
+            );
+            info!(
+                collection = collection_name,
+                field = field_path,
+                "vector index created"
+            );
         }
     }
 
@@ -191,30 +236,62 @@ impl IndexManager {
     pub fn drop_collection_indexes(&mut self, collection_name: &str) {
         self.indexes.remove(collection_name);
         self.vector_indexes.remove(collection_name);
-        debug!(collection = collection_name, "all indexes dropped for collection");
+        debug!(
+            collection = collection_name,
+            "all indexes dropped for collection"
+        );
     }
 
     pub fn get_index(&self, collection_name: &str, field_path: &str) -> Option<&BTreeIndex> {
-        self.indexes.get(collection_name).and_then(|m| m.get(field_path))
+        self.indexes
+            .get(collection_name)
+            .and_then(|m| m.get(field_path))
     }
 
-    pub fn get_index_mut(&mut self, collection_name: &str, field_path: &str) -> Option<&mut BTreeIndex> {
-        self.indexes.get_mut(collection_name).and_then(|m| m.get_mut(field_path))
+    pub fn get_index_mut(
+        &mut self,
+        collection_name: &str,
+        field_path: &str,
+    ) -> Option<&mut BTreeIndex> {
+        self.indexes
+            .get_mut(collection_name)
+            .and_then(|m| m.get_mut(field_path))
     }
 
-    pub fn get_vector_index(&self, collection_name: &str, field_path: &str) -> Option<&VectorIndex> {
-        self.vector_indexes.get(collection_name).and_then(|m| m.get(field_path))
+    pub fn get_vector_index(
+        &self,
+        collection_name: &str,
+        field_path: &str,
+    ) -> Option<&VectorIndex> {
+        self.vector_indexes
+            .get(collection_name)
+            .and_then(|m| m.get(field_path))
     }
 
-    pub fn get_vector_index_mut(&mut self, collection_name: &str, field_path: &str) -> Option<&mut VectorIndex> {
-        self.vector_indexes.get_mut(collection_name).and_then(|m| m.get_mut(field_path))
+    pub fn get_vector_index_mut(
+        &mut self,
+        collection_name: &str,
+        field_path: &str,
+    ) -> Option<&mut VectorIndex> {
+        self.vector_indexes
+            .get_mut(collection_name)
+            .and_then(|m| m.get_mut(field_path))
     }
 
     pub fn get_indexed_fields(&self, collection_name: &str) -> Vec<String> {
-        self.indexes.get(collection_name).map(|m| m.keys().cloned().collect()).unwrap_or_default()
+        self.indexes
+            .get(collection_name)
+            .map(|m| m.keys().cloned().collect())
+            .unwrap_or_default()
     }
 
-    pub fn on_insert(&mut self, collection_name: &str, link: &Link, item: &Item, old_item: Option<&Item>) {
+    pub fn on_insert(
+        &mut self,
+        collection_name: &str,
+        link: &Link,
+        item: &Item,
+        old_item: Option<&Item>,
+    ) {
         // B-tree indexes
         if let Some(btree_fields) = self.indexes.get(collection_name) {
             let fields: Vec<String> = btree_fields.keys().cloned().collect();
@@ -318,7 +395,11 @@ impl IndexManager {
             }
         }
 
-        info!(collection = collection_name, documents = data.len(), "indexes rebuilt");
+        info!(
+            collection = collection_name,
+            documents = data.len(),
+            "indexes rebuilt"
+        );
     }
 }
 
@@ -349,7 +430,9 @@ fn traverse_embedding<'a, I: Iterator<Item = &'a str>>(
                         return match remaining.next() {
                             Some(next) => traverse_embedding(v, next, remaining),
                             None => match v {
-                                Item::Primitive(Primitive::EmbeddingPrimitive(e)) => Some(e.values().to_vec()),
+                                Item::Primitive(Primitive::EmbeddingPrimitive(e)) => {
+                                    Some(e.values().to_vec())
+                                }
                                 _ => None,
                             },
                         };
@@ -375,7 +458,11 @@ fn extract_field_value(item: &Item, field_path: &str) -> Option<IndexKey> {
     }
 }
 
-fn traverse_path<'a, I: Iterator<Item = &'a str>>(current: &Item, segment: &str, mut remaining: I) -> Option<IndexKey> {
+fn traverse_path<'a, I: Iterator<Item = &'a str>>(
+    current: &Item,
+    segment: &str,
+    mut remaining: I,
+) -> Option<IndexKey> {
     match current {
         Item::Map(map_item) => {
             let items = map_item.get_items();
@@ -422,7 +509,10 @@ mod tests {
     #[test]
     fn index_key_from_primitive_string() {
         let p = Primitive::new("s".to_string(), "hello".to_string()).unwrap();
-        assert_eq!(IndexKey::from_primitive(&p), Some(IndexKey::Str("hello".to_string())));
+        assert_eq!(
+            IndexKey::from_primitive(&p),
+            Some(IndexKey::Str("hello".to_string()))
+        );
     }
 
     #[test]
@@ -527,14 +617,20 @@ mod tests {
     fn btree_index_len() {
         let mut idx = BTreeIndex::new("test".to_string());
         assert_eq!(idx.len(), 0);
-        idx.insert(IndexKey::Str("a".to_string()), Link::create("t".to_string()));
+        idx.insert(
+            IndexKey::Str("a".to_string()),
+            Link::create("t".to_string()),
+        );
         assert_eq!(idx.len(), 1);
     }
 
     #[test]
     fn index_key_from_primitive_number() {
         let p = Primitive::new("n".to_string(), "42".to_string()).unwrap();
-        assert!(matches!(IndexKey::from_primitive(&p), Some(IndexKey::Num(_))));
+        assert!(matches!(
+            IndexKey::from_primitive(&p),
+            Some(IndexKey::Num(_))
+        ));
     }
 
     #[test]
@@ -595,13 +691,13 @@ mod tests {
 
     #[test]
     fn extract_field_value_nested() {
-        use crate::MapItem;
         use crate::TySONMap;
         let mut m = crate::data_types::map::storage::StorageMap::new("".to_string()).unwrap();
         m.insert(
             Primitive::new("s".to_string(), "name".to_string()).unwrap(),
             Item::Primitive(Primitive::new("s".to_string(), "Alice".to_string()).unwrap()),
-        ).unwrap();
+        )
+        .unwrap();
         let item = m.to_item();
         let key = extract_field_value(&item, "name");
         assert_eq!(key, Some(IndexKey::Str("Alice".to_string())));

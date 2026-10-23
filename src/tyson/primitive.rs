@@ -11,9 +11,9 @@ pub trait TySONPrimitive: BaseTySONItemInterface {
     fn serialize(&self) -> String {
         let prefix = self.get_prefix();
         let value = self.get_string_value(); // TODO escape
-        if value == "".to_string() {
-            format!("{}", prefix)
-        } else if prefix == "".to_string() {
+        if value.is_empty() {
+            prefix.to_string()
+        } else if prefix.is_empty() {
             format!("|{}|", value)
         } else {
             format!("{}|{}|", prefix, value)

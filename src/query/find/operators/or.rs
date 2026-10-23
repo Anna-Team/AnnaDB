@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::OR_OPERATOR;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -46,7 +46,11 @@ impl TySONVector for OrOperator {
             Item::Map(MapItem::KnnOperator(_)) => {
                 self.items.push(item);
             }
-            _ => return Err(DBError::UnsupportedOperation("item for OR operator".to_string())),
+            _ => {
+                return Err(DBError::UnsupportedOperation(
+                    "item for OR operator".to_string(),
+                ))
+            }
         };
         Ok(true)
     }

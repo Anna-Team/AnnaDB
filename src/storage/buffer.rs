@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Item, Link, Primitive};
+use crate::{Item, Link};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -49,6 +49,7 @@ impl FilterBuffer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Primitive;
 
     #[test]
     fn insert_buffer_new_is_empty() {

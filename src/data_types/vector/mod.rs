@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::query::find::query::FindQuery;
 use crate::query::insert::query::InsertQuery;

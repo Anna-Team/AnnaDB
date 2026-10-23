@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::{
     BOOL, COLLECTION_NAME, DELETED, DELETE_QUERY, EMBEDDING, KEEP, NULL, NUMBER, PATH_TO_VALUE,
@@ -220,7 +220,10 @@ mod extra_tests {
 
     #[test]
     fn link_primitive_parsing() {
-        let p = Primitive::new("l".to_string(), "550e8400-e29b-41d4-a716-446655440000".to_string());
+        let p = Primitive::new(
+            "l".to_string(),
+            "550e8400-e29b-41d4-a716-446655440000".to_string(),
+        );
         assert!(p.is_ok());
         assert!(matches!(p.unwrap(), Primitive::Link(_)));
     }

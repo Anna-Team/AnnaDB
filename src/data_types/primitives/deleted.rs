@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::DELETED;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -12,7 +12,7 @@ pub struct DeletedPrimitive;
 
 impl BaseTySONItemInterface for DeletedPrimitive {
     fn get_prefix(&self) -> String {
-        return DELETED.to_string();
+        DELETED.to_string()
     }
 }
 

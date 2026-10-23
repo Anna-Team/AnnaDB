@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::NOT_OPERATOR;
 use crate::tyson::item::BaseTySONItemInterface;

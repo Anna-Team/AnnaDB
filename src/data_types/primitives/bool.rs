@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::BOOL;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -14,7 +14,7 @@ pub struct BoolPrimitive {
 
 impl BaseTySONItemInterface for BoolPrimitive {
     fn get_prefix(&self) -> String {
-        return BOOL.to_string();
+        BOOL.to_string()
     }
 }
 

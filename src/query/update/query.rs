@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::UPDATE_QUERY;
 use crate::query::operations::QueryOperation;
@@ -59,7 +59,7 @@ impl UpdateQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Primitive, Item};
+    use crate::{Item, Primitive};
 
     #[test]
     fn update_query_new() {

@@ -55,7 +55,11 @@ impl TySONMap for KnnOperator {
         // Extract primitive value before matching on key
         let primitive_val = match v {
             Item::Primitive(ref p) => p.clone(),
-            _ => return Err(DBError::TypeMismatch("knn values must be primitives".to_string())),
+            _ => {
+                return Err(DBError::TypeMismatch(
+                    "knn values must be primitives".to_string(),
+                ))
+            }
         };
 
         match &k {
@@ -132,7 +136,9 @@ mod tests {
     #[test]
     fn knn_operator_insert_field() {
         let mut op = KnnOperator::new("".to_string()).unwrap();
-        let k = Primitive::PathToValue(crate::PathToValue::new("".to_string(), "embedding".to_string()).unwrap());
+        let k = Primitive::PathToValue(
+            crate::PathToValue::new("".to_string(), "embedding".to_string()).unwrap(),
+        );
         let v = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
         op.insert(k, v).unwrap();
         assert_eq!(op.get_field(), "embedding");

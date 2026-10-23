@@ -10,7 +10,7 @@ pub trait Serialize {
         for (k, v) in self.items() {
             contents.push(format!("{}:{}", k.serialize(), v.to_tyson()));
         }
-        format!("{}", contents.join(";"))
+        contents.join(";").to_string()
     }
 }
 
@@ -39,7 +39,9 @@ mod tests {
     fn serialize_single_entry() {
         let k = Primitive::new("s".to_string(), "key".to_string()).unwrap();
         let v = Item::Primitive(Primitive::new("s".to_string(), "value".to_string()).unwrap());
-        let j = TestJournal { entries: vec![(k, v)] };
+        let j = TestJournal {
+            entries: vec![(k, v)],
+        };
         let s = j.serialize();
         assert!(s.contains("key"));
         assert!(s.contains("value"));
@@ -52,7 +54,9 @@ mod tests {
         let v1 = Item::Primitive(Primitive::new("n".to_string(), "1".to_string()).unwrap());
         let k2 = Primitive::new("s".to_string(), "b".to_string()).unwrap();
         let v2 = Item::Primitive(Primitive::new("n".to_string(), "2".to_string()).unwrap());
-        let j = TestJournal { entries: vec![(k1, v1), (k2, v2)] };
+        let j = TestJournal {
+            entries: vec![(k1, v1), (k2, v2)],
+        };
         let s = j.serialize();
         assert!(s.contains(";"));
     }

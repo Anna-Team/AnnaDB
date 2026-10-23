@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::LIMIT_QUERY;
 use crate::query::operations::QueryOperation;
@@ -26,7 +26,9 @@ impl TySONModifier for LimitQuery {
             Item::Primitive(Primitive::NumberPrimitive(_pr)) => Ok(Self {
                 expr: Box::new(value),
             }),
-            _ => Err(DBError::TypeMismatch("limit supports only numbers".to_string())),
+            _ => Err(DBError::TypeMismatch(
+                "limit supports only numbers".to_string(),
+            )),
         }
     }
 
@@ -79,7 +81,10 @@ mod tests {
         let num = NumberPrimitive::new("".to_string(), "10".to_string()).unwrap();
         let item = Item::Primitive(Primitive::NumberPrimitive(num));
         let q = LimitQuery::new("".to_string(), item).unwrap();
-        assert!(matches!(q.get_value(), Item::Primitive(Primitive::NumberPrimitive(_))));
+        assert!(matches!(
+            q.get_value(),
+            Item::Primitive(Primitive::NumberPrimitive(_))
+        ));
     }
 
     #[test]

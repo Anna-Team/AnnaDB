@@ -77,7 +77,9 @@ fn manage_operator(
                     update_item(storage, found_item, insert_buf, inserted_value)?;
                 }
                 _ => {
-                    return Err(DBError::TypeMismatch("inc operator supports numbers only".to_string()));
+                    return Err(DBError::TypeMismatch(
+                        "inc operator supports numbers only".to_string(),
+                    ));
                 }
             },
             None | Some(Item::Primitive(Primitive::DeletedPrimitive(_))) => {
@@ -85,9 +87,11 @@ fn manage_operator(
                     "inc operator requires a number value".to_string(),
                 ));
             }
-            _ => return Err(DBError::TypeMismatch(
-                "inc operator requires a number value".to_string(),
-            )),
+            _ => {
+                return Err(DBError::TypeMismatch(
+                    "inc operator requires a number value".to_string(),
+                ))
+            }
         },
         _ => {
             return Err(DBError::UnsupportedOperation("update operator".to_string()));
@@ -145,9 +149,11 @@ fn process(
                     updated = true;
                     manage_operator(op, storage, insert_buf, v, o)?;
                 }
-        _ => return Err(DBError::TypeMismatch(
-            "cannot update non-map, non-vector container".to_string(),
-        )),
+                _ => {
+                    return Err(DBError::TypeMismatch(
+                        "cannot update non-map, non-vector container".to_string(),
+                    ))
+                }
             }
         }
         if updated {
@@ -160,14 +166,14 @@ fn process(
 pub(crate) fn update(
     storage: &Storage,
     query: &UpdateQuery,
-    mut insert_buf: &mut InsertBuffer,
+    insert_buf: &mut InsertBuffer,
     filter_buf: &FilterBuffer,
 ) -> Result<QueryResponse, DBError> {
     let mut result: HashSet<Link> = HashSet::new();
     for item in query.get_items() {
         match item {
             Item::Map(op) => {
-                result.extend(process(op, storage, &filter_buf, &mut insert_buf)?);
+                result.extend(process(op, storage, filter_buf, insert_buf)?);
             }
             _ => return Err(DBError::UnexpectedType("update operator".to_string())),
         }

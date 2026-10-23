@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::STRING;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -14,7 +14,7 @@ pub struct StringPrimitive {
 
 impl BaseTySONItemInterface for StringPrimitive {
     fn get_prefix(&self) -> String {
-        return STRING.to_string();
+        STRING.to_string()
     }
 }
 

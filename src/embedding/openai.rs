@@ -52,13 +52,9 @@ impl EmbeddingProvider for OpenAiProvider {
             .set("Authorization", &format!("Bearer {}", self.api_key))
             .set("Content-Type", "application/json")
             .send_json(&request)
-            .map_err(|e| {
-                DBError::UnsupportedOperation(format!("OpenAI API error: {}", e))
-            })?
+            .map_err(|e| DBError::UnsupportedOperation(format!("OpenAI API error: {}", e)))?
             .into_json()
-            .map_err(|e| {
-                DBError::UnsupportedOperation(format!("OpenAI parse error: {}", e))
-            })?;
+            .map_err(|e| DBError::UnsupportedOperation(format!("OpenAI parse error: {}", e)))?;
 
         response
             .data
@@ -81,13 +77,15 @@ mod tests {
 
     #[test]
     fn openai_provider_dimensions() {
-        let provider = OpenAiProvider::new("test-key".to_string(), "text-embedding-3-small".to_string());
+        let provider =
+            OpenAiProvider::new("test-key".to_string(), "text-embedding-3-small".to_string());
         assert_eq!(provider.dimensions(), 1536);
     }
 
     #[test]
     fn openai_provider_large_dims() {
-        let provider = OpenAiProvider::new("test-key".to_string(), "text-embedding-3-large".to_string());
+        let provider =
+            OpenAiProvider::new("test-key".to_string(), "text-embedding-3-large".to_string());
         assert_eq!(provider.dimensions(), 3072);
     }
 }

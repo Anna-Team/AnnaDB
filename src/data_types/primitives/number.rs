@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::NUMBER;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -14,7 +14,7 @@ pub struct NumberPrimitive {
 
 impl BaseTySONItemInterface for NumberPrimitive {
     fn get_prefix(&self) -> String {
-        return NUMBER.to_string();
+        NUMBER.to_string()
     }
 }
 

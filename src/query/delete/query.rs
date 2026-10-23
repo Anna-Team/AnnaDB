@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::DELETE_QUERY;
 use crate::query::operations::QueryOperation;
@@ -13,7 +13,7 @@ pub struct DeleteQuery;
 
 impl BaseTySONItemInterface for DeleteQuery {
     fn get_prefix(&self) -> String {
-        return DELETE_QUERY.to_string();
+        DELETE_QUERY.to_string()
     }
 }
 

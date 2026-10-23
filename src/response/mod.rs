@@ -40,6 +40,12 @@ pub struct OkTransactionResponse {
     pub responses: Vec<QueryResponse>,
 }
 
+impl Default for OkTransactionResponse {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl OkTransactionResponse {
     pub fn new() -> Self {
         Self { responses: vec![] }
@@ -98,7 +104,8 @@ mod tests {
 
     #[test]
     fn query_response_new() {
-        let data = Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let data =
+            Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
         let meta = Meta::FindMeta(FindMeta::new(5));
         let resp = QueryResponse::new(data, meta, QueryStatus::Ready);
         assert!(resp.serialize().contains("response"));
@@ -106,7 +113,8 @@ mod tests {
 
     #[test]
     fn query_status_not_fetched() {
-        let data = Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let data =
+            Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
         let meta = Meta::FindMeta(FindMeta::new(0));
         let resp = QueryResponse::new(data, meta, QueryStatus::NotFetched);
         assert!(resp.serialize().contains("response"));
@@ -116,7 +124,8 @@ mod tests {
     fn ok_transaction_response() {
         let mut ok = OkTransactionResponse::new();
         assert!(ok.responses.is_empty());
-        let data = Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
+        let data =
+            Item::Primitive(crate::Primitive::new("null".to_string(), "".to_string()).unwrap());
         let meta = Meta::FindMeta(FindMeta::new(1));
         ok.add_response(QueryResponse::new(data, meta, QueryStatus::Ready));
         assert!(!ok.responses.is_empty());
@@ -131,7 +140,7 @@ mod tests {
 
     #[test]
     fn transaction_response_ok() {
-        let mut ok = OkTransactionResponse::new();
+        let ok = OkTransactionResponse::new();
         let resp = TransactionResponse::Ok(ok);
         assert!(resp.serialize().contains("ok"));
     }

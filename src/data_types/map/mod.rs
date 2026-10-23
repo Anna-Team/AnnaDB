@@ -1,8 +1,8 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::{
-    EQ_OPERATOR, GTE_OPERATOR, GT_OPERATOR, INC_OPERATOR, KNN_OPERATOR, LTE_OPERATOR,
-    LT_OPERATOR, NEQ_OPERATOR, PROJECT_QUERY, RESPONSE_OBJECTS, SET_OPERATOR, STORAGE_MAP,
+    EQ_OPERATOR, GTE_OPERATOR, GT_OPERATOR, INC_OPERATOR, KNN_OPERATOR, LTE_OPERATOR, LT_OPERATOR,
+    NEQ_OPERATOR, PROJECT_QUERY, RESPONSE_OBJECTS, SET_OPERATOR, STORAGE_MAP,
 };
 use crate::data_types::item::Item;
 use crate::data_types::map::storage::StorageMap;

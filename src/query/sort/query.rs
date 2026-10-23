@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::{ASC_OPERATOR, DESC_OPERATOR, SORT_QUERY};
 
@@ -33,7 +33,10 @@ impl TySONModifier for AscOperator {
             Item::Primitive(Primitive::RootPrimitive(_)) => Ok(Self {
                 expr: Box::new(value),
             }),
-            _ => Err(DBError::TypeMismatch(format!("cannot sort by {}", value.to_tyson()))),
+            _ => Err(DBError::TypeMismatch(format!(
+                "cannot sort by {}",
+                value.to_tyson()
+            ))),
         }
     }
 
@@ -106,7 +109,10 @@ impl TySONVector for SortQuery {
                 self.items.push(item);
                 Ok(true)
             }
-            _ => Err(DBError::UnsupportedOperation(format!("sort operator: {}", item.to_tyson()))),
+            _ => Err(DBError::UnsupportedOperation(format!(
+                "sort operator: {}",
+                item.to_tyson()
+            ))),
         }
     }
 
@@ -181,15 +187,18 @@ mod tests {
     fn sort_query_push_asc() {
         let mut sq = SortQuery::new("".to_string()).unwrap();
         let p = PathToValue::new("".to_string(), "name".to_string()).unwrap();
-        let asc = AscOperator::new("".to_string(), Item::Primitive(Primitive::PathToValue(p))).unwrap();
-        sq.push(Item::Modifier(ModifierItem::AscOperator(asc))).unwrap();
+        let asc =
+            AscOperator::new("".to_string(), Item::Primitive(Primitive::PathToValue(p))).unwrap();
+        sq.push(Item::Modifier(ModifierItem::AscOperator(asc)))
+            .unwrap();
         assert_eq!(sq.items.len(), 1);
     }
 
     #[test]
     fn sort_query_push_invalid() {
         let mut sq = SortQuery::new("".to_string()).unwrap();
-        let invalid = Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
+        let invalid =
+            Item::Primitive(Primitive::new("s".to_string(), "hello".to_string()).unwrap());
         assert!(sq.push(invalid).is_err());
     }
 }

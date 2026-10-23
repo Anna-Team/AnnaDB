@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::INSERT_QUERY;
 use crate::query::operations::QueryOperation;
@@ -59,7 +59,7 @@ impl InsertQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Primitive, Item};
+    use crate::{Item, Primitive};
 
     #[test]
     fn insert_query_prefix() {

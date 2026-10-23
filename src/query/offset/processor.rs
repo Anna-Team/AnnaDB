@@ -25,9 +25,9 @@ pub fn offset(query: &OffsetQuery, buf: &mut FilterBuffer) -> Result<QueryRespon
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data_types::primitives::number::NumberPrimitive;
     use crate::query::offset::query::OffsetQuery;
     use crate::tyson::modifier::TySONModifier;
-    use crate::data_types::primitives::number::NumberPrimitive;
     use crate::tyson::primitive::TySONPrimitive;
     use crate::Link;
 

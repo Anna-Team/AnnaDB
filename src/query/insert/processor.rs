@@ -9,11 +9,11 @@ pub fn insert(
     storage: &Storage,
     collection_name: String,
     items: &Vec<Item>,
-    mut buf: &mut InsertBuffer,
+    buf: &mut InsertBuffer,
 ) -> Result<QueryResponse, DBError> {
     let mut links: ResponseIds = ResponseIds::new(RESPONSE_IDS.to_string())?;
     for item in items {
-        links.push(storage.insert_item(collection_name.clone(), &mut buf, item.clone())?)?;
+        links.push(storage.insert_item(collection_name.clone(), buf, item.clone())?)?;
     }
     let meta = InsertMeta::new(links.items.len());
     Ok(QueryResponse::new(

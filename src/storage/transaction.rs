@@ -72,11 +72,11 @@ impl Desereilize for Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::query::insert::query::InsertQuery;
     use crate::query::delete::query::DeleteQuery;
+    use crate::query::insert::query::InsertQuery;
     use crate::storage::common::collection_name::CollectionName;
-    use crate::tyson::vector::TySONVector;
     use crate::tyson::primitive::TySONPrimitive;
+    use crate::tyson::vector::TySONVector;
 
     #[test]
     fn transaction_new() {
@@ -99,7 +99,12 @@ mod tests {
     fn transaction_push_rejects_non_collection() {
         let mut txn = Transaction::new("".to_string());
         let item = Item::Primitive(Primitive::new("null".to_string(), "".to_string()).unwrap());
-        assert!(txn.push((Primitive::new("s".to_string(), "bad".to_string()).unwrap(), item)).is_err());
+        assert!(txn
+            .push((
+                Primitive::new("s".to_string(), "bad".to_string()).unwrap(),
+                item
+            ))
+            .is_err());
     }
 
     #[test]

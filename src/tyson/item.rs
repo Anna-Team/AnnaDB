@@ -16,6 +16,7 @@ pub trait BaseTySONItemInterface: Debug {
 }
 
 impl TySONItem {
+    #[allow(dead_code)]
     pub(crate) fn serialize(&self) -> String {
         match self {
             TySONItem::Map(o) => o.serialize(),

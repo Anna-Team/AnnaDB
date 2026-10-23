@@ -203,8 +203,14 @@ impl HnswIndex {
         let mut results = BinaryHeap::new();
 
         let d = self.distance(query, &self.nodes[ep].vector);
-        candidates.push(Candidate { id: ep, distance: d });
-        results.push(Candidate { id: ep, distance: d });
+        candidates.push(Candidate {
+            id: ep,
+            distance: d,
+        });
+        results.push(Candidate {
+            id: ep,
+            distance: d,
+        });
         visited.insert(ep);
 
         while let Some(current) = candidates.pop() {
@@ -221,8 +227,14 @@ impl HnswIndex {
                     visited.insert(nb);
                     let dist = self.distance(query, &self.nodes[nb].vector);
                     if results.len() < ef || dist < worst_result {
-                        candidates.push(Candidate { id: nb, distance: dist });
-                        results.push(Candidate { id: nb, distance: dist });
+                        candidates.push(Candidate {
+                            id: nb,
+                            distance: dist,
+                        });
+                        results.push(Candidate {
+                            id: nb,
+                            distance: dist,
+                        });
                         if results.len() > ef {
                             results.pop();
                         }
@@ -261,6 +273,7 @@ impl HnswIndex {
         }
     }
 }
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -278,7 +291,7 @@ mod tests {
         index.insert(&v3);
         index.insert(&v4);
 
-        let results = index.search(&vec![0.9, 0.0, 0.1], 2);
+        let results = index.search(&[0.9, 0.0, 0.1], 2);
         assert!(!results.is_empty());
         assert!(results.len() <= 2);
     }
@@ -305,7 +318,7 @@ mod tests {
         let mut index = HnswIndex::new(2, 16, 50, HnswMetric::Euclidean);
         index.set_ef_search(100);
 
-        let ids: Vec<usize> = (0..50)
+        let _ids: Vec<usize> = (0..50)
             .map(|i| {
                 let angle = (i as f32) * 0.125;
                 index.insert(&[angle.cos(), angle.sin()])

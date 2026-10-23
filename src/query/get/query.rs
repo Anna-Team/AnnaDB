@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::GET_QUERY;
 use crate::query::operations::QueryOperation;
@@ -26,7 +26,9 @@ impl TySONVector for GetQuery {
         match &item {
             Item::Primitive(Primitive::Link(_)) => self.items.push(item),
             _ => {
-                return Err(DBError::TypeMismatch("get query can contain only links".to_string()));
+                return Err(DBError::TypeMismatch(
+                    "get query can contain only links".to_string(),
+                ));
             }
         }
         Ok(true)
@@ -48,7 +50,9 @@ impl GetQuery {
             match &item {
                 Item::Primitive(Primitive::Link(o)) => ids.push(o),
                 _ => {
-                    return Err(DBError::TypeMismatch("get query can contain only links".to_string()));
+                    return Err(DBError::TypeMismatch(
+                        "get query can contain only links".to_string(),
+                    ));
                 }
             }
         }
@@ -96,7 +100,8 @@ mod tests {
     fn get_query_get_ids() {
         let mut gq = GetQuery::new("".to_string()).unwrap();
         let link = Link::create("test".to_string());
-        gq.push(Item::Primitive(Primitive::Link(link.clone()))).unwrap();
+        gq.push(Item::Primitive(Primitive::Link(link.clone())))
+            .unwrap();
         let ids = gq.get_ids().unwrap();
         assert_eq!(ids.len(), 1);
         assert_eq!(ids[0], &link);

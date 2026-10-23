@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::KEEP;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -12,7 +12,7 @@ pub struct KeepPrimitive;
 
 impl BaseTySONItemInterface for KeepPrimitive {
     fn get_prefix(&self) -> String {
-        return KEEP.to_string();
+        KEEP.to_string()
     }
 }
 

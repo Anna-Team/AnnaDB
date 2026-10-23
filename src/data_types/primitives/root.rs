@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::ROOT;
 use crate::tyson::item::BaseTySONItemInterface;
@@ -12,7 +12,7 @@ pub struct RootPrimitive;
 
 impl BaseTySONItemInterface for RootPrimitive {
     fn get_prefix(&self) -> String {
-        return ROOT.to_string();
+        ROOT.to_string()
     }
 }
 

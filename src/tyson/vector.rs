@@ -39,7 +39,9 @@ mod tests {
     fn tyson_vector_serialize_with_items() {
         use crate::data_types::vector::storage::StorageVector;
         let mut v = StorageVector::new("".to_string()).unwrap();
-        let item = crate::Item::Primitive(crate::Primitive::new("s".to_string(), "hi".to_string()).unwrap());
+        let item = crate::Item::Primitive(
+            crate::Primitive::new("s".to_string(), "hi".to_string()).unwrap(),
+        );
         v.push(item).unwrap();
         let s = TySONVector::serialize(&v);
         assert!(s.contains("hi"));
