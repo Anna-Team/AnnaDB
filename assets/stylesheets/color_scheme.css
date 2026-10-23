@@ -1,0 +1,14 @@
+[data-md-color-scheme="bright"] {
+
+  --md-primary-fg-color:        #219ebc; /* Panel */
+  --md-primary-bg-color:        #EDF2F4; /* Panel text */
+
+  --md-default-fg-color--light:        #023047;
+  --md-default-bg-color:        #FFFFFF;
+
+  --md-typeset-color: #023047;
+  --md-typeset-a-color: #fb8500;
+
+  --md-accent-fg-color: #fb8500;
+
+}
