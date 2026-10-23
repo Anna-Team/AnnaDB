@@ -204,11 +204,11 @@ opencode "$@"
 - [x] Auto-linking and dedup
 - [x] Parametrized unwrapping (UnwrapConfig)
 - [x] Python bindings
-- [ ] Release binary builds on CI (GitHub Actions)
+- [x] Release binary builds on CI (GitHub Actions)
 
 ### opencode side — to build
-- [ ] `skills/annadb.md` — skill definition with tools
-- [ ] `launcher.sh` / `launcher.ps1` — bootstrap script
+- [x] `skills/annadb.md` — skill definition with tools
+- [x] `launcher.sh` / `launcher.ps1` — bootstrap script
 - [ ] `config.json` schema — AnnaDB section
 - [ ] End-to-end test: store decision in session 1, recall in session 2
 - [ ] License: MIT for the extension, AnnaDB binary under BSL
